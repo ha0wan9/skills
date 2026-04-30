@@ -1,0 +1,31 @@
+{
+  "name": "ha0wan9-skills",
+  "owner": {
+    "name": "Haoran Wang",
+    "email": "haoran.wang@stereolabs.com"
+  },
+  "metadata": {
+    "description": "Agent harness skills: project-meta for repo memory and execution governance, dl-research for rigorous DL research workflows.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "project-meta",
+      "description": "Bootstrap, audit, and evolve a repository agent-work harness. Generates AGENTS.md, USER.md preferences, project-specific artifacts from skill-level templates, execution rules, and pre-commit delivery. Use when starting work in a repo, repairing memory layout, evolving agent instructions, coordinating complex work, or running /project-meta init|status|validate|deliver|audit.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/project-meta"
+      ]
+    },
+    {
+      "name": "dl-research",
+      "description": "Guide rigorous Deep Learning research studies: initialize a project research adapter, frame questions, survey evidence, design controlled experiments, prepare/launch/monitor runs, evaluate results, synthesize findings, audit methodology, or run a bounded autonomous ratchet loop.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/dl-research"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DL Research Graph",
+  "type": "object",
+  "required": ["study_id", "nodes", "edges", "generated_utc"],
+  "properties": {
+    "study_id": {"type": "string"},
+    "generated_utc": {"type": "string"},
+    "winning_route": {"type": ["string", "null"]},
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {
+            "type": "string",
+            "enum": ["study", "track", "experiment", "evidence", "result", "decision"]
+          },
+          "label": {"type": "string"},
+          "status": {
+            "type": "string",
+            "enum": [
+              "baseline",
+              "running",
+              "pass",
+              "fail",
+              "promoted",
+              "discarded",
+              "inconclusive",
+              "invalid"
+            ]
+          },
+          "uri": {"type": ["string", "null"]},
+          "summary": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "relation"],
+        "properties": {
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "relation": {
+            "type": "string",
+            "enum": [
+              "tests",
+              "supports",
+              "contradicts",
+              "depends-on",
+              "supersedes",
+              "promotes",
+              "forks-from"
+            ]
+          },
+          "summary": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "DL Research"
+  short_description: "Run rigorous DL research workflows"
+  default_prompt: "Use $dl-research to frame, design, and run a controlled DL study."

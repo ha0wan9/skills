@@ -1,0 +1,7 @@
+# Project Meta local files
+
+# Local user collaboration preferences. Keep these files out of Git.
+/USER.md
+
+# Do not expose local preference templates in target projects by default.
+/USER.template.md

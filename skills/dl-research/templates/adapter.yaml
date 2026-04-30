@@ -1,0 +1,42 @@
+# Project-local adapter for the dl-research meta skill.
+# Instantiate as agents/research/adapter.yaml in the target repository.
+
+adapter_version: 1
+instantiated_from: dl-research/templates/adapter.yaml
+owner: <owner>
+created_utc: <YYYY-MM-DDThh:mmZ>
+last_reviewed_utc: <YYYY-MM-DDThh:mmZ>
+status: draft # draft | ready | blocked
+
+research_root_pattern: agents/research/<study-id>/
+branch_pattern: res/<study-id>
+run_name_pattern: <study-id>-<HnEn>-<experiment-name>
+
+config_backend: <project-native config system>
+execution_backend: <local shell | scheduler | tracker launch | other>
+launch_command: <exact command or command template>
+metric_parser: <command, script, query, or manual extraction rule>
+primary_metric: <metric name>
+metric_direction: <minimize|maximize>
+tracking_backend: <tracker or ledger backend>
+artifact_backend: <local path, tracker artifacts, object store, or other>
+data_version_source: <dataset/split/version source>
+
+editable_surface:
+  - <paths, config groups, notebooks, or scripts research may change>
+
+protected_files:
+  - <eval harness, metric parser, split definitions, secrets, queue defaults>
+
+budget: <wall-clock, compute, trial, or cost limit>
+stop_policy: <timeout, early-stop, crash, and retry rules>
+seed_policy: <fixed seed, seed sweep, or repeated-trial rule>
+
+graph_backend:
+  mermaid: research_graph.mmd
+  json: research_graph.json
+  json_schema: dl-research/templates/research-graph.schema.json
+
+baseline_source: <optional checkpoint, run ID, paper number, or command>
+reporting_target: <optional issue, doc, paper, dashboard, or memory target>
+remote_constraints: <optional queues, accelerators, containers, package sync>

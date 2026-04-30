@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Meta"
+  short_description: "Build and evolve project agent harnesses."
+  default_prompt: "Use /project-meta init, status, validate, deliver, or audit to bootstrap or evolve a project's agent-work harness: canonical memory, local USER.md preference presets, the existing agent-facing documentation framework, user-facing delivery, skill-level templates that instantiate project-specific artifacts, behavior guardrails, trigger policy, multi-agent planning/review, pre-commit delivery, mirrors, and durable lesson writeback."

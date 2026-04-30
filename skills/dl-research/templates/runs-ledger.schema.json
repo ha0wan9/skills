@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DL Research Runs Ledger Row",
+  "type": "object",
+  "required": [
+    "run_id",
+    "study_id",
+    "experiment_id",
+    "status",
+    "hypothesis",
+    "intervention",
+    "command",
+    "code_revision",
+    "data_version",
+    "primary_metric",
+    "metric_direction",
+    "created_utc"
+  ],
+  "properties": {
+    "run_id": {"type": "string"},
+    "study_id": {"type": "string"},
+    "experiment_id": {
+      "type": "string",
+      "description": "Canonical experiment ID. Multi-route H/E studies use the dotted form (e.g. 'H1.E1'); single-route studies use 'E1', 'E2', ..."
+    },
+    "track_id": {
+      "type": ["string", "null"],
+      "description": "Hypothesis track (e.g. 'H1'). Null for single-route studies."
+    },
+    "slug": {
+      "type": ["string", "null"],
+      "description": "Filename-safe identifier including the experiment name (e.g. 'H1E1-token-pruning'). Used in run names and directory paths. Required for any launched run."
+    },
+    "parent_id": {"type": ["string", "null"]},
+    "status": {
+      "type": "string",
+      "enum": ["prepared", "running", "completed", "failed", "stopped", "discarded", "invalid"]
+    },
+    "hypothesis": {"type": "string"},
+    "intervention": {"type": "string"},
+    "command": {"type": "string"},
+    "code_revision": {"type": "string"},
+    "data_version": {"type": "string"},
+    "seed": {"type": ["integer", "string", "null"]},
+    "primary_metric": {"type": "string"},
+    "metric_direction": {"type": "string", "enum": ["minimize", "maximize"]},
+    "metric_value": {"type": ["number", "null"]},
+    "baseline_run_id": {"type": ["string", "null"]},
+    "verdict": {
+      "type": ["string", "null"],
+      "enum": ["kept", "killed", "inconclusive", "invalid", null]
+    },
+    "decision": {
+      "type": ["string", "null"],
+      "enum": ["promote", "kill", "fork", "repeat", "inconclusive", null]
+    },
+    "decision_reason": {"type": ["string", "null"]},
+    "graph_nodes": {
+      "type": ["array", "null"],
+      "items": {"type": "string"}
+    },
+    "budget_estimate": {"type": ["string", "number", "null"]},
+    "tracking_uri": {"type": ["string", "null"]},
+    "artifact_uri": {"type": ["string", "null"]},
+    "created_utc": {"type": "string"},
+    "updated_utc": {"type": ["string", "null"]},
+    "design_deviation": {"type": ["boolean", "null"]}
+  }
+}
