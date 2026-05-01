@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Deep Survey BFS Claims",
+  "description": "Each line in claims.jsonl is one object matching this schema.",
+  "type": "object",
+  "required": ["claim_id", "kind", "paper_id", "section", "quote"],
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "pattern": "^C\\d{3,5}$",
+      "description": "Stable ID like C001, C012, C0123."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["metric", "architecture", "dataset", "finding", "scale", "timeline"]
+    },
+    "paper_id": {
+      "type": "string",
+      "pattern": "^P\\d{3,5}$",
+      "description": "Resolves to a row in paper_index.md."
+    },
+    "section": {
+      "type": "string",
+      "description": "Section, table, or figure reference within the paper. Examples: 'Abstract', '§4.3', 'Table 2', 'Figure 5'."
+    },
+    "quote": {
+      "type": "string",
+      "description": "Verbatim quote from the paper, OR an explicit table/figure reference description. Empty quote requires explicit table_ref or figure_ref."
+    },
+    "table_ref": {
+      "type": ["string", "null"],
+      "description": "Specific table cell reference, e.g., 'Table 4, row LaBraM-base, column TUEG accuracy'."
+    },
+    "figure_ref": {
+      "type": ["string", "null"],
+      "description": "Specific figure reference, e.g., 'Figure 5b, line REVE-large'."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "superseded"],
+      "default": "active"
+    },
+    "superseded_by": {
+      "type": ["string", "null"],
+      "description": "If status='superseded', the claim_id that supersedes this one."
+    },
+    "notes": {
+      "type": ["string", "null"]
+    },
+    "confidence": {
+      "type": ["string", "null"],
+      "enum": ["low", "medium", "high", null]
+    }
+  }
+}

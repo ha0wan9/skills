@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deep Survey (BFS)"
+  short_description: "Rigorous breadth-first literature surveys"
+  default_prompt: "Use $deep-survey-bfs to run a literature survey on the topic, with multi-source search, gap audit, and a multi-tier reading list."

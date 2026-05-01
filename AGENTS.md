@@ -1,6 +1,6 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts two skills under `skills/`: [`project-meta`](skills/project-meta/) and [`dl-research`](skills/dl-research/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts three skills under `skills/`: [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), and [`deep-survey-bfs`](skills/deep-survey-bfs/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
@@ -19,6 +19,7 @@
 | `.claude-plugin/marketplace.json` | plugin manifest; canonical source for installable plugin names and skill locations |
 | `skills/project-meta/` | full project-meta skill, including its own SKILL.md, references, templates, agents/openai.yaml |
 | `skills/dl-research/` | full dl-research skill, including phases, modes, references, templates, agents/openai.yaml |
+| `skills/deep-survey-bfs/` | full deep-survey-bfs skill, including phases, references, templates, scripts (`arxiv_search.py`, `coverage_check.py`, `claims_validate.py`, `bias_audit.py`), agents/openai.yaml |
 | `scripts/validate_project_meta.py` | dev-only validator; not shipped to install. Validates the project-meta skill content under `skills/project-meta/` |
 
 ## Bounded Doc Loading

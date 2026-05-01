@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Build a sub-question x dimension coverage matrix from paper_index.md and index.md.
+
+Reads:
+  - paper_index.md  (Markdown table; column "Sub-questions" comma-sep SQ ids,
+                     "Dimensions" comma-sep dim names, "Stars" with star chars)
+  - index.md        (parses the "## Sub-Questions" section and the "## Active
+                     Evidence Dimensions" table)
+
+Prints a coverage matrix to stdout and exits 0 if all active cells have at
+least one star-three paper, else exits 1.
+
+Usage:
+  python3 coverage_check.py <paper_index.md> <index.md>
+"""
+
+from __future__ import annotations
+
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+
+DIMENSIONS = ["theory", "experiment", "survey", "critical-review", "dataset"]
+
+
+def parse_subquestions(index_text: str) -> list[str]:
+    m = re.search(r"## Sub-Questions\s*\n(.*?)(?=\n## )", index_text, re.S)
+    if not m:
+        return []
+    out = []
+    for line in m.group(1).splitlines():
+        m2 = re.match(r"^\s*\d+\.\s+(SQ\d+)\b", line)
+        if m2:
+            out.append(m2.group(1))
+    return out
+
+
+def parse_active_dims(index_text: str) -> dict[str, set[str]]:
+    """Return SQ -> set of active dimensions, parsed from the markdown table."""
+    m = re.search(
+        r"## Active Evidence Dimensions\s*\n(.*?)(?=\n## )",
+        index_text,
+        re.S,
+    )
+    if not m:
+        return {}
+    active: dict[str, set[str]] = {}
+    header = None
+    for raw in m.group(1).splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if header is None:
+            if cells[0].lower().startswith("sub-question"):
+                header = [c.lower() for c in cells[1:]]
+            continue
+        if cells[0].startswith("---"):
+            continue
+        sq = cells[0]
+        dims = set()
+        for i, dim_name in enumerate(header):
+            value = cells[i + 1] if i + 1 < len(cells) else ""
+            if value and value not in {"-", "—"}:
+                dims.add(dim_name)
+        if sq:
+            active[sq] = dims
+    return active
+
+
+def parse_paper_rows(idx_text: str) -> list[dict]:
+    """Each tr is a paper row from paper_index.md."""
+    rows: list[dict] = []
+    header_cells = None
+    for raw in idx_text.splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if header_cells is None:
+            if cells[0].lower() == "id":
+                header_cells = [c.lower() for c in cells]
+            continue
+        if cells[0].startswith("---"):
+            continue
+        if not cells[0].startswith("P"):
+            continue
+        row = dict(zip(header_cells, cells))
+        rows.append(row)
+    return rows
+
+
+def is_starstarstar(value: str) -> bool:
+    # Count star characters; ★ is U+2605
+    return value.count("★") >= 3
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 3:
+        print("usage: coverage_check.py <paper_index.md> <index.md>", file=sys.stderr)
+        return 2
+    pi_path = Path(argv[1])
+    idx_path = Path(argv[2])
+    if not pi_path.is_file() or not idx_path.is_file():
+        print("input files do not exist", file=sys.stderr)
+        return 2
+
+    pi_text = pi_path.read_text(encoding="utf-8")
+    idx_text = idx_path.read_text(encoding="utf-8")
+
+    sqs = parse_subquestions(idx_text)
+    active = parse_active_dims(idx_text)
+    rows = parse_paper_rows(pi_text)
+
+    # cell[(sq, dim)] = list of paper ids
+    cell: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for r in rows:
+        if not is_starstarstar(r.get("stars", "")):
+            continue
+        paper_id = r.get("id", "").strip()
+        sqs_in = [s.strip() for s in r.get("sub-questions", "").split(",") if s.strip()]
+        dims_in = [d.strip().lower() for d in r.get("dimensions", "").split(",") if d.strip()]
+        for sq in sqs_in:
+            for dim in dims_in:
+                cell[(sq, dim)].append(paper_id)
+
+    # render
+    print(f"Survey coverage matrix\n  sub-questions: {len(sqs)}  papers (★★★): "
+          f"{sum(1 for r in rows if is_starstarstar(r.get('stars','')))}\n")
+    header = ["SQ"] + DIMENSIONS
+    print("| " + " | ".join(header) + " |")
+    print("|" + "|".join(["---"] * len(header)) + "|")
+    open_cells = 0
+    closed_cells = 0
+    for sq in sqs:
+        row = [sq]
+        active_dims = active.get(sq, set(DIMENSIONS))
+        for dim in DIMENSIONS:
+            if dim not in active_dims:
+                row.append("N/A")
+                continue
+            papers = cell.get((sq, dim), [])
+            if not papers:
+                row.append("**GAP**")
+                open_cells += 1
+            else:
+                row.append(", ".join(papers))
+                closed_cells += 1
+        print("| " + " | ".join(row) + " |")
+
+    print(f"\nclosed: {closed_cells}  gap: {open_cells}")
+    return 0 if open_cells == 0 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

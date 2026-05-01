@@ -26,6 +26,15 @@
       "skills": [
         "./skills/dl-research"
       ]
+    },
+    {
+      "name": "deep-survey-bfs",
+      "description": "Conduct rigorous breadth-first literature surveys: frame the research question with sub-question decomposition, broad multi-source search (arXiv/OpenReview/DBLP/Semantic Scholar), 4-dimension paper rating, sub-question x dimension coverage matrix gap audit, targeted gap-filling rounds, multi-axis taxonomy + timeline + per-paper deep-dives synthesis, source/institution/year/method bias audit, and incremental versioned reports as new evidence arrives. Use when the user asks for a literature review, comprehensive survey, or wants to expand/audit an existing survey.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/deep-survey-bfs"
+      ]
     }
   ]
 }

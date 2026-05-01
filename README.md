@@ -10,6 +10,7 @@ Each skill in `skills/` is independently installable by name. The plugin manifes
 |---|---|---|
 | `project-meta` | [`skills/project-meta/`](skills/project-meta/) | Bootstrap, audit, and evolve a repository agent-work harness — canonical memory, execution rules, multi-agent protocols, project-specific artifact instantiation, pre-commit delivery. Surface commands: `/project-meta init`, `/project-meta status`, `/project-meta validate`, `/project-meta deliver`, `/project-meta audit`. |
 | `dl-research` | [`skills/dl-research/`](skills/dl-research/) | Rigorous Deep Learning research workflows: frame, survey, design, prepare, launch, monitor, evaluate, synthesize, audit, plus a bounded autonomous ratchet loop. Project-agnostic; uses an adapter for backend integration. |
+| `deep-survey-bfs` | [`skills/deep-survey-bfs/`](skills/deep-survey-bfs/) | Breadth-first literature surveys with hard coverage gates: frame → Round 1 broad search → gap audit (sub-question × dimension matrix) → Round N gap-fill → synthesize multi-axis taxonomy + per-paper deep-dives + multi-tier reading list. Anti-hallucination via `claims.jsonl` contract. |
 
 ## Install
 
@@ -21,6 +22,7 @@ From a git repo URL (`git@github.com:ha0wan9/skills.git` or `https://github.com/
 /plugin marketplace add ha0wan9/skills
 /plugin install project-meta@ha0wan9-skills
 /plugin install dl-research@ha0wan9-skills
+/plugin install deep-survey-bfs@ha0wan9-skills
 ```
 
 Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace.json` and copies the referenced skill directory into the user's plugin store. Skills install independently; you can install one without the other.
@@ -28,8 +30,9 @@ Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace
 For users who do not use the plugin marketplace, manual install copies one skill subdirectory into the agent's skills directory:
 
 ```bash
-cp -R /path/to/skills/skills/project-meta ~/.claude/skills/project-meta
-cp -R /path/to/skills/skills/dl-research  ~/.claude/skills/dl-research
+cp -R /path/to/skills/skills/project-meta    ~/.claude/skills/project-meta
+cp -R /path/to/skills/skills/dl-research     ~/.claude/skills/dl-research
+cp -R /path/to/skills/skills/deep-survey-bfs ~/.claude/skills/deep-survey-bfs
 ```
 
 ## Bounded Doc Loading
@@ -78,14 +81,21 @@ skills/
     │       ├── extract_doc_context.py
     │       ├── render_user_preferences.py
     │       └── validate_target_harness.py
-    └── dl-research/
+    ├── dl-research/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── modes/
+    │   ├── phases/
+    │   ├── references/
+    │   ├── templates/
+    │   └── scripts/validate_ledger.py
+    └── deep-survey-bfs/
         ├── SKILL.md
         ├── agents/openai.yaml
-        ├── modes/
-        ├── phases/
-        ├── references/
-        ├── templates/
-        └── scripts/validate_ledger.py
+        ├── phases/      # 00-frame, 01-round1, 02-gap-audit, 03-roundN, 04-synthesize, 05-version
+        ├── references/  # source-coverage, paper-rating-rubric, coverage-matrix, claims-discipline, taxonomy-revision, bias-audit
+        ├── templates/   # survey-index, paper-index, coverage-matrix, survey-skeleton, claims.schema.json
+        └── scripts/     # arxiv_search, coverage_check, claims_validate, bias_audit
 ```
 
 The `skills/<name>/` flat layout mirrors `anthropics/skills` and is what `/plugin install` expects when reading `marketplace.json`.
