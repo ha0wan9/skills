@@ -110,6 +110,23 @@ artifacts.
     finding. Skip this step when the survey is conceptual / non-
     comparative.
 
+11. **(Optional) Export to interactive HTML.** Load
+    `references/html-export.md`. Render the survey directory into a
+    single self-contained HTML file with sticky TOC, paper/claim
+    tooltips, search, sortable tables, Mermaid graphs, and Plotly
+    charts that replace the static PNG outputs:
+    ```
+    python3 skill/scripts/render_html.py SURVEY_DIR survey.html \
+        --title "<title>" \
+        --include-citation-graphs lineage,critique,temporal
+    ```
+    The HTML reads `paper_index.md`, `claims.jsonl`,
+    `artifacts/chart_data.csv`, plus `citations.tsv` / `clusters.tsv`
+    when those exist. Output is ~100 KB-1 MB depending on chart-data
+    size; a `--fully-offline` mode inlines the third-party libraries
+    for archival. The HTML is a render, not a source — never edit it
+    by hand; re-run the script to update.
+
 ## Synthesis Discipline
 
 - **Do not introduce new facts during synthesis.** If a claim is needed
