@@ -12,20 +12,21 @@
     },
     "kind": {
       "type": "string",
-      "enum": ["metric", "architecture", "dataset", "finding", "scale", "timeline"]
+      "enum": ["metric", "architecture", "dataset", "finding", "scale", "timeline", "synthesis"],
+      "description": "kind=synthesis is reserved for cross-paper aggregations (e.g., institutional concentration, year-over-year route shifts) computed from other claims; it requires depends_on and does NOT require a verbatim quote."
     },
     "paper_id": {
       "type": "string",
-      "pattern": "^P\\d{3,5}$",
-      "description": "Resolves to a row in paper_index.md."
+      "pattern": "^(P\\d{3,5}|\\*)$",
+      "description": "Resolves to a row in paper_index.md. Use '*' for kind=synthesis claims that span multiple papers (e.g., institutional distribution)."
     },
     "section": {
       "type": "string",
-      "description": "Section, table, or figure reference within the paper. Examples: 'Abstract', '§4.3', 'Table 2', 'Figure 5'."
+      "description": "Section, table, or figure reference within the paper. Examples: 'Abstract', '§4.3', 'Table 2', 'Figure 5'. For kind=synthesis, use a free-text label like 'Cross-paper institution analysis'."
     },
     "quote": {
       "type": "string",
-      "description": "Verbatim quote from the paper, OR an explicit table/figure reference description. Empty quote requires explicit table_ref or figure_ref."
+      "description": "Verbatim quote from the paper, OR an explicit table/figure reference description. Empty quote requires explicit table_ref or figure_ref. For kind=synthesis, this field carries the computed conclusion in prose."
     },
     "table_ref": {
       "type": ["string", "null"],

@@ -54,6 +54,15 @@ def main(argv: list[str] | None = None) -> int:
              "Default is to skip them so extraction-debt is not flagged as "
              "lab capture.",
     )
+    parser.add_argument(
+        "--strict-status",
+        action="store_true",
+        help="Require an explicit `confirmed` value in the Status column. "
+             "Default behaviour now auto-promotes a row to confirmed when its "
+             "Inst cell is populated with a real institution (not empty, '?', "
+             "or *-pending), since filling the Inst column was a manual "
+             "investigation step in earlier workflow.",
+    )
     args = parser.parse_args(argv)
 
     if not args.paper_index.is_file():
@@ -66,9 +75,21 @@ def main(argv: list[str] | None = None) -> int:
         print("no ★★★ papers; bias audit not applicable")
         return 0
 
+    def is_confirmed(row: dict) -> bool:
+        explicit = row.get("status", "").strip().lower() == "confirmed"
+        if explicit or args.strict_status:
+            return explicit
+        # Auto-promote: a populated Inst cell counts as confirmed.
+        inst = row.get("inst", "").strip().lower()
+        if not inst or inst in {"?", "n/a", "tbd", "unknown"}:
+            return False
+        if inst.endswith("-pending") or inst == "pending":
+            return False
+        return True
+
     n_total = len(starred)
     if not args.include_pending:
-        confirmed = [r for r in starred if r.get("status", "").strip() == "confirmed"]
+        confirmed = [r for r in starred if is_confirmed(r)]
         skipped = n_total - len(confirmed)
         if skipped:
             print(

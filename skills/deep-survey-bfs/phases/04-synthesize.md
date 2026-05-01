@@ -80,6 +80,19 @@ artifacts.
    survey.md` to confirm every assertion in `survey.md` traces to a
    claim row.
 
+9. Run `python3 skill/scripts/synthesize_self_check.py survey.md
+   paper_index.md` to confirm the skeleton's structural requirements
+   are met:
+   - §4 Datasets exists and comes before §5 method comparison
+   - §13 Reading list contains all four tiers (Entry / Deep /
+     Critical / Overview)
+   - §14 Reproducibility tier is present when ★★★ papers have varied
+     code-release status (some 'pending', some described)
+   - Section IDs are monotonic (no v1.x supplements appended out of
+     order; if out-of-order, run a renumber pass per `05-version.md`)
+   Self-check failure means the survey is not ready to ship — fix
+   structure before handing off.
+
 ## Synthesis Discipline
 
 - **Do not introduce new facts during synthesis.** If a claim is needed

@@ -83,13 +83,29 @@ def main(argv: list[str]) -> int:
                 if cid in claims:
                     errors.append(f"claims line {line_no}: duplicate claim_id {cid}")
                 claims[cid] = obj
+                kind = obj.get("kind", "")
                 for field in REQUIRED_FIELDS:
                     if not obj.get(field):
                         errors.append(f"{cid}: missing required field {field}")
-                if obj["paper_id"] not in paper_ids:
-                    errors.append(
-                        f"{cid}: paper_id {obj['paper_id']} not in paper_index.md"
-                    )
+                if kind == "synthesis":
+                    # Synthesis claims aggregate from other claims; paper_id may be '*'.
+                    deps = obj.get("depends_on")
+                    if not deps or not isinstance(deps, list) or len(deps) == 0:
+                        errors.append(
+                            f"{cid}: kind=synthesis requires non-empty depends_on "
+                            f"(list of contributing claim_ids)"
+                        )
+                    pid = obj.get("paper_id", "")
+                    if pid != "*" and pid not in paper_ids:
+                        errors.append(
+                            f"{cid}: paper_id {pid} not in paper_index.md "
+                            f"(use '*' for cross-paper synthesis claims)"
+                        )
+                else:
+                    if obj["paper_id"] not in paper_ids:
+                        errors.append(
+                            f"{cid}: paper_id {obj['paper_id']} not in paper_index.md"
+                        )
                 if not obj.get("quote") and not obj.get("table_ref") and not obj.get("figure_ref"):
                     errors.append(f"{cid}: must have quote, table_ref, or figure_ref")
                 if obj.get("status") == "superseded":
