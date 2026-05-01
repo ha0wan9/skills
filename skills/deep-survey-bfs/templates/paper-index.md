@@ -1,8 +1,8 @@
 # Paper Index — <survey-id>
 
-| ID | ArXiv | Title (short) | First author | Inst | Year | Venue | Sub-questions | Dimensions | Stars | Round | Status | One-line note |
-|----|-------|---------------|--------------|------|------|-------|---------------|------------|-------|-------|--------|---------------|
-| P001 | 2101.12037 | <title> | <Last F.> | <inst> | 2021 | Frontiers 2022 | SQ1, SQ3 | theory, experiment | ★★★ | R1 | confirmed | <note> |
+| ID | ArXiv | Title (short) | First author | Inst | Year | Venue | Sub-questions | Dimensions | Stars | Round | Status | Repro | One-line note |
+|----|-------|---------------|--------------|------|------|-------|---------------|------------|-------|-------|--------|-------|---------------|
+| P001 | 2101.12037 | <title> | <Last F.> | <inst> | 2021 | Frontiers 2022 | SQ1, SQ3 | theory, experiment | ★★★ | R1 | confirmed | oss/recipe:complete/issues:clean/quality:strong/3p:confirmed | <note> |
 
 > Conventions:
 > - **ID**: assigned in append order; never renumbered.
@@ -24,5 +24,16 @@
 >   are extraction-pending such as `inst-pending`), or `pending` (only
 >   title + arxiv ID populated). The bias audit only counts
 >   `confirmed` rows by default — see `bias-audit.md`.
+> - **Repro**: 5-tag reproducibility summary per
+>   `references/reproducibility-assessment.md`, format
+>   `<release>/<recipe>/<issues>/<quality>/<3p>` with values:
+>   - release: `oss` (open-source) | `ow` (open-weights) |
+>     `io` (inference-only) | `cl` (closed)
+>   - recipe: `complete` | `partial` | `absent`
+>   - issues: `clean` | `mixed` | `stale` | `unmaintained`
+>   - quality: `strong` | `adequate` | `weak` | `unverified`
+>   - 3p: `confirmed` | `partial` | `failed` | `unverified`
+>   Use `pending` as a placeholder until the assessment runs. The
+>   synthesis prose maps the row to a Tier R1-R4 (see reference).
 > - **One-line note**: a single distinguishing fact (e.g., "first 1B+
 >   parameter EEG FM").

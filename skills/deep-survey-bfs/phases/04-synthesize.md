@@ -53,7 +53,17 @@ artifacts.
    inline. The timeline should make the field's reframing moments
    visible (when did the dominant approach shift?).
 
-7. Build the multi-tier reading list:
+7. **Run reproducibility assessment** on every ★★★ paper before
+   writing per-paper deep-dives. Load
+   `references/reproducibility-assessment.md` and apply the 5-question
+   rubric (release / recipe / issues / quality / 3p reproduction).
+   Populate the `Repro` column in `paper_index.md` and map each paper
+   to a Tier R1-R4. The deep-dive subsections in §5 must annotate the
+   tier (e.g., "IGEV-Stereo (P002) [R1]"). When citing accuracy /
+   latency / param numbers in §4 / §6 / §8, papers in Tier R3 / R4
+   require an explicit reproducibility caveat in the surrounding prose.
+
+8. Build the multi-tier reading list:
    - Entry tier (3-5 papers, suggested reading order, time estimate)
    - Deep tier (per route)
    - Critical tier (limitations, negative results)

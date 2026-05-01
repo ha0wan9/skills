@@ -84,7 +84,13 @@ State the detected phase, `survey-id`, study root, and reason before loading.
 8. Load `references/taxonomy-revision.md` during `synthesize` and after every
    `roundn` that adds ≥3 papers.
 9. Load `references/bias-audit.md` during `audit`.
-10. Load templates only when scaffolding the matching artifact.
+10. Load `references/reproducibility-assessment.md` before populating the
+    `Repro` column on any ★★★ paper, and during `synthesize` to map each
+    paper to its Tier R1-R4. The 5-question rubric (release / recipe /
+    issues / quality / 3p reproduction) grades evidence strength
+    independently of accuracy claims; `survey.md` should annotate each
+    deep-dive subsection with the tier.
+11. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 
