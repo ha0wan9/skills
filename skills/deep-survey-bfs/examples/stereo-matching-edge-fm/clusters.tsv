@@ -1,0 +1,30 @@
+# clusters.tsv for stereo-matching-edge-fm
+# Sourced from paper_index.md "By architecture family" distribution (Round 2-A)
+# plus the v1.2 §11 Key Research Teams analysis.
+paper_id	cluster
+P001	Iterative-RAFT
+P002	Iterative-RAFT
+P003	Iterative-RAFT
+P004	Iterative-RAFT
+P010	Iterative-RAFT
+P011	Iterative-RAFT
+P012	Iterative-RAFT
+P022	Iterative-RAFT
+P005	Foundation-VFM
+P006	Foundation-VFM
+P007	Foundation-VFM
+P008	Foundation-VFM
+P009	Foundation-VFM
+P019	Foundation-VFM
+P020	Mamba-SSM
+P016	Edge-CNN
+P013	Edge-CNN
+P014	Edge-CNN
+P015	Edge-CNN
+P018	Edge-CNN
+P026	Transformer-attention
+P017	Survey
+P021	Critical-review
+P023	Critical-review
+P024	Dataset+Critical-review
+P025	Dataset+Critical-review

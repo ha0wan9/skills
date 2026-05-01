@@ -1,0 +1,21 @@
+paper_id,model,architecture,params_M,accuracy_inv,val_set,latency_torch_ms,latency_trt_ms,hardware,precision,source_status
+P001,RAFT-Stereo,Recurrent-RAFT,11.12,5.72,zero-shot Mean (P007 Tab II),380,,RTX 3090,FP32,P004 Tab2 + P007 Tab II
+P002,IGEV-Stereo,Hybrid,12.60,5.51,zero-shot Mean (P007 Tab II),180,,RTX 3090,FP32,P002 Tab5 + P007 Tab II
+P004a,Selective-RAFT,Transformer,11.65,,SF EPE 0.47 (no Mean P007),450,,unknown,FP32,P004 Tab2+6
+P004b,Selective-IGEV,Transformer,13.14,7.28,zero-shot Mean (P007 Tab II),240,,unknown,FP32,P004 Tab2+6 + P007 Tab II
+P005,FoundationStereo,Foundation-VFM,,3.85,zero-shot Mean (P007 Tab II),,,A100 (training),FP32,P005 + P007 Tab II
+P006a,DEFOM-Stereo-ViT-S,Foundation-VFM,18.51,,SF EPE 0.46 (no Mean P007),255,,RTX 4090,FP32,P006 Tab 2
+P006b,DEFOM-Stereo-ViT-L,Foundation-VFM,47.30,3.59,zero-shot Mean (P007 Tab II),316,,RTX 4090,FP32,P006 Tab 2 + P007 Tab II
+P007,StereoAnything,Foundation-VFM,,2.68,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+P006v,DLNR,CNN,57.37,,SF EPE 0.49,,,unknown,FP32,P004 Tab 2
+P010,MonSter,Hybrid,,3.70,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+PSMNet,PSMNet,CNN,,28.55,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+GwcNet,GwcNet,CNN,,23.16,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+CFNet,CFNet,CNN,,14.33,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+COEX,COEX,CNN,,14.92,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+FADNet,FADNet++,CNN,,17.77,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+LightS-L,LightStereo-L,CNN,,10.41,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+DSMNet,DSMNet,CNN,,6.75,zero-shot Mean (P007 Tab II),,,unknown,FP32,P007 Tab II
+NMRF,NMRF,Hybrid,,5.15,zero-shot Mean (P007 Tab II),90,,various (paper-self-reported via P006 Tab 3),FP32,P007 Tab II
+SBase,StereoBase,Hybrid,,5.77,zero-shot Mean (P007 Tab II),290,,various (paper-self-reported via P006 Tab 3),FP32,P007 Tab II
+P016,StereoVoxelNet,CNN,5.40,,no zero-shot Mean (occupancy task; not in P007 Tab II),28.6,,RTX 3090,FP32,P016 §IV.B + Tab III

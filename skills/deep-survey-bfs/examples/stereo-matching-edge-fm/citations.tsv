@@ -1,0 +1,47 @@
+# citations.tsv for stereo-matching-edge-fm
+# Populated from PDF reading of P002, P003, P004, P005, P006, P010, P021, P022, P024, P025;
+# and from explicit cross-references in claims.jsonl C015, C024-C027, C031, C034, C038-C042.
+# 'evidence' anchors to the citing paper's section or to the supporting claim_id.
+from	to	relation	evidence
+P002	P001	extends	P002 §3 builds on RAFT iterative update paradigm; (C028) reports IGEV vs RAFT in same Tab1
+P003	P002	extends	P003 abstract: IGEV++ extends IGEV with multi-range geometry encoding
+P004	P002	extends	P004 Tab2 reports Selective-IGEV variant on top of IGEV-Stereo
+P004	P001	competing-route	P004 Tab2 reports Selective-RAFT variant alongside Selective-IGEV
+P010	P002	extends	P010 §2 cites IGEV as backbone (MonSter unified stereo/MVS)
+P011	P002	same-team	HUST/Gangwei Xu first author on P002 P003 P011
+P003	P004	same-team	HUST cluster IGEV++ <-> Selective-Stereo
+P002	P004	same-team	HUST cluster IGEV-Stereo <-> Selective-Stereo
+P022	P012	extends	P022 §3 cites TemporalStereo lineage (dynamic stereo with memory)
+P006	P002	compares-against	P006 Tab2 reports IGEV-Stereo for comparison; (C031) DEFOM Tab3 KITTI numbers vs IGEV-Stereo
+P006	P004	compares-against	P006 Tab2 also reports Selective-Stereo
+P006	P005	compares-against	P006 Tab3 reports FoundationStereo numbers
+P006	P001	compares-against	P006 Tab2 RAFT-Stereo baseline
+P005	P002	compares-against	P005 Tab benchmarks against IGEV-Stereo
+P005	P006	compares-against	P005 introduces FoundationStereo positioning vs DEFOM
+P007	P002	compares-against	P007 Tab II Mean over zero-shot benchmarks lists IGEV-Stereo (C015)
+P007	P001	compares-against	P007 Tab II includes RAFT-Stereo
+P007	P005	compares-against	P007 Tab II includes FoundationStereo
+P007	P006	compares-against	P007 Tab II includes DEFOM
+P007	P010	compares-against	P007 Tab II includes MonSter
+P007	P011	compares-against	P007 Tab II includes CGI-Stereo and other speed-track
+P008	P006	competing-route	both VFM-transfer routes; AAAI 2025 vs CVPR 2025
+P019	P006	competing-route	SMFormer self-supervised VFM stereo route
+P020	P002	competing-route	DenVisCoM Mamba/SSM route vs hybrid IGEV
+P021	P005	critical-review-of	P021 abstract: shows foundation stereo fails on mirrors / transparencies; introduces failure-mode benchmark
+P021	P006	critical-review-of	P021 §4 ablations including DEFOM
+P021	P007	critical-review-of	P021 covers Stereo-Anything class
+P023	P005	critical-review-of	P023 §1 syn-to-real failure; specifically targets large-scale synthetic-trained stereo
+P023	P002	critical-review-of	P023 covers iterative-update family for syn-to-real
+P024	P005	compares-against	P024 Tab3 monocular-vs-stereo evaluation includes FoundationStereo
+P024	P007	compares-against	P024 evaluates Stereo-Anything zero-shot
+P025	P001	dataset-target	P025 Tab2b stereo R1px reports RAFT-Stereo (C040)
+P025	P002	dataset-target	P025 Tab2b reports IGEV-Stereo (C040)
+P025	P005	dataset-target	P025 Tab2b reports FoundationStereo (C041)
+P025	P006	dataset-target	P025 Tab2b reports DEFOM-Stereo (C042)
+P025	P007	dataset-target	P025 Tab2b reports Stereo-Anything corruption robustness
+P017	P001	cites	P017 survey covers 2020+ deep stereo
+P017	P002	cites	P017 survey covers IGEV
+P017	P004	cites	P017 covers Selective-Stereo route
+P012	P001	extends	P012 TemporalStereo extends RAFT-class iterative update across time
+P016	P001	cites	P016 StereoVoxelNet §II.B cites RAFT family
+P026	P001	competing-route	P026 transformer occlusion route vs iterative

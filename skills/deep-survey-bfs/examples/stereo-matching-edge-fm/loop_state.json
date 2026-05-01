@@ -1,0 +1,143 @@
+{
+  "_schema": "deep-survey-bfs.loop_state.v1",
+  "survey_id": "stereo-matching-edge-fm",
+  "iteration": 4,
+  "started_utc": "2026-05-01T03:15Z",
+  "last_updated_utc": "2026-05-01T05:35Z",
+  "phase": "synthesized",
+  "current_task": {
+    "label": "RUN 2 COMPLETE \u2014 survey v1.2 landed. \u00a710 #7 (institutional benchmark-inertia challenge), \u00a711 (Key Research Teams), \u00a713 (multi-tier reading list) all integrated. Next iteration would need human input.",
+    "paper_ids": []
+  },
+  "next_targets": [],
+  "blockers": [
+    "(none active)",
+    "Stereo Anything (P007) does NOT publish param count in PDF or repo; OpenStereo Model Zoo lacks params/FLOPs columns. Treat as confirmed-not-disclosed."
+  ],
+  "completed_targets": [
+    {
+      "label": "R3-B iter1: FoundationStereo + IGEV-Stereo READMEs - TRT speedup + RTX 3090 hardware confirmed",
+      "completed_utc": "2026-05-01T03:15Z",
+      "claims_added": [
+        "C024",
+        "C025",
+        "C026",
+        "C027"
+      ]
+    },
+    {
+      "label": "R3-A iter2: IGEV Table 1 via extract_paper_metrics.py",
+      "completed_utc": "2026-05-01T03:50Z",
+      "claims_added": [
+        "C028",
+        "C029"
+      ]
+    },
+    {
+      "label": "R3-A iter3: DEFOM-Stereo Tab 3+4 cross-method numbers",
+      "completed_utc": "2026-05-01T03:54Z",
+      "claims_added": [
+        "C030",
+        "C031",
+        "C032"
+      ]
+    },
+    {
+      "label": "R3-A iter4: Stereo Anything param search (PDF: no data) + OpenStereo Model Zoo + Deploy doc (TRT pipeline ships, no benchmarks)",
+      "completed_utc": "2026-05-01T03:58Z",
+      "claims_added": [
+        "C033",
+        "C034"
+      ]
+    },
+    {
+      "label": "R3-B iter5: CGI-Stereo + StereoVoxelNet PDF cross-method speed-track + edge HW",
+      "completed_utc": "2026-05-01T04:05Z",
+      "claims_added": [
+        "C035",
+        "C036",
+        "C037"
+      ]
+    },
+    {
+      "label": "R3-C iter6: PPMStereo Tab 1 + Limitations",
+      "completed_utc": "2026-05-01T04:11Z",
+      "claims_added": [
+        "C038",
+        "C039"
+      ]
+    },
+    {
+      "label": "R3-C iter7: RobustSpring Tab 2b stereo corruption robustness",
+      "completed_utc": "2026-05-01T04:18Z",
+      "claims_added": [
+        "C040",
+        "C041",
+        "C042"
+      ]
+    },
+    {
+      "label": "iter8 (final): synthesize+repro \u2014 6-paper repro assessment + survey v1.1 (\u00a714 tier + \u00a76.1 regimes + \u00a710.1 challenges)",
+      "completed_utc": "2026-05-01T04:26Z",
+      "claims_added": [
+        "C043",
+        "C044",
+        "C045",
+        "C046",
+        "C047",
+        "C048"
+      ]
+    },
+    {
+      "label": "R3-D iter1 (run 2): 7 inst confirmations via pdftotext + 1 venue upgrade (P025 \u2192 ICLR 2026)",
+      "completed_utc": "2026-05-01T05:00Z",
+      "claims_added": [
+        "C049",
+        "C050",
+        "C051",
+        "C052",
+        "C053",
+        "C054",
+        "C055"
+      ]
+    },
+    {
+      "label": "R3-D iter2 (run 2): all 11 inst-pending resolved (3 high-confidence, 8 medium); HUST + Bologna concentration confirmed",
+      "completed_utc": "2026-05-01T05:05Z",
+      "claims_added": [
+        "C056",
+        "C057",
+        "C058",
+        "C059",
+        "C060",
+        "C061",
+        "C062",
+        "C063",
+        "C064",
+        "C065"
+      ]
+    },
+    {
+      "label": "iter3 (run 2): §11 Key Research Teams added with HUST/Bologna 33% concentration narrative + geographic split + dataset-adoption implications; chart_data.csv re-verified (no new TRT entries; SQ6 gap structural); bias_audit -p shows top inst HUST 17%/no triggers",
+      "completed_utc": "2026-05-01T05:25Z",
+      "claims_added": []
+    },
+    {
+      "label": "iter4 (run 2, FINAL): §10 challenge #7 added (benchmark-adoption inertia tracks institutional concentration; cites C067); §13 restructured into Entry/Deep/Critical/Overview tiers per skeleton (P020 SSM/Mamba in Deep, P021 P022 P023 P024 P025 in Critical); R3-D explicitly marked ✅ closed; claims_validate ok at 67 claims",
+      "completed_utc": "2026-05-01T05:35Z",
+      "claims_added": []
+    }
+  ],
+  "stop_conditions": {
+    "max_iterations": 8,
+    "all_starstarstar_extracted": true,
+    "all_critical_gaps_closed": false,
+    "human_input_required": true,
+    "reached": "iter4-run2: synthesis pass complete; remaining gap (SQ6 TensorRT numbers) requires reaching out to repo authors — out of skill scope for autonomous loop"
+  },
+  "wakeup": {
+    "last_delay_seconds": null,
+    "last_reason": "RUN 2 COMPLETE — no further wakeup scheduled; survey v1.2 ready for review"
+  },
+  "_run": 2
+}

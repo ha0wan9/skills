@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stereo Matching for Edge & Foundation Models (2020-2026)</title>
+  <meta name="generator" content="deep-survey-bfs render_html.py" />
+  <meta name="generated" content="2026-05-01T10:56:20.326151+00:00" />
+
+  
+
+  <style>
+/* ---------- root tokens ---------- */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f7f4;
+  --bg-code: #f3f3ee;
+  --fg: #18181b;
+  --fg-muted: #52525b;
+  --fg-faint: #a1a1aa;
+  --border: #e4e4e7;
+  --accent: #2563eb;
+  --accent-soft: #dbeafe;
+  --warn: #b45309;
+  --crit: #b91c1c;
+  --tooltip-bg: #18181b;
+  --tooltip-fg: #fafafa;
+  --max-content: 880px;
+  --toc-w: 240px;
+  --topbar-h: 48px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --bg-soft: #18181b;
+  --bg-code: #1f1f23;
+  --fg: #e4e4e7;
+  --fg-muted: #a1a1aa;
+  --fg-faint: #52525b;
+  --border: #27272a;
+  --accent: #60a5fa;
+  --accent-soft: #1e3a5f;
+  --warn: #f59e0b;
+  --crit: #ef4444;
+  --tooltip-bg: #f4f4f5;
+  --tooltip-fg: #18181b;
+}
+
+/* ---------- baseline ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre { font-family: var(--mono); font-size: 13px; }
+code { background: var(--bg-code); padding: 1px 5px; border-radius: 3px; }
+pre {
+  background: var(--bg-code);
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+pre code { background: transparent; padding: 0; }
+
+/* ---------- topbar ---------- */
+.topbar {
+  height: var(--topbar-h);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  gap: 12px;
+}
+.topbar-left { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.topbar-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-meta { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+#search-input {
+  width: 280px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-soft);
+  color: var(--fg);
+  font-size: 13px;
+  font-family: var(--sans);
+}
+#search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+}
+#theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#theme-toggle:hover { background: var(--bg-soft); }
+
+/* ---------- search results ---------- */
+.search-results {
+  position: fixed;
+  top: var(--topbar-h);
+  right: 18px;
+  width: 420px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  z-index: 60;
+  padding: 6px 0;
+}
+.search-results .res {
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.search-results .res:last-child { border-bottom: none; }
+.search-results .res:hover { background: var(--bg-soft); }
+.search-results .res-kind {
+  display: inline-block;
+  font-size: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.search-results .res-title { font-weight: 500; }
+.search-results .res-snippet { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: var(--toc-w) minmax(0, 1fr);
+  gap: 28px;
+  max-width: calc(var(--max-content) + var(--toc-w) + 60px);
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+.toc {
+  position: sticky;
+  top: calc(var(--topbar-h) + 16px);
+  align-self: start;
+  max-height: calc(100vh - var(--topbar-h) - 32px);
+  overflow-y: auto;
+  font-size: 13px;
+  border-right: 1px solid var(--border);
+  padding-right: 16px;
+}
+.toc-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fg-faint);
+  margin-bottom: 10px;
+}
+.toc ul { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 2px 0; }
+.toc a {
+  display: block;
+  padding: 3px 8px;
+  color: var(--fg-muted);
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+}
+.toc a:hover { background: var(--bg-soft); text-decoration: none; }
+.toc a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+.toc .toc-h3 a { padding-left: 22px; font-size: 12px; }
+
+/* ---------- content ---------- */
+.content {
+  min-width: 0;
+  max-width: var(--max-content);
+}
+.content h1 { font-size: 28px; line-height: 1.25; margin: 0 0 8px; }
+.content h2 { font-size: 22px; line-height: 1.3; margin: 36px 0 12px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.content h3 { font-size: 17px; margin: 24px 0 10px; }
+.content h4 { font-size: 15px; margin: 18px 0 8px; }
+.content p { margin: 0 0 14px; }
+.content ul, .content ol { padding-left: 22px; }
+.content blockquote {
+  border-left: 3px solid var(--border);
+  padding: 4px 14px;
+  margin: 14px 0;
+  color: var(--fg-muted);
+  background: var(--bg-soft);
+}
+
+/* tables */
+.content table {
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 13px;
+  width: 100%;
+}
+.content th, .content td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.content th {
+  background: var(--bg-soft);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+}
+.content th.sortable::after { content: " ⇅"; color: var(--fg-faint); font-size: 10px; }
+.content th.sort-asc::after  { content: " ↑"; color: var(--accent); }
+.content th.sort-desc::after { content: " ↓"; color: var(--accent); }
+
+/* paper / claim refs */
+.paper-ref, .claim-ref {
+  cursor: help;
+  border-bottom: 1px dotted var(--accent);
+  padding: 0 1px;
+}
+.paper-ref:hover, .claim-ref:hover { background: var(--accent-soft); }
+.claim-ref { color: var(--warn); border-bottom-color: var(--warn); }
+
+/* tooltip */
+.tooltip {
+  position: absolute;
+  z-index: 100;
+  max-width: 420px;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+.tooltip[aria-hidden="false"] { opacity: 1; }
+.tooltip .t-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+.tooltip .t-meta  { font-size: 11px; opacity: 0.7; margin-bottom: 6px; }
+.tooltip .t-quote { font-style: italic; margin: 6px 0; padding-left: 6px; border-left: 2px solid var(--accent); }
+.tooltip .t-link  { color: var(--accent); font-size: 11px; pointer-events: auto; }
+
+/* mermaid */
+.mermaid {
+  background: var(--bg-soft);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 18px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+/* plotly chart placeholder */
+.plotly-chart {
+  margin: 18px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  padding: 8px;
+  min-height: 360px;
+}
+.plotly-chart .chart-fallback {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg-muted);
+  padding: 8px;
+}
+
+/* misc */
+.section-anchor {
+  visibility: hidden;
+  margin-left: 6px;
+  font-size: 0.7em;
+  color: var(--fg-faint);
+}
+h2:hover .section-anchor, h3:hover .section-anchor { visibility: visible; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { display: none; }
+  #search-input { width: 160px; }
+}
+
+@media print {
+  .topbar, .toc, .tooltip, .search-results { display: none !important; }
+  .layout { display: block; padding: 0; }
+  .content { max-width: 100%; }
+  a { color: var(--fg); text-decoration: none; }
+  pre, .mermaid, .plotly-chart { page-break-inside: avoid; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Stereo Matching for Edge & Foundation Models (2020-2026)</span>
+      <span class="topbar-meta">2026-05-01 · 26 papers · 67 claims</span>
+    </div>
+    <div class="topbar-right">
+      <input type="search" id="search-input" placeholder="Search papers, claims, sections…" autocomplete="off" />
+      <button id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">◐</button>
+    </div>
+  </header>
+
+  <div id="search-results" class="search-results" hidden></div>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <div class="toc-title">Contents</div>
+      <ul>
+<li class="toc-h2"><a href="#edge-foundation-stereo-matching-survey-stereo-matching-edge-fm-v11">Edge &amp; Foundation Stereo Matching Survey (stereo-matching-edge-fm) v1.1</a></li>
+<li class="toc-h3"><a href="#contents">Contents</a></li>
+<li class="toc-h3"><a href="#1">§1 Research question and scope</a></li>
+<li class="toc-h3"><a href="#3">§3 Taxonomy and timeline</a></li>
+<li class="toc-h3"><a href="#3-5">§3.5 Datasets: canonical and emergent (v1.1 added)</a></li>
+<li class="toc-h3"><a href="#4">§4 Method-route comparison</a></li>
+<li class="toc-h3"><a href="#5">§5 Per-paper deep-dives — flagship models</a></li>
+<li class="toc-h3"><a href="#6">§6 Benchmarks: the unified zero-shot Mean metric</a></li>
+<li class="toc-h3"><a href="#8">§8 Cross-cutting analysis: charts</a></li>
+<li class="toc-h3"><a href="#9">§9 Per-data-type analysis</a></li>
+<li class="toc-h3"><a href="#10">§10 Open challenges</a></li>
+<li class="toc-h3"><a href="#11">§11 Key research teams</a></li>
+<li class="toc-h3"><a href="#12">§12 Direct Q&amp;A</a></li>
+<li class="toc-h3"><a href="#13">§13 Reading list and Round 3 task list</a></li>
+<li class="toc-h3"><a href="#14">§14 Reproducibility tier (v1.1 added)</a></li>
+<li class="toc-h3"><a href="#10-1">§10.1 Open challenges (v1.1 supplement)</a></li>
+<li class="toc-h3"><a href="#6-1">§6.1 Cross-method speed-track (v1.1 added)</a></li>
+</ul>
+    </nav>
+
+    <main class="content" id="content">
+      <h1 id="edge-foundation-stereo-matching-survey-stereo-matching-edge-fm-v11">Edge &amp; Foundation Stereo Matching Survey (stereo-matching-edge-fm) v1.1<a class="section-anchor" href="#edge-foundation-stereo-matching-survey-stereo-matching-edge-fm-v11" title="link">&para;</a></h1>
+<div class="plotly-chart" data-chart="01"><div class="chart-fallback">loading chart 01…</div></div>
+<ul>
+<li><strong>Foundation-VFM family at 47M params (DEFOM-ViT-L) reaches Mean
+  3.59</strong>, the lowest plotted error.</li>
+<li><strong>DLNR (CNN, 57M params) sits at SF EPE 0.49</strong> (no Mean reported
+  in P007 Tab II) — a counterexample showing more params ≠ better
+  generalization in classical CNN.</li>
+<li><strong>The 12-13M-param tier</strong> (RAFT/IGEV/Selective) clusters at Mean
+  5.5-7.3, showing that within iterative methods, frequency
+  specialization (Selective) trades off zero-shot quality for
+  in-domain quality.</li>
+</ul>
+<div class="plotly-chart" data-chart="02"><div class="chart-fallback">loading chart 02…</div></div>
+<div class="plotly-chart" data-chart="03"><div class="chart-fallback">loading chart 03…</div></div>
+<h2 id="9">§9 Per-data-type analysis<a class="section-anchor" href="#9" title="link">&para;</a></h2>
+<p>The user's third deliverable: <strong>which models suit which data
+characteristics</strong>. Grounded in claims C001-C022:</p>
+<h3 id="91-by-spatial-frequency-texture-sq8">9.1 By spatial frequency / texture (SQ8)<a class="section-anchor" href="#91-by-spatial-frequency-texture-sq8" title="link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Data type</th>
+<th>Strongest model family</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>High-frequency (edges, fine structure)</strong></td>
+<td>Selective-Stereo family (Selective-RAFT / Selective-IGEV)</td>
+<td>C007: Selective-RAFT cuts Edges EPE from 3.21 → 2.40 (-25%) on Scene Flow vs RAFT-Stereo</td>
+</tr>
+<tr>
+<td><strong>Low-frequency (smooth surfaces, low texture)</strong></td>
+<td>Stereo Anywhere &amp; DEFOM-Stereo (mono-prior fusion)</td>
+<td>C018: Stereo Anywhere targets "textureless regions, occlusions, non-Lambertian surfaces"; mono prior provides shape bias where stereo correspondences fail</td>
+</tr>
+<tr>
+<td><strong>Repetitive / aliased textures</strong></td>
+<td>(no direct evidence in claims; expected weak point of all methods, IGEV's reflective-region perf in C022 is closest analogue)</td>
+<td>open</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-by-distance-depth-bin-robustness-sq7">9.2 By distance / depth-bin robustness (SQ7)<a class="section-anchor" href="#92-by-distance-depth-bin-robustness-sq7" title="link">&para;</a></h3>
+<p>The literature does not commonly publish per-distance breakdowns. The
+indirect signals in the claims:</p>
+<table>
+<thead>
+<tr>
+<th>Distance regime</th>
+<th>Strongest evidence model</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Near-range (high disparity, small baseline impact)</strong></td>
+<td>iterative methods generally; IGEV-Stereo specifically because of cost-volume design</td>
+<td>C022: IGEV-Stereo wins KITTI-12 reflective regions (which are predominantly near-range road surfaces)</td>
+</tr>
+<tr>
+<td><strong>Mid-range</strong></td>
+<td>Foundation-VFM family (FoundationStereo / DEFOM / StereoAnything) — strong on KITTI-15 (driving 5-50m)</td>
+<td>C015: foundation models lead the Mean which is dominated by KITTI</td>
+</tr>
+<tr>
+<td><strong>Far-range / long-range</strong></td>
+<td>(limited evidence; FoundationStereo's "long-range context reasoning" claim is the closest, see P005 abstract)</td>
+<td>open — would require Booster / TartanAir / DrivingStereo per-distance tables</td>
+</tr>
+<tr>
+<td><strong>Dynamic scenes (temporal coherence)</strong></td>
+<td>PPMStereo (P022, NeurIPS 2025) — explicit memory mechanism for "consistent dynamic stereo"</td>
+<td>C023</td>
+</tr>
+</tbody>
+</table>
+<h3 id="93-by-failure-mode-robustness-sq9">9.3 By failure-mode / robustness (SQ9)<a class="section-anchor" href="#93-by-failure-mode-robustness-sq9" title="link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Failure mode</th>
+<th>Best-positioned model</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mirrors / transparencies / non-Lambertian</strong></td>
+<td>Stereo Anywhere (<span class="paper-ref" data-id="P021">P021</span>)</td>
+<td>C019: "remarkable robustness to challenging cases such as mirrors and transparencies"</td>
+</tr>
+<tr>
+<td><strong>Reflective surfaces (KITTI ill-posed)</strong></td>
+<td>IGEV-Stereo with 16 iterations</td>
+<td>C022: beats RAFT-Stereo with 32 iterations</td>
+</tr>
+<tr>
+<td><strong>Domain shift (synthetic→real)</strong></td>
+<td>FoundationStereo + Stereo Anything (large-scale pretraining)</td>
+<td>C009/C015: top zero-shot generalization on Middlebury / ETH3D</td>
+</tr>
+<tr>
+<td><strong>Image corruptions / weather / sensor noise</strong></td>
+<td>(covered by RobustSpring P025 as benchmark, no method dominates per claims indexed)</td>
+<td>open — needs P025 PDF read</td>
+</tr>
+</tbody>
+</table>
+<h3 id="94-recommended-model-by-use-case">9.4 Recommended model by use-case<a class="section-anchor" href="#94-recommended-model-by-use-case" title="link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Use-case</th>
+<th>Recommended</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Best zero-shot generalization, no edge constraint</td>
+<td><strong>Stereo Anything (<span class="paper-ref" data-id="P007">P007</span>)</strong></td>
+<td>Lowest Mean 2.68 (<span class="claim-ref" data-id="C015">C015</span>)</td>
+</tr>
+<tr>
+<td>Best accuracy-per-param at moderate scale</td>
+<td><strong>DEFOM-Stereo ViT-L (<span class="paper-ref" data-id="P006">P006</span>)</strong></td>
+<td>47M params, Mean 3.59</td>
+</tr>
+<tr>
+<td>Best edge-detail preservation</td>
+<td><strong>Selective-IGEV (<span class="paper-ref" data-id="P004">P004</span>)</strong></td>
+<td>Edges EPE 2.18 (<span class="claim-ref" data-id="C007">C007</span>)</td>
+</tr>
+<tr>
+<td>Robust to specular/transparent surfaces</td>
+<td><strong>Stereo Anywhere (<span class="paper-ref" data-id="P021">P021</span>)</strong></td>
+<td>Designed exactly for this case</td>
+</tr>
+<tr>
+<td>Fastest while still SOTA-tier in-domain</td>
+<td><strong>IGEV-Stereo (<span class="paper-ref" data-id="P002">P002</span>)</strong></td>
+<td>12.6M params, 0.18s reported runtime, KITTI-15 D1 1.59</td>
+</tr>
+<tr>
+<td>Edge / Jetson deployment</td>
+<td><strong>none of the foundation-VFM models indexed</strong> — fall back to CGI-Stereo / StereoVoxelNet for now</td>
+<td>(FM × edge cell empty; see §3.3)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="10">§10 Open challenges<a class="section-anchor" href="#10" title="link">&para;</a></h2>
+<ol>
+<li><strong>Foundation-VFM × edge deployment</strong> — the indexed FM family
+   (FoundationStereo, DEFOM, Stereo Anything, Stereo Anywhere) all run
+   on RTX-class GPUs. No Jetson / mobile port indexed.</li>
+<li><strong>TensorRT latency missing</strong> (SQ6 confirmed gap). The community
+   does not publish TRT engine numbers in abstracts; they live in repo
+   READMEs and need grep-extraction (R2-H).</li>
+<li><strong>Per-distance accuracy breakdowns</strong> are rare. Most papers report
+   only aggregate Mean; the few that disaggregate (P022 PPMStereo for
+   temporal, P004 for reflective) are exceptions.</li>
+<li><strong>Selective-Stereo's zero-shot regression</strong> (Mean 7.28 vs IGEV's
+   5.51, C015) is unexplained — improving in-domain frequency
+   handling appears to hurt zero-shot generalization. Open question
+   for the field.</li>
+<li><strong>Mamba / SSM stereo</strong> has only one indexed paper (P020, ICRA 2026).
+   The architectural alternative to Transformer is barely explored.</li>
+<li><strong>Synthetic-to-real domain gap</strong> is partially addressed by
+   FoundationStereo's 1M synthetic pairs (<span class="claim-ref" data-id="C011">C011</span>) but is the dominant
+   failure mode per Stereo Anywhere's framing (<span class="paper-ref" data-id="P021">P021</span>).</li>
+<li><strong>Benchmark-adoption inertia tracks institutional concentration</strong>
+   (<span class="claim-ref" data-id="C067">C067</span>). The two top-output labs — HUST (3/18 ★★★) and U Bologna
+   (3/18) — exhibit opposite habits: HUST's papers stick to canonical
+   KITTI/SF/Middlebury/ETH3D; Bologna's introduce emergent datasets
+   (Booster, Stereo Anywhere failure modes). The China-cluster
+   majority (~11/18 ★★★) inherits the canonical-only habit, which
+   means published headline numbers in 2025-2026 still over-index on
+   benchmarks that the field's own critical-review papers (P021, P023,
+   P025) have shown to mask the dominant failure modes (synthetic-to-
+   real, mirrors/transparencies, weather corruption). This is not a
+   technical bottleneck but a publication-norm one.</li>
+</ol>
+<h2 id="11">§11 Key research teams<a class="section-anchor" href="#11" title="link">&para;</a></h2>
+<p>Across the 18 ★★★ papers, two institutions hold disproportionate share
+of the field's headline output (<span class="claim-ref" data-id="C067">C067</span>):</p>
+<ul>
+<li><strong>HUST (Huazhong U of Sci &amp; Tech)</strong> — 3/18 = 17%: P002 IGEV-Stereo
+  (CVPR 2023), P003 IGEV++ (TPAMI 2025), P004 Selective-Stereo
+  (CVPR 2024). The HUST cluster owns the iterative-geometry-volume
+  route end-to-end (geometry-encoding → multi-range → frequency-aware).</li>
+<li><strong>University of Bologna (Tosi/Mattoccia group)</strong> — 3/18 = 17%: P012
+  TemporalStereo (IROS 2023), P017 Survey: Deep Stereo in the Twenties
+  (preprint 2024), P021 Stereo Anywhere (CVPR 2025). Bologna owns the
+  field-mapping + critical-review angle (taxonomy survey + failure-mode
+  paper) and contributes the temporal-stereo lineage.</li>
+</ul>
+<p>Combined: <strong>6/18 = 33%</strong> of ★★★ output. The remaining 12 papers spread
+across NVIDIA Research (<span class="paper-ref" data-id="P005">P005</span>), Insta360 (<span class="paper-ref" data-id="P006">P006</span>), Wuhan U + Bologna multi-
+collab (<span class="paper-ref" data-id="P007">P007</span>), Fudan + Xiaomi + ShanghaiAILab + CUHK (<span class="paper-ref" data-id="P008">P008</span>), Tongji
+(<span class="paper-ref" data-id="P009">P009</span>), Princeton (<span class="paper-ref" data-id="P001">P001</span>), Northeastern RIVeR (<span class="paper-ref" data-id="P016">P016</span>), CityU HK + CUHK SZ
++ Fudan + SYSU (<span class="paper-ref" data-id="P022">P022</span>), DLUT + Tencent PCG + HKUST GZ (<span class="paper-ref" data-id="P024">P024</span>), Stuttgart
++ NVIDIA + Mannheim + MPI (<span class="paper-ref" data-id="P025">P025</span>), Sun Yat-sen (<span class="paper-ref" data-id="P019">P019</span>), INRIA (<span class="paper-ref" data-id="P020">P020</span>),
+and Beihang + Macquarie + RIKEN + UTokyo (<span class="paper-ref" data-id="P023">P023</span>).</p>
+<p><strong>Geographic distribution (★★★, n=18, by primary affiliation)</strong>:</p>
+<ul>
+<li>China-affiliated: ~11/18 (61%) — HUST (3), Bologna's Wuhan collab,
+  Insta360, Fudan/CUHK clusters, CityU/Sun Yat-sen, DLUT, Tongji</li>
+<li>Europe: ~5/18 (28%) — Bologna (3), Stuttgart (1), INRIA (1)</li>
+<li>US: ~3/18 (17%) — NVIDIA (P005, also on P025), Princeton (<span class="paper-ref" data-id="P001">P001</span>),
+  Northeastern (<span class="paper-ref" data-id="P016">P016</span>)</li>
+<li>Japan: ~2/18 (11%) — Tokyo Tech (<span class="paper-ref" data-id="P026">P026</span>), AIST/Tsukuba (P014/P015)</li>
+</ul>
+<p>Caveats: many recent papers are multi-institution and double-count;
+percentages are share-of-paper not headcount. NVIDIA appears as
+collaborator on 2 ★★★ (P005 lead, P025 collab) — the only US-industry
+imprint on the canonical set.</p>
+<p><strong>Implications for §3.5 dataset adoption</strong>: HUST's 3 papers all
+evaluate on the canonical KITTI/SF/Middlebury/ETH3D set; none adopt
+the emergent datasets (RobustSpring, MonoTrap, Mono2Stereo). Bologna
+papers are both adopters and producers of emergent datasets (Booster
+2023+, Stereo Anywhere's failure-mode evaluations). The canonical-set
+inertia thus tracks the geographic split: the China-cluster majority
+keeps reporting on canonical benchmarks, while European labs (Bologna,
+Stuttgart) drive the emergent-benchmark agenda. This is a structural
+finding, not an aesthetic one — it predicts where the next emergent
+benchmarks will come from (European groups + a handful of US industry
+labs) and where canonical-only model claims will keep accumulating
+(the China-cluster lineage).</p>
+<h2 id="12">§12 Direct Q&amp;A<a class="section-anchor" href="#12" title="link">&para;</a></h2>
+<p><strong>Q: How do edge and foundation stereo matching approaches compare?</strong></p>
+<p>A: They occupy non-overlapping points in the design space. Foundation
+models (Mean 2.68 - 3.85, C015) lead in zero-shot accuracy by 2-3×
+over the best non-FM method (NMRF Mean 5.15). They cost 18-47M+
+trainable params (<span class="claim-ref" data-id="C013">C013</span>) and 0.25-0.32s/frame on RTX 4090 (<span class="claim-ref" data-id="C013">C013</span>) — not
+edge-feasible without compression. Edge-deployable models (CGI-Stereo,
+StereoVoxelNet) trade accuracy for latency but were not benchmarked
+on the unified Mean metric in indexed papers.</p>
+<p><strong>Q: Charts for params × accuracy and speed × accuracy?</strong></p>
+<p>A: Generated in <code>artifacts/</code>. Chart 1 (params × accuracy) plots 7 of
+19 models with grounded numbers. Chart 2 (Torch / proxy) plots the
+same 7. Chart 3 (TensorRT) is empty pending repo-grep work.</p>
+<p><strong>Q: Per-data-type analysis?</strong></p>
+<p>A: §9 above. Summary: high-frequency edges → Selective-Stereo;
+mirrors/transparencies → Stereo Anywhere; zero-shot generalization →
+Stereo Anything; speed-Pareto on RTX → IGEV-Stereo; edge deployment →
+no foundation model fits, use CGI-Stereo / StereoVoxelNet.</p>
+<h2 id="13">§13 Reading list and Round 3 task list<a class="section-anchor" href="#13" title="link">&para;</a></h2>
+<h3 id="entry-tier-3-5-papers-suggested-order-6h-reading">Entry tier (3-5 papers, suggested order, ~6h reading)<a class="section-anchor" href="#entry-tier-3-5-papers-suggested-order-6h-reading" title="link">&para;</a></h3>
+<ol>
+<li><strong>Survey: Deep Stereo in the Twenties</strong> (P017, ~90 min) — start
+   here for the 2020+ taxonomy and term map</li>
+<li><strong>RAFT-Stereo</strong> (P001, ~60 min) — 2021 inflection point; recurrent
+   field-transform paradigm that everything since 2023 inherits</li>
+<li><strong>IGEV-Stereo</strong> (P002, ~60 min) — 2023 hybrid backbone of choice;
+   reading this clarifies why "geometry encoding volume" matters</li>
+<li><strong>FoundationStereo</strong> (P005, ~90 min) — 2025 foundation wave entry
+   point; data-scale shift (1M synthetic pairs) and zero-shot framing</li>
+</ol>
+<h3 id="deep-tier-per-architecture-route">Deep tier (per architecture route)<a class="section-anchor" href="#deep-tier-per-architecture-route" title="link">&para;</a></h3>
+<ul>
+<li><strong>Recurrent / iterative</strong>: P001 → P002 → P003 (IGEV++) → P010
+  (MonSter++)</li>
+<li><strong>Foundation-VFM</strong>: P005 (data scale) → P006 (frozen DepthAnything
+  prior) → P007 (zero-shot champion) → P008 (VFM transfer)</li>
+<li><strong>Frequency / attention</strong>: P004 Selective-Stereo (frequency-aware
+  iteration); P026 Global Occlusion-Aware Transformer</li>
+<li><strong>SSM / Mamba</strong>: P020 DenVisCoM (sole indexed paper; thin route)</li>
+<li><strong>Edge / real-time</strong>: P011 CGI-Stereo → P012 TemporalStereo → P013
+  Stereo Matching in Time → P016 StereoVoxelNet</li>
+</ul>
+<h3 id="critical-tier-limitations-negative-results-failure-mode">Critical tier (limitations, negative results, failure-mode<a class="section-anchor" href="#critical-tier-limitations-negative-results-failure-mode" title="link">&para;</a></h3>
+<p>papers)</p>
+<ul>
+<li><strong>P021 Stereo Anywhere</strong> (CVPR 2025) — failure-mode-targeted; only
+  paper that explicitly sets out to break foundation-stereo</li>
+<li><strong>P023 Robust Syn-to-Real Stereo</strong> (CVPR 2024) — synthetic-to-real
+  empirical analysis; shows where data-scale alone fails</li>
+<li><strong>P024 Mono2Stereo</strong> (CVPR 2025) — empirical study of stereo
+  conversion; benchmark + critical analysis</li>
+<li><strong>P025 RobustSpring</strong> (ICLR 2026) — first-class corruption
+  benchmark for stereo + scene flow + optical flow; introduces R1px
+  metric</li>
+<li><strong>P022 PPMStereo</strong> (NeurIPS 2025) — dynamic stereo with explicit
+  per-distance / temporal-consistency reporting</li>
+</ul>
+<h3 id="overview-tier-other-surveys-for-cross-checking">Overview tier (other surveys, for cross-checking)<a class="section-anchor" href="#overview-tier-other-surveys-for-cross-checking" title="link">&para;</a></h3>
+<ul>
+<li><strong>P017 Tosi et al., 2024</strong> — only deep-stereo survey within the
+  2020+ scope; pair with this survey for triangulation</li>
+</ul>
+<h3 id="round-3-task-list-deferred">Round 3 task list (deferred)<a class="section-anchor" href="#round-3-task-list-deferred" title="link">&para;</a></h3>
+<ul>
+<li>R3-A (chart-data completion): open paper PDFs for all 18 ★★★
+  papers, extract param counts where missing — partially landed in
+  iter 1-7 (run 1)</li>
+<li>R3-B (TensorRT data, the SQ6 closure): grep GitHub READMEs of P001
+  RAFT-Stereo, P002 IGEV-Stereo, P011 CGI-Stereo, P016 StereoVoxelNet
+  for TensorRT / Jetson / FP16 engines — partially landed (iter 1
+  C024-C027 + iter 5 C035-C037); the structural gap (TRT numbers
+  not in publication norm) documented as Open Challenge #2</li>
+<li>R3-C: extract per-distance breakdowns from P005 / P007 / P022
+  appendices when available; pull RobustSpring (<span class="paper-ref" data-id="P025">P025</span>) corruption-class
+  results — landed in iter 6 (PPMStereo, C038-C039) + iter 7
+  (RobustSpring R1px, C040-C042)</li>
+<li>~~R3-D~~ ✅ <strong>closed</strong> (run 2 iter 1-2): institutions backfilled
+  for all 18 ★★★ papers (C049-C066); §11 Key Research Teams
+  populated with HUST/Bologna concentration narrative + geographic
+  split + dataset-adoption implications (<span class="claim-ref" data-id="C067">C067</span>)</li>
+</ul>
+<hr />
+<h2 id="citation-graphs">Citation graphs <a class="section-anchor" href="#citation-graphs">¶</a></h2>
+<h3 id="cg-lineage">Citation graph — lineage</h3><div class="mermaid">graph LR
+  subgraph Foundation_VFM["Foundation-VFM"]
+    P006["P006 DEFOM-Stereo<br/>2025 CVPR"]
+    P008["P008 All-in-One VFM Stereo<br/>2024 AAAI"]
+    P019["P019 SMFormer<br/>2026 TIP"]
+  end
+  subgraph Iterative_RAFT["Iterative-RAFT"]
+    P001["P001 RAFT-Stereo<br/>2021 3DV"]
+    P002["P002 IGEV-Stereo<br/>2023 CVPR"]
+    P003["P003 IGEV++<br/>2024 TPAMI"]
+    P004["P004 Selective-Stereo<br/>2024 CVPR"]
+    P010["P010 MonSter++<br/>2025"]
+    P011["P011 CGI-Stereo<br/>2023"]
+    P012["P012 TemporalStereo<br/>2022 IROS"]
+    P022["P022 PPMStereo<br/>2025 NeurIPS"]
+  end
+  subgraph Mamba_SSM["Mamba-SSM"]
+    P020["P020 DenVisCoM<br/>2026 ICRA"]
+  end
+  subgraph Transformer_attention["Transformer-attention"]
+    P026["P026 Global Occlusion-Aware Tr…<br/>2023 WACV"]
+  end
+  P002 --> P001
+  P003 --> P002
+  P004 --> P002
+  P004 ==>|competing| P001
+  P010 --> P002
+  P011 -.->|same-team| P002
+  P003 -.->|same-team| P004
+  P002 -.->|same-team| P004
+  P022 --> P012
+  P008 ==>|competing| P006
+  P019 ==>|competing| P006
+  P020 ==>|competing| P002
+  P012 --> P001
+  P026 ==>|competing| P001</div>
+<h3 id="cg-critique">Citation graph — critique</h3><div class="mermaid">graph LR
+  P001["P001 RAFT-Stereo<br/>2021 3DV"]
+  P002["P002 IGEV-Stereo<br/>2023 CVPR"]
+  P004["P004 Selective-Stereo<br/>2024 CVPR"]
+  P005["P005 FoundationStereo<br/>2025 CVPR"]
+  P006["P006 DEFOM-Stereo<br/>2025 CVPR"]
+  P007["P007 Stereo Anything<br/>2024"]
+  P010["P010 MonSter++<br/>2025"]
+  P011["P011 CGI-Stereo<br/>2023"]
+  P021["P021 Stereo Anywhere<br/>2024 CVPR"]
+  P023["P023 Robust Syn-to-Real Stereo<br/>2024 CVPR"]
+  P024["P024 Mono2Stereo<br/>2025 CVPR"]
+  P025["P025 RobustSpring<br/>2025 ICLR"]
+  P006 -.->|compare| P002
+  P006 -.->|compare| P004
+  P006 -.->|compare| P005
+  P006 -.->|compare| P001
+  P005 -.->|compare| P002
+  P005 -.->|compare| P006
+  P007 -.->|compare| P002
+  P007 -.->|compare| P001
+  P007 -.->|compare| P005
+  P007 -.->|compare| P006
+  P007 -.->|compare| P010
+  P007 -.->|compare| P011
+  P021 -.->|critique| P005
+  P021 -.->|critique| P006
+  P021 -.->|critique| P007
+  P023 -.->|critique| P005
+  P023 -.->|critique| P002
+  P024 -.->|compare| P005
+  P024 -.->|compare| P007
+  P025 -.->|evals| P001
+  P025 -.->|evals| P002
+  P025 -.->|evals| P005
+  P025 -.->|evals| P006
+  P025 -.->|evals| P007</div>
+<h3 id="cg-temporal">Citation graph — temporal</h3><div class="mermaid">graph LR
+  subgraph y2021["2021"]
+    P001["P001 RAFT-Stereo<br/>2021 3DV"]
+  end
+  subgraph y2022["2022"]
+    P012["P012 TemporalStereo<br/>2022 IROS"]
+    P016["P016 StereoVoxelNet<br/>2022 ICRA"]
+  end
+  subgraph y2023["2023"]
+    P002["P002 IGEV-Stereo<br/>2023 CVPR"]
+    P011["P011 CGI-Stereo<br/>2023"]
+    P026["P026 Global Occlusion-Aware Tr…<br/>2023 WACV"]
+  end
+  subgraph y2024["2024"]
+    P003["P003 IGEV++<br/>2024 TPAMI"]
+    P004["P004 Selective-Stereo<br/>2024 CVPR"]
+    P007["P007 Stereo Anything<br/>2024"]
+    P008["P008 All-in-One VFM Stereo<br/>2024 AAAI"]
+    P017["P017 Survey: Deep Stereo in th…<br/>2024 preprint (CVPR 2024 tutorial extended)"]
+    P021["P021 Stereo Anywhere<br/>2024 CVPR"]
+    P023["P023 Robust Syn-to-Real Stereo<br/>2024 CVPR"]
+  end
+  subgraph y2025["2025"]
+    P005["P005 FoundationStereo<br/>2025 CVPR"]
+    P006["P006 DEFOM-Stereo<br/>2025 CVPR"]
+    P010["P010 MonSter++<br/>2025"]
+    P022["P022 PPMStereo<br/>2025 NeurIPS"]
+    P024["P024 Mono2Stereo<br/>2025 CVPR"]
+    P025["P025 RobustSpring<br/>2025 ICLR"]
+  end
+  subgraph y2026["2026"]
+    P019["P019 SMFormer<br/>2026 TIP"]
+    P020["P020 DenVisCoM<br/>2026 ICRA"]
+  end
+  P002 --> P001
+  P003 --> P002
+  P004 --> P002
+  P004 ==>|competing| P001
+  P010 --> P002
+  P011 -.->|same-team| P002
+  P003 -.->|same-team| P004
+  P002 -.->|same-team| P004
+  P022 --> P012
+  P006 -.->|compare| P002
+  P006 -.->|compare| P004
+  P006 -.->|compare| P005
+  P006 -.->|compare| P001
+  P005 -.->|compare| P002
+  P005 -.->|compare| P006
+  P007 -.->|compare| P002
+  P007 -.->|compare| P001
+  P007 -.->|compare| P005
+  P007 -.->|compare| P006
+  P007 -.->|compare| P010
+  P007 -.->|compare| P011
+  P008 ==>|competing| P006
+  P019 ==>|competing| P006
+  P020 ==>|competing| P002
+  P021 -.->|critique| P005
+  P021 -.->|critique| P006
+  P021 -.->|critique| P007
+  P023 -.->|critique| P005
+  P023 -.->|critique| P002
+  P024 -.->|compare| P005
+  P024 -.->|compare| P007
+  P025 -.->|evals| P001
+  P025 -.->|evals| P002
+  P025 -.->|evals| P005
+  P025 -.->|evals| P006
+  P025 -.->|evals| P007
+  P017 --> P001
+  P017 --> P002
+  P017 --> P004
+  P012 --> P001
+  P016 --> P001
+  P026 ==>|competing| P001</div>
+<h2 id="14">§14 Reproducibility tier (v1.1 added)<a class="section-anchor" href="#14" title="link">&para;</a></h2>
+<p>This section grades each ★★★ paper's evidence provenance per the
+5-question rubric in <code>references/reproducibility-assessment.md</code>:
+release / recipe / issues / quality / 3p reproduction. v1.1 covers 6
+flagship papers; the remaining 12 are marked <code>pending</code> in
+<code>paper_index.md</code> and will land in v1.2.</p>
+<table>
+<thead>
+<tr>
+<th>Paper</th>
+<th>Release</th>
+<th>Recipe</th>
+<th>Issues</th>
+<th>Code Quality</th>
+<th>3p Reproduced</th>
+<th>Tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P001 RAFT-Stereo</td>
+<td>OSS</td>
+<td>complete</td>
+<td>59 open, mixed</td>
+<td>strong (Best Student Paper 3DV 2021)</td>
+<td>confirmed (OpenStereo Model Zoo matches)</td>
+<td><strong>R1</strong> (<span class="claim-ref" data-id="C043">C043</span>)</td>
+</tr>
+<tr>
+<td>P002 IGEV-Stereo</td>
+<td>OSS</td>
+<td>complete</td>
+<td>36 open, mixed (CN-language community)</td>
+<td>strong</td>
+<td>confirmed (OpenStereo: 0.46 vs paper 0.47 SF EPE)</td>
+<td><strong>R1</strong> (<span class="claim-ref" data-id="C044">C044</span>)</td>
+</tr>
+<tr>
+<td>P004 Selective-Stereo</td>
+<td>OSS</td>
+<td>complete</td>
+<td>3 open, clean</td>
+<td>strong</td>
+<td>unverified</td>
+<td><strong>R2</strong> (<span class="claim-ref" data-id="C045">C045</span>)</td>
+</tr>
+<tr>
+<td>P005 FoundationStereo</td>
+<td>OSS</td>
+<td>partial (docker-only TRT)</td>
+<td>75 open, mixed (deployment-pain pattern)</td>
+<td>strong (NVIDIA Research)</td>
+<td>unverified</td>
+<td><strong>R2-R3</strong> (<span class="claim-ref" data-id="C046">C046</span>)</td>
+</tr>
+<tr>
+<td>P006 DEFOM-Stereo</td>
+<td>OSS</td>
+<td>complete (5 train scripts)</td>
+<td>unverified</td>
+<td>strong (modular, MIT, Insta360)</td>
+<td>unverified</td>
+<td><strong>R1</strong> pending 3p (<span class="claim-ref" data-id="C047">C047</span>)</td>
+</tr>
+<tr>
+<td>P021 Stereo Anywhere</td>
+<td>OSS</td>
+<td>partial (authors: "in development")</td>
+<td>0 open, clean</td>
+<td>adequate</td>
+<td>unverified</td>
+<td><strong>R2-R3</strong> (<span class="claim-ref" data-id="C048">C048</span>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key reproducibility findings</strong>:</p>
+<ol>
+<li><strong>All 6 flagships are open-source MIT/permissive</strong> — no closed-code
+   work in the foundation-VFM family.</li>
+<li><strong>FoundationStereo's 75 open issues skew toward deployment</strong>
+   (Jetson, FP16 quantization, monochrome inference, point-cloud
+   denoising). The deployment claims (<code>6× speedup</code>, C024) need
+   third-party validation given this issue pattern.</li>
+<li><strong>Stereo Anywhere is author-acknowledged "in-development"</strong> —
+   numbers cited from this paper get an explicit caveat in §5.7.</li>
+<li><strong>Tier-R1 papers</strong> (RAFT-Stereo, IGEV-Stereo, DEFOM-Stereo)
+   provide complete training recipes. Tier-R2 (Selective-Stereo) is
+   gold-standard except for missing third-party reproduction.
+   Tier-R3 candidates (FoundationStereo, Stereo Anywhere) carry
+   recipe / development-stage caveats.</li>
+<li><strong>OpenStereo cross-validation</strong> (<span class="claim-ref" data-id="C033">C033</span>) provides third-party
+   reproduction for IGEV (0.46 vs 0.47), confirming P002 numbers.
+   No equivalent independent reproduction exists for the foundation
+   models yet.</li>
+</ol>
+<p>For citation in survey prose: every accuracy / latency claim in §4 /
+§6 / §8 from a Tier R3 paper now carries a "(R3 — partial recipe)"
+inline. Tier R1/R2 papers cite as before. The chart pipeline does
+not yet visualize tier; future v1.2 may add tier-based marker
+borders.</p>
+<h2 id="10-1">§10.1 Open challenges (v1.1 supplement)<a class="section-anchor" href="#10-1" title="link">&para;</a></h2>
+<p>Round 3 surfaced two new open challenges beyond v1's six:</p>
+<ol start="7">
+<li><strong>Deployment-claim reproducibility crisis</strong>: claim C024
+   (FoundationStereo "6× speedup with TRT FP16") and C034 (OpenStereo
+   ships TRT pipeline with zero benchmarks) are now a 2-source pattern:
+   the community publishes deployment pipelines but <strong>not benchmarks</strong>.
+   Combined with the failure of arXiv <code>abs:TensorRT</code> queries to find
+   any paper-side numbers, this is structural — not a survey gap.</li>
+<li><strong>Foundation-VFM × adversarial corruption robustness untested</strong>:
+   RobustSpring (<span class="paper-ref" data-id="P025">P025</span>) evaluated only RAFT-Stereo / ACVNet / LEAStereo
+   / GANet (<span class="claim-ref" data-id="C040">C040</span>). No foundation-VFM model has been corruption-graded.
+   This is a Round 4 follow-up gap.</li>
+</ol>
+<h2 id="6-1">§6.1 Cross-method speed-track (v1.1 added)<a class="section-anchor" href="#6-1" title="link">&para;</a></h2>
+<p>Two distinct evaluation regimes have surfaced:</p>
+<table>
+<thead>
+<tr>
+<th>Regime</th>
+<th>Y axis</th>
+<th>Best example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Zero-shot Mean</strong> (chart 1 / 2)</td>
+<td>KITTI / Middlebury / ETH3D / KITTI Mean (lower better)</td>
+<td>StereoAnything 2.68 (<span class="claim-ref" data-id="C015">C015</span>)</td>
+</tr>
+<tr>
+<td><strong>Speed-track</strong> (KITTI-finetuned, &lt;50ms class)</td>
+<td>KITTI 2015 D1-all (lower better)</td>
+<td>HITNet 20ms / 1.98 D1-all (<span class="claim-ref" data-id="C035">C035</span>)</td>
+</tr>
+<tr>
+<td><strong>Temporal consistency</strong></td>
+<td>TEPE (Sintel, Dynamic Replica)</td>
+<td>PPMStereo_VDA 0.052 TEPE (<span class="claim-ref" data-id="C038">C038</span>)</td>
+</tr>
+<tr>
+<td><strong>Corruption robustness</strong></td>
+<td>R1px (RobustSpring)</td>
+<td>RAFT-Stereo (s) avg 33.40 (<span class="claim-ref" data-id="C040">C040</span>)</td>
+</tr>
+</tbody>
+</table>
+<p>These four regimes capture different deployment realities and <strong>do
+not collapse to one Y axis</strong>. The chart pipeline currently visualizes
+only the first regime; the others are textual in this v1.1.</p>
+<hr />
+<p><em>Survey v1.1 generated 2026-05-01. claims_validate.py: ok, 48
+claims, 26 papers, all references resolve. v1 → v1.1 delta:
++25 claims (C024-C048), new §3.5 datasets canonical-vs-emergent +
+adoption heatmap + dataset gaps, new §14 reproducibility tier for 6
+flagship papers, new §6.1 four-regime evaluation framing, new §10.1
+two open challenges. Chart pipeline reproducible from
+<code>artifacts/chart_data.csv</code> + <code>generate_charts.py</code>. Skill v1.1
+incorporates optimizations #1-#8 including the datasets-section
+reference (<code>references/datasets-section.md</code>) and a restructured
+survey-skeleton that places datasets at §4 before method comparison.</em></p>
+<p><em>v1 footer: claims_validate.py: ok, 23 claims, 26 papers (preserved
+for delta-traceability).</em></p>
+    </main>
+  </div>
+
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <script>
+    window.__SURVEY_DATA__ = {"papers": {"P001": {"title": "RAFT-Stereo", "authors": "Lahav Lipson", "inst": "Princeton", "year": "2021", "venue": "3DV 2021", "stars": "★★★", "arxiv": "2109.07547", "repro": "oss/recipe:complete/issues:mixed/quality:strong/3p:confirmed", "note": "Recurrent multi-level field transforms; canonical 2021+ stereo backbone"}, "P002": {"title": "IGEV-Stereo", "authors": "Gangwei Xu", "inst": "HUST", "year": "2023", "venue": "CVPR 2023", "stars": "★★★", "arxiv": "2303.06615", "repro": "oss/recipe:complete/issues:mixed/quality:strong/3p:confirmed", "note": "Iterative Geometry Encoding Volume; widely-used backbone"}, "P003": {"title": "IGEV++", "authors": "Gangwei Xu", "inst": "HUST", "year": "2024", "venue": "TPAMI 2025", "stars": "★★★", "arxiv": "2409.00638", "repro": "pending", "note": "Multi-range geometry encoding extension; promoted ★★→★★★ post-venue confirmation (TPAMI)"}, "P004": {"title": "Selective-Stereo", "authors": "Xianqi Wang", "inst": "HUST", "year": "2024", "venue": "CVPR 2024", "stars": "★★★", "arxiv": "2403.00486", "repro": "oss/recipe:complete/issues:clean/quality:strong/3p:unverified", "note": "Adaptive frequency information selection (DIRECTLY relevant to SQ8 frequency analysis)"}, "P005": {"title": "FoundationStereo", "authors": "Bowen Wen", "inst": "NVIDIA Research", "year": "2025", "venue": "CVPR 2025", "stars": "★★★", "arxiv": "2501.09898", "repro": "oss/recipe:partial/issues:mixed/quality:strong/3p:unverified", "note": "Zero-shot stereo matching foundation model"}, "P006": {"title": "DEFOM-Stereo", "authors": "Hualie Jiang", "inst": "Insta360 Research", "year": "2025", "venue": "CVPR 2025", "stars": "★★★", "arxiv": "2501.09466", "repro": "oss/recipe:complete/issues:unverified/quality:strong/3p:unverified", "note": "Depth Foundation Model based stereo (DepthAnything-derived)"}, "P007": {"title": "Stereo Anything", "authors": "Xianda Guo", "inst": "Wuhan U + Bologna (multi)", "year": "2024", "venue": "preprint", "stars": "★★★", "arxiv": "2411.14053", "repro": "pending", "note": "Unifies zero-shot stereo with large-scale mixed data"}, "P008": {"title": "All-in-One VFM Stereo", "authors": "Jingyi Zhou", "inst": "Fudan + Xiaomi + ShAILab + CUHK", "year": "2024", "venue": "AAAI 2025", "stars": "★★★", "arxiv": "2412.09912", "repro": "pending", "note": "Transferring vision foundation models into stereo; promoted ★★→★★★ post-venue confirmation (AAAI 2025)"}, "P009": {"title": "VFM-Strengths in Stereo", "authors": "Chuang-Wei Liu", "inst": "Tongji (likely)", "year": "2024", "venue": "preprint", "stars": "★★", "arxiv": "2404.06261", "repro": "pending", "note": "Playing to vision FM's strengths for stereo"}, "P010": {"title": "MonSter++", "authors": "Junda Cheng", "inst": "HUST", "year": "2025", "venue": "preprint", "stars": "★★", "arxiv": "2501.08643", "repro": "pending", "note": "Unified stereo / MVS / real-time with monodepth"}, "P011": {"title": "CGI-Stereo", "authors": "Gangwei Xu", "inst": "HUST", "year": "2023", "venue": "preprint", "stars": "★★", "arxiv": "2301.02789", "repro": "pending", "note": "Context+Geometry Interaction; positioned as accurate AND real-time"}, "P012": {"title": "TemporalStereo", "authors": "Youmin Zhang", "inst": "U Bologna (CVLAB)", "year": "2022", "venue": "IROS 2023", "stars": "★★★", "arxiv": "2211.13755", "repro": "pending", "note": "Spatio-temporal efficient stereo; promoted ★★→★★★ post-venue confirmation (IROS)"}, "P013": {"title": "Stereo Matching in Time", "authors": "Ziang Cheng", "inst": "Tencent XR + ANU", "year": "2023", "venue": "preprint", "stars": "★★", "arxiv": "2309.04183", "repro": "pending", "note": "100+ FPS video stereo for XR (deployment angle)"}, "P014": {"title": "Real-Time HQ Stereo on GPU", "authors": "Qiong Chang", "inst": "Tsukuba (likely)", "year": "2022", "venue": "preprint", "stars": "★★", "arxiv": "2212.00488", "repro": "pending", "note": "Real-time high-quality system on GPU"}, "P015": {"title": "Embedded GPU stereo", "authors": "Qiong Chang", "inst": "Tsukuba+AIST (likely)", "year": "2022", "venue": "preprint (likely journal)", "stars": "★★", "arxiv": "2212.00476", "repro": "pending", "note": "Efficient stereo on embedded GPUs (zero-mean cross-correlation)"}, "P016": {"title": "StereoVoxelNet", "authors": "Hongyu Li", "inst": "Northeastern (RIVeR Lab)", "year": "2022", "venue": "ICRA 2023", "stars": "★★★", "arxiv": "2209.08459", "repro": "pending", "note": "Real-time obstacle detection from stereo on Jetson-class HW; promoted ★★→★★★ post-venue (ICRA)"}, "P017": {"title": "Survey: Deep Stereo in the Twenties", "authors": "Fabio Tosi", "inst": "U Bologna", "year": "2024", "venue": "preprint (CVPR 2024 tutorial extended)", "stars": "★★★", "arxiv": "2407.07816", "repro": "pending", "note": "2020+ deep stereo systematic survey"}, "P018": {"title": "DCVSMNet", "authors": "Mahmoud Tahmasebi", "inst": "Atlantic Tech U Ireland + York PA", "year": "2024", "venue": "published-journal", "stars": "★★", "arxiv": "2402.16473", "repro": "pending", "note": "Double Cost Volume stereo (journal_ref present, exact venue unclear)"}, "P019": {"title": "SMFormer", "authors": "Yun Wang", "inst": "Sun Yat-sen + collab", "year": "2026", "venue": "TIP 2026", "stars": "★★★", "arxiv": "2604.10218", "repro": "pending", "note": "Self-supervised stereo via foundation models; promoted ★★→★★★ post-venue confirmation (TIP)"}, "P020": {"title": "DenVisCoM", "authors": "Tushar Anand", "inst": "INRIA + Indian co-affil", "year": "2026", "venue": "ICRA 2026", "stars": "★★★", "arxiv": "2602.01724", "repro": "pending", "note": "Mamba-based dense vision correspondence; promoted ★★→★★★ post-venue confirmation (ICRA), now closes SQ3 SSM cell"}, "P021": {"title": "Stereo Anywhere", "authors": "Luca Bartolomei", "inst": "U Bologna (likely; Tosi-group)", "year": "2024", "venue": "CVPR 2025", "stars": "★★★", "arxiv": "2412.04472", "repro": "Robust zero-shot stereo when stereo OR mono fails — directly addresses foundation-stereo failure modes", "note": ""}, "P022": {"title": "PPMStereo", "authors": "Yun Wang", "inst": "CityU HK + CUHK SZ + Fudan + SYSU", "year": "2025", "venue": "NeurIPS 2025", "stars": "★★★", "arxiv": "2510.20178", "repro": "Dynamic stereo with memory; temporal consistency over distance/depth-bin movement", "note": ""}, "P023": {"title": "Robust Syn-to-Real Stereo", "authors": "Jiawei Zhang", "inst": "Beihang + Macquarie + RIKEN + UTokyo", "year": "2024", "venue": "CVPR 2024", "stars": "★★★", "arxiv": "2403.07705", "repro": "Synthetic-to-real transfer analysis — robust foundation stereo critical review angle", "note": ""}, "P024": {"title": "Mono2Stereo", "authors": "Songsong Yu", "inst": "DLUT + Tencent PCG + HKUST GZ", "year": "2025", "venue": "CVPR 2025", "stars": "★★★", "arxiv": "2503.22262", "repro": "Benchmark + empirical study for stereo conversion; provides dataset coverage for SQ4/SQ7", "note": ""}, "P025": {"title": "RobustSpring", "authors": "Victor Oei", "inst": "U Stuttgart + NVIDIA + Mannheim + MPI", "year": "2025", "venue": "ICLR 2026", "stars": "★★★", "arxiv": "2505.09368", "repro": "Benchmarks robustness to image corruptions for optical flow + scene flow + stereo — direct dataset contribution for distance/freq robustness", "note": ""}, "P026": {"title": "Global Occlusion-Aware Transformer", "authors": "Zihua Liu", "inst": "Tokyo Institute of Technology", "year": "2023", "venue": "WACV 2024", "stars": "★★", "arxiv": "2312.14650", "repro": "Occlusion-aware transformer — robustness for boundaries/distance edges", "note": ""}}, "claims": {"C001": {"claim_id": "C001", "kind": "metric", "paper_id": "P002", "section": "Table 4", "quote": "0.47", "notes": "Scene Flow test set EPE for IGEV-Stereo", "confidence": "high"}, "C002": {"claim_id": "C002", "kind": "metric", "paper_id": "P002", "section": "Table 5, row IGEV-Stereo, column D1-all", "quote": "1.59", "notes": "KITTI 2015 D1-all (test); 16 update iters", "confidence": "high"}, "C003": {"claim_id": "C003", "kind": "metric", "paper_id": "P002", "section": "Table 5, runtime column", "quote": "0.18", "notes": "KITTI eval runtime (s); HW not specified in this table", "confidence": "medium"}, "C004": {"claim_id": "C004", "kind": "metric", "paper_id": "P002", "section": "Table 7", "quote": "Middlebury half 7.1, quarter 6.2, ETH3D 3.6", "notes": "Synthetic (Scene Flow) zero-shot to real", "confidence": "high"}, "C005": {"claim_id": "C005", "kind": "metric", "paper_id": "P004", "section": "Table 2", "quote": "RAFT-Stereo 11.12M, Selective-RAFT 11.65M, IGEV-Stereo 12.60M, Selective-IGEV 13.14M, DLNR 57.37M, Selective-DLNR 58.09M", "notes": "Param counts; SF EPE 0.53/0.47/0.47/0.44/0.49/0.46 respectively", "confidence": "high"}, "C006": {"claim_id": "C006", "kind": "metric", "paper_id": "P004", "section": "Table 6, KITTI rows", "quote": "Selective-RAFT D1-all 1.63, Selective-IGEV D1-all 1.55", "notes": "KITTI 2015 D1-all", "confidence": "high"}, "C007": {"claim_id": "C007", "kind": "finding", "paper_id": "P004", "section": "Table 7 (Edges vs Non-Edges)", "quote": "RAFT-Stereo Edges EPE 3.21 / Non-Edges 0.53; Selective-RAFT 2.40 / 0.40; IGEV-Stereo 2.23 / 0.41; Selective-IGEV 2.18 / 0.38", "notes": "Frequency analysis: edges = high-freq, non-edges = low-freq. Selective-* improves both regions, but the absolute and relative improvement is much larger on Edges (high-freq).", "confidence": "high"}, "C008": {"claim_id": "C008", "kind": "metric", "paper_id": "P005", "section": "Body, Scene Flow comparison", "quote": "0.34", "notes": "FoundationStereo Scene Flow EPE; previous best was 0.41", "confidence": "high"}, "C009": {"claim_id": "C009", "kind": "finding", "paper_id": "P005", "section": "Body §10 + leaderboard refs", "quote": "ranks 1st on the ETH3D leaderboard at the time of submission ... 1st on the world-wide Middlebury leaderboard", "notes": "FoundationStereo zero-shot ranking", "confidence": "high"}, "C010": {"claim_id": "C010", "kind": "metric", "paper_id": "P005", "section": "Cross-domain zero-shot table", "quote": "Middlebury BP-2 5.5, ETH3D BP-1 1.8, KITTI-12 D1 3.2, KITTI-15 D1 4.9", "notes": "FoundationStereo trained on Scene Flow + FSD, zero-shot evaluated", "confidence": "high"}, "C011": {"claim_id": "C011", "kind": "scale", "paper_id": "P005", "section": "Abstract", "quote": "1M stereo pairs", "notes": "Synthetic training dataset size", "confidence": "high"}, "C012": {"claim_id": "C012", "kind": "scale", "paper_id": "P005", "section": "Implementation Details", "quote": "32 NVIDIA A100 GPUs", "notes": "Training hardware (not inference)", "confidence": "high"}, "C013": {"claim_id": "C013", "kind": "metric", "paper_id": "P006", "section": "Table 2, full models", "quote": "DEFOM-Stereo (ViT-S): SF EPE 0.46, params 18.51M, time 0.255s; (ViT-L): EPE 0.42, params 47.30M, time 0.316s", "notes": "Inference time on 960x540 inputs, RTX 4090 GPU", "confidence": "high"}, "C014": {"claim_id": "C014", "kind": "architecture", "paper_id": "P006", "section": "Body §4", "quote": "DPT head in a frozen DepthAnythingV2", "notes": "DEFOM-Stereo uses frozen DepthAnythingV2 monocular foundation prior", "confidence": "high"}, "C015": {"claim_id": "C015", "kind": "metric", "paper_id": "P007", "section": "Table II (zero-shot mean)", "quote": "RAFT-Stereo 5.72; IGEV 5.51; Selective-IGEV 7.28; StereoBase 5.77; NMRF 5.15; MonSter 3.70; DEFOM 3.59; FoundationStereo 3.85; StereoAnything 2.68", "notes": "Cross-method unified zero-shot Mean = avg(K12 D1, K15 D1, Midd Bad-2, E3D Bad-1). Lower is better.", "confidence": "high"}, "C016": {"claim_id": "C016", "kind": "metric", "paper_id": "P007", "section": "Table II (CNN baselines)", "quote": "PSMNet Mean 28.55; GwcNet 23.16; CFNet 14.33; COEX 14.92; FADNet++ 17.77; LightStereo-L 10.41; DSMNet 6.75", "notes": "Earlier-generation CNN stereo on the same zero-shot benchmark", "confidence": "high"}, "C017": {"claim_id": "C017", "kind": "finding", "paper_id": "P004", "section": "§3.4", "quote": "stereo matching methods based on iterative optimization, like RAFT-Stereo and IGEV-Stereo, ... struggle to simultaneously capture high-frequency information in edges and low-frequency information in smooth regions due to the fixed receptive field", "notes": "P004 framing of the frequency problem; the index's only direct SQ8 contributor", "confidence": "high"}, "C018": {"claim_id": "C018", "kind": "finding", "paper_id": "P021", "section": "Abstract", "quote": "novel cost volume fusion mechanisms that effectively handle critical challenges such as textureless regions, occlusions, and non-Lambertian surfaces", "notes": "Stereo Anywhere targets stereo-failure cases (mirrors, transparencies)", "confidence": "high"}, "C019": {"claim_id": "C019", "kind": "finding", "paper_id": "P021", "section": "Abstract", "quote": "achieves state-of-the-art results in zero-shot generalization, significantly outperforming existing solutions while showing remarkable robustness to challenging cases such as mirrors and transparencies", "notes": "Robustness positioning", "confidence": "high"}, "C020": {"claim_id": "C020", "kind": "finding", "paper_id": "P017", "section": "Abstract", "quote": "the last five years of research brought further ground-breaking advancements ... in-depth examination of the latest developments in deep stereo matching, focusing on the pioneering architectural designs and groundbreaking paradigms that have redefined the field in the 2020s", "notes": "P017 survey scope statement", "confidence": "high"}, "C021": {"claim_id": "C021", "kind": "finding", "paper_id": "P006", "section": "Body §4.1", "quote": "We implement our DEFOM-Stereo using the PyTorch framework on NVIDIA RTX 4090 GPUs", "notes": "DEFOM-Stereo benchmarking HW", "confidence": "high"}, "C022": {"claim_id": "C022", "kind": "metric", "paper_id": "P002", "section": "Table 6 (reflective)", "quote": "RAFT-Stereo 32 iters: 2-noc 8.41, 2-all 9.87, 3-noc 5.40, 3-all 6.48; IGEV-Stereo 16 iters: 2-noc 7.57, 2-all 8.80, 3-noc 4.35, 3-all 5.00", "notes": "Reflective-region performance on KITTI 2012; IGEV with fewer iters beats RAFT with 32 iters in this ill-posed regime", "confidence": "high"}, "C023": {"claim_id": "C023", "kind": "finding", "paper_id": "P022", "section": "Title + Abstract", "quote": "Pick-and-Play Memory Construction for Consistent Dynamic Stereo Matching", "notes": "PPMStereo memory mechanism for temporal consistency in dynamic scenes", "confidence": "high"}, "C024": {"claim_id": "C024", "kind": "metric", "paper_id": "P005", "section": "GitHub README (FoundationStereo)", "quote": "We have observed 6X speed on the same GPU 3090 with TensorRT FP16", "notes": "Relative TensorRT speedup vs PyTorch eager on RTX 3090; absolute ms not given. Closes SQ6 partially.", "confidence": "high"}, "C025": {"claim_id": "C025", "kind": "metric", "paper_id": "P002", "section": "GitHub README (IGEV-Stereo) Environment section + Comparison table", "quote": "NVIDIA RTX 3090; Runtime IGEV-Stereo 0.18s, RAFT-Stereo 0.38s", "notes": "Confirms IGEV/RAFT comparison runtimes are on RTX 3090. Updates P002 hardware in chart_data.csv from unknown to RTX 3090.", "confidence": "high"}, "C026": {"claim_id": "C026", "kind": "architecture", "paper_id": "P005", "section": "GitHub README", "quote": "We only support docker setup for ONNX/TRT version", "notes": "FoundationStereo ships an ONNX/TensorRT path but only via docker; export at 448x672", "confidence": "high"}, "C027": {"claim_id": "C027", "kind": "architecture", "paper_id": "P005", "section": "GitHub README", "quote": "Please refer to readme_jetson.md", "notes": "FoundationStereo has dedicated Jetson Orin support (tested per project page)", "confidence": "high"}, "C028": {"claim_id": "C028", "kind": "metric", "paper_id": "P002", "section": "Table 1, row 'Full model (IGEV-Stereo)'", "quote": "EPE 0.47, >3px 2.47%, Time 0.37s, Params 12.60M", "notes": "IGEV-Stereo own paper ablation table; 32 iterations of ConvGRUs at inference. Note: differs from Table 5's 0.18s which uses 16 iters — the 16-iter config is the published headline runtime.", "confidence": "high", "depends_on": ["C025"]}, "C029": {"claim_id": "C029", "kind": "metric", "paper_id": "P002", "section": "Table 1, row 'Baseline'", "quote": "Baseline RAFT-Stereo with MobileNetV2-100 backbone: EPE 0.56, >3px 2.85%, Time 0.36s, Params 12.02M", "notes": "IGEV's RAFT baseline uses MobileNetV2-100 backbone (not vanilla RAFT-Stereo's CNN encoder) for fair-comparison ablation. The vanilla RAFT-Stereo number 11.12M from C005 differs because of backbone choice.", "confidence": "high"}, "C030": {"claim_id": "C030", "kind": "metric", "paper_id": "P006", "section": "Table 3, row 'DEFOM-Stereo (Ours)'", "quote": "KITTI 2012 non-occ Bad 2.0 1.43, Bad 3.0 0.94, AvgErr 0.31; KITTI 2012 all Bad 2.0 1.79; KITTI 2015 non-occ D1-all 1.33; KITTI 2015 all D1-all 1.41; Run-time 0.30s", "notes": "DEFOM-Stereo finetuned-on-target leaderboard numbers; ranks 1st on Avg-Noc / Avg-All(Reflective) / 2-Out-All(Reflective) for KITTI 2012 and D1-fg/D1-all/D1-all(Noc) for KITTI 2015 at submission. Run-time 0.30s on RTX 4090 (paper Implementation Details).", "confidence": "high"}, "C031": {"claim_id": "C031", "kind": "metric", "paper_id": "P006", "section": "Table 3, Run-time column (cross-method survey)", "quote": "ACVNet 0.2s; PCWNet 0.44s; LaC+GANet 1.8s; CREStereo 0.40s; IGEV-Stereo 0.18s; MC-Stereo 0.40s; DN+ACVNet 0.24s; Selective-IGEV 0.24s; NMRF-Stereo 0.09s; LoS 0.19s; GANet+ADL 0.67s; MoCha-Stereo 0.33s; IGEV++ 0.28s; StereoBase 0.29s; ViTAStereo 0.22s; DEFOM-Stereo 0.30s", "notes": "Cross-method run-time survey from DEFOM-Stereo Table 3. CRITICAL: numbers are NOT measured on same hardware — they are quoted from each method's original paper. DEFOM-Stereo own run-time (0.30s) is on RTX 4090; IGEV-Stereo row (0.18s) is from P002 on RTX 3090 per C025; other rows have unspecified HW. Cross-paper comparison is approximate.", "confidence": "high"}, "C032": {"claim_id": "C032", "kind": "metric", "paper_id": "P006", "section": "Table 4, row 'DEFOM-Stereo (Ours)'", "quote": "Middlebury non-occ Bad 2.0 2.39, AvgErr 0.79, RMS 5.81; Middlebury all Bad 2.0 5.02, AvgErr 1.27; ETH3D non-occ Bad 1.0 0.70, AvgErr 0.11; ETH3D all Bad 1.0 0.78", "notes": "DEFOM-Stereo Middlebury + ETH3D leaderboard-submitted numbers. Beats Selective-IGEV (Bad 2.0 noc) by 4.8% on Middlebury and 16.9% on Bad 2.0 all per body text.", "confidence": "high"}, "C033": {"claim_id": "C033", "kind": "metric", "paper_id": "P007", "section": "OpenStereo Model Zoo (github.com/XiandaGuo/OpenStereo/blob/v2/docs/1.model_zoo.md)", "quote": "Scene Flow EPE — STTR 0.43/0.40; PSMNet 1.09/0.95; CFNet 1.04/0.96; AANet 0.87/0.80; MobileStereo-2D 1.14/1.10; MobileStereo-3D 0.80/0.78; GwcNet 0.76/0.74; COEX 0.68/0.67; FADNet++ 0.76/0.65; CasStereo 0.72/0.67; IGEV 0.47/0.46; IGEV++ 0.43/0.44; IGEV_RT 0.50/0.52; StereoBase 0.34; FoundationStereo 0.34/0.34; Monster 0.37/0.40; LightStereo-S 0.73; LightStereo-M 0.62; LightStereo-L 0.59; LightStereo-H 0.51", "notes": "OpenStereo model zoo cross-method SF EPE table. Format: Original/OpenStereo-reproduced. KITTI-15 D1-all also listed: StereoBase 1.44, IGEV 1.59, LightStereo variants 2.30-1.82. Note: model zoo page does NOT list params/FLOPs/latency. This is in-domain SF EPE, NOT the zero-shot Mean used in chart_data.csv y-axis.", "confidence": "high"}, "C034": {"claim_id": "C034", "kind": "finding", "paper_id": "P007", "section": "OpenStereo Deployment README (github.com/XiandaGuo/OpenStereo/blob/v2/deploy/README.md)", "quote": "TensorRT has been integrated, please see the Deployment documentation", "notes": "OpenStereo SHIPS a TensorRT export pipeline (June 2024 update) and provides trt_profile.sh, but publishes ZERO benchmark numbers (no GPU model, no precision, no ms, no FPS, no resolution). REINFORCES SQ6 finding: deployment numbers are systematically not published, even when TRT integration ships. Combined with C024 (FoundationStereo's '6X speedup' relative claim with no absolute ms), this is now corroborated across two independent sources.", "confidence": "high"}, "C035": {"claim_id": "C035", "kind": "metric", "paper_id": "P011", "section": "Table 6 (Speed track), KITTI 2012/2015 + Runtime", "quote": "CGF-ACV (Ours, accuracy track): KITTI-12 3-all 1.34, KITTI-15 D1-all 1.61, runtime 240ms. Speed-track methods <50ms: DeepPrunerFast 62ms / D1-all 2.59; AANet 62ms / 2.55; DecNet 50ms / 2.37; BGNet+ 32ms / 2.19; CoEx 27ms / 2.13; Fast-ACVNet+ 45ms / 2.01; HITNet 20ms / 1.98; CGI-Stereo (Ours, speed track) implied <50ms (paper claim). Accuracy track: GANet 1800ms, CSPN 1000ms, CFNet 180ms, LEAStereo 300ms, CREStereo 410ms, ACVNet 200ms.", "notes": "KITTI 2012/2015 finetuned D1-all numbers + paper-self-reported runtimes. Hardware unspecified in this table. CGI-Stereo positioning is 'speed track' (<50ms class). NOTE: This is finetuned-on-target accuracy, NOT zero-shot Mean — different axis from chart 1 / 2 Y axis.", "confidence": "high"}, "C036": {"claim_id": "C036", "kind": "metric", "paper_id": "P016", "section": "§IV.B body + Table III", "quote": "Our model runs at 35Hz on RTX 3090 GPU without any optimization. ... real-time inference for obstacle detection using an onboard computer (NVIDIA Jetson TX2). Table III (Intel i7-12700K runtime): MSNet(2D) 2.61s/2.35M params; ACVNet 4.38s/6.17M; Lac-GwcNet 5.83s/9.37M; SGBM 0.08s; StereoVoxelNet (Ours) 0.55s/5.40M params/17.31G MACs.", "notes": "StereoVoxelNet has explicit edge HW data: 35Hz (~28.6ms) on RTX 3090 + Jetson TX2 onboard deployment + 0.55s on Intel i7-12700K CPU. Params 5.40M. This is for occupancy-voxel obstacle detection, not raw disparity — the cost-volume path uses 17.31G MACs vs ACVNet's 644.57G. ICRA 2023 paper specifically about robot deployment.", "confidence": "high"}, "C037": {"claim_id": "C037", "kind": "finding", "paper_id": "P011", "section": "Abstract + body", "quote": "outperforms all other published real-time methods (<50ms) on KITTI benchmarks", "notes": "CGI-Stereo positions itself in the <50ms speed track. Paper does not disclose its own absolute runtime explicitly — but per Tab 6 their 'CGF-ACV' (accuracy track) is 240ms. The 'speed track CGI-Stereo' implied by the abstract claim is a separate variant whose absolute runtime is not in any indexed table.", "confidence": "medium"}, "C038": {"claim_id": "C038", "kind": "metric", "paper_id": "P022", "section": "Table 1, PPMStereo (Ours, SF training)", "quote": "Sintel Clean: δ3px 5.34, TEPE 0.64, δ1px-t 7.38, δ3px-t 3.40. Sintel Final: δ3px 7.87, TEPE 1.14, δ1px-t 10.12, δ3px-t 4.99. Dynamic Replica (first 150 frames): δ1px 2.95, TEPE 0.066, δ1px-t 0.67, δ3px-t 0.23. PPMStereo_VDA (Video Depth Anything ViT-Small backbone): Sintel Clean δ3px 4.62 / TEPE 0.58. PPMStereo outperforms BiDAStereo by 12.3%/9.52% TEPE on Sintel clean/final and DynamicStereo by 16.8%/21.3% TEPE.", "notes": "TEPE = Temporal End-Point Error, the temporal-consistency metric for dynamic stereo. δnpx-t = pct pixels with TEPE > n px. Lower better. The VDA variant uses Video Depth Anything as feature extractor and gains further. Trained on 8x A100 GPUs, batch=2, 320x512 crops, 5-frame seqs, 180k iters (~4.5 days).", "confidence": "high"}, "C039": {"claim_id": "C039", "kind": "finding", "paper_id": "P022", "section": "§C Limitations", "quote": "our method occasionally [fails] in textureless areas (e.g., blank walls) or transparent surfaces (e.g., glass), where current techniques, including ours, may produce inconsistencies", "notes": "PPMStereo's self-stated limitation parallels Stereo Anywhere's (P021) failure-mode framing — both point to textureless / transparent surfaces as the open problem class. Adds independent corroboration of the SQ8/SQ9 critical-review evidence.", "confidence": "high"}, "C040": {"claim_id": "C040", "kind": "metric", "paper_id": "P025", "section": "Table 2b (stereo disparity corruption robustness, average row)", "quote": "Average R1px (lower=more robust): RAFT-Stereo (s) 33.40; ACVNet (s) 36.80; LEAStereo (s) 40.95; LEAStereo (k) 50.02; GANet (k) 44.71; GANet (s) 45.26. Median R1px: RAFT-Stereo (s) 40.30; ACVNet 37.21; LEAStereo (s) 36.81; LEAStereo (k) 55.58; GANet (k) 48.53; GANet (s) 46.64. Std. Dev. R1px: 20.16 / 23.56 / 29.19 / 23.69 / 21.37 / 28.09.", "notes": "R1px is the corruption robustness score (delta between clean and corrupted disparity at 1-pixel threshold). Suffix (s) = Scene Flow checkpoint; (k) = KITTI checkpoint. RAFT-Stereo (Scene Flow checkpoint) shows the lowest average R1px → most robust. Models evaluated: RAFT-Stereo, ACVNet, LEAStereo, GANet only — NO foundation-VFM models (FoundationStereo, DEFOM, Stereo Anything, Stereo Anywhere) included in P025's evaluation.", "confidence": "high"}, "C041": {"claim_id": "C041", "kind": "finding", "paper_id": "P025", "section": "§5 + Tab 2b body", "quote": "Noise corruptions introduce extremely large errors, highlighting the sensitivity of stereo models to pixel-level noise. ... RAFT-Stereo shows stronger resilience across most [corruption types]", "notes": "Per-corruption pattern: Gaussian/Impulse/Speckle/Shot noise is most destructive (R1px 39-85), Pixelate/JPEG/Elastic moderate (35-66), Brightness/Saturate/Glass mild (6-19). RAFT-Stereo's recurrent-update architecture is the most corruption-resilient among evaluated CNN-iterative methods. NO foundation-VFM evaluated — this is a Round 4 follow-up gap.", "confidence": "high"}, "C042": {"claim_id": "C042", "kind": "dataset", "paper_id": "P025", "section": "§3", "quote": "RobustSpring is the first image corruption dataset for optical flow, scene flow, and stereo. It integrates 20 corruptions for blurs, noises, tints, artifacts, and weather in time, stereo, and depth.", "notes": "Dataset closes SQ8 (per-frequency / per-corruption) + SQ9 (critical-review of failure modes) cells with concrete numbers for 6 methods. The 20 corruption classes are: Brightness, Contrast, Saturate (Color); Defocus, Gaussian, Glass, Motion, Zoom (Blur); Gaussian, Impulse, Speckle, Shot (Noise); Pixelate, JPEG, Elastic (Quality); Fog, Frost, Rain, Snow, Spatter (Weather).", "confidence": "high"}, "C043": {"claim_id": "C043", "kind": "finding", "paper_id": "P001", "section": "GitHub repo (princeton-vl/RAFT-Stereo)", "quote": "MIT license; train_stereo.py, evaluate_stereo.py, demo.py present; pretrained weights via download_models.sh; 1.1k stars, 177 forks, 59 open issues; Best Student Paper Award at 3DV 2021; multi-GPU training (RTX-6000); Colab notebook for visualization", "notes": "P001 reproducibility = oss/recipe:complete/issues:mixed/quality:strong/3p:confirmed. Tier R1.", "confidence": "high"}, "C044": {"claim_id": "C044", "kind": "finding", "paper_id": "P002", "section": "GitHub repo (gangweiX/IGEV) issues page", "quote": "36 open issues; recent issues span Feb 2024 - Sep 2024; predominantly Chinese-language community; concerns include training configurations, model performance variations, distant object precision, disparity extraction. Discussions active.", "notes": "P002 reproducibility = oss/recipe:complete/issues:mixed/quality:strong/3p:confirmed (OpenStereo Model Zoo independently reports 0.46 SF EPE vs paper's 0.47, close match per C033). Tier R1.", "confidence": "high"}, "C045": {"claim_id": "C045", "kind": "finding", "paper_id": "P004", "section": "GitHub repo (Windsrain/Selective-Stereo) issues", "quote": "3 open issues: Problem with RAFT's sequence loss when args.train_iters is 1; Experiment-Related Questions; Export to onnx. 192 stars, 24 forks. Most recent issue Feb 2026.", "notes": "P004 reproducibility = oss/recipe:complete/issues:clean/quality:strong/3p:unverified. Tier R1 once 3p reproduction lands. None of the issues are 'cannot reproduce' patterns.", "confidence": "high"}, "C046": {"claim_id": "C046", "kind": "finding", "paper_id": "P005", "section": "GitHub repo (NVlabs/FoundationStereo) issues + README", "quote": "75 open issues; ~12+ older than 6 months. Issue patterns: 'Cartons in the lower layer sometimes show point cloud tilting'; 'FP16 quantization performance across different GPU architectures'; 'Performance on grayscale'; 'How can I run monochrome inference on the Jetson AGX Orin?'; 'Process hangs during denoise point cloud step'. README: 'We only support docker setup for ONNX/TRT version'.", "notes": "P005 reproducibility = oss/recipe:partial (docker required for TRT path; deployment recipe is non-trivial)/issues:mixed (75 open, deployment-pain heavy)/quality:strong (NVIDIA Research)/3p:unverified. Tier R2-R3: numbers citable, but TRT/Jetson deployment claims need third-party validation given the issue pattern.", "confidence": "high"}, "C047": {"claim_id": "C047", "kind": "finding", "paper_id": "P006", "section": "GitHub repo (Insta360-Research-Team/DEFOM-Stereo) README", "quote": "MIT license; train_sceneflow_vits.sh / train_sceneflow_vitl.sh / train_kitti.sh / train_middlebury.sh / train_eth3d.sh / train_rvc.sh + train_stereo.py; demo.py + evaluate_stereo.py + make_submission.py; pretrained weights on Google Drive; modular structure with core/, demo/, depth_anything_v2/, utils/, scripts/; 15 commits; environment.yaml + requirements.txt", "notes": "P006 reproducibility = oss/recipe:complete (per-benchmark training scripts)/issues:unverified/quality:strong (production-ready setup, well-organized)/3p:unverified. Tier R1 once 3p reproduction confirmed. The depth_anything_v2/ subdirectory shows clean integration of the foundation prior.", "confidence": "high"}, "C048": {"claim_id": "C048", "kind": "finding", "paper_id": "P021", "section": "GitHub repo (bartn8/stereoanywhere) README", "quote": "Repository is currently in the development phase. We are actively working to add and refine features and documentation. Pretrained weights via Google Drive; run_train.sh + train.py provided; test.py + test_monotrap.py inference scripts; OAK-D camera demo + image-based demos; dataloaders/, models/, demo/ structure; 0 open issues; setup instructions for 8+ benchmarks.", "notes": "P021 reproducibility = oss/recipe:partial (authors acknowledge ongoing refinement)/issues:clean (0 open, but limited community feedback)/quality:adequate/3p:unverified. Tier R2-R3: numbers citable, with 'in-development' caveat per author admission.", "confidence": "high"}, "C049": {"claim_id": "C049", "kind": "finding", "paper_id": "P004", "section": "PDF first page (institutional affiliation)", "quote": "Xianqi Wang*, Gangwei Xu*, Hao Jia, Xin Yang† — Huazhong University of Science and Technology", "notes": "P004 Selective-Stereo institution = HUST. Same group as P002 IGEV-Stereo (Gangwei Xu) and P011 CGI-Stereo and P010 MonSter++. The HUST stereo group is now confirmed for 4 indexed papers — concentration risk worth noting in synthesis.", "confidence": "high"}, "C050": {"claim_id": "C050", "kind": "finding", "paper_id": "P007", "section": "PDF first page (author list)", "quote": "Xianda Guo, Chenming Zhang, Youmin Zhang, Ruilin Wang, Dujun Nie, Wenzhao Zheng, Matteo Poggi, Hao Zhao, Mang Ye, Qin Zou, Long Chen", "notes": "P007 Stereo Anything authorship spans Wuhan University and U Bologna (Matteo Poggi); affiliation footnotes not surfaced by pdftotext on first page. Cross-pollination China/Italy is notable. Treat institution as 'multi (Wuhan + Bologna + others)' pending body extraction.", "confidence": "medium"}, "C051": {"claim_id": "C051", "kind": "finding", "paper_id": "P008", "section": "PDF first page (institutional affiliation)", "quote": "1 School of Information Science and Technology, Fudan University, China; 2 Xiaomi Inc., Beijing, China; 3 Shanghai AI Laboratory, Shanghai, China; 4 The Chinese University of Hong Kong", "notes": "P008 All-in-One VFM = Fudan + Xiaomi + Shanghai AI Lab + CUHK. Multi-institution China.", "confidence": "high"}, "C052": {"claim_id": "C052", "kind": "finding", "paper_id": "P010", "section": "PDF first page (author list)", "quote": "Junda Cheng*, Wenjing Liao*, Zhipeng Cai, Longliang Liu, Gangwei Xu, Xianqi Wang, Yuzhou Wang, Zikang Yuan, Yong Deng, Jinliang Zang, Yangyang Shi, Jinhui Tang, Xin Yang", "notes": "P010 MonSter++: Gangwei Xu + Xianqi Wang are HUST authors (per C049). MonSter++ is HUST + extended team. Confirms HUST group concentration.", "confidence": "high"}, "C053": {"claim_id": "C053", "kind": "finding", "paper_id": "P022", "section": "PDF first page (institutional affiliation)", "quote": "1 City University of Hong Kong, 2 The Chinese University of Hong Kong, Shenzhen, 3 Fudan University, 4 Shenzhen Campus, Sun Yat-sen University", "notes": "P022 PPMStereo: CityU HK + CUHK Shenzhen + Fudan + SYSU Shenzhen. Multi-institution China/HK SAR.", "confidence": "high"}, "C054": {"claim_id": "C054", "kind": "finding", "paper_id": "P024", "section": "PDF first page (institutional affiliation)", "quote": "DLUT 1, ARC Lab, Tencent PCG 2, HKUST(GZ) 3", "notes": "P024 Mono2Stereo: Dalian U of Technology + Tencent PCG ARC Lab + HKUST Guangzhou.", "confidence": "high"}, "C055": {"claim_id": "C055", "kind": "finding", "paper_id": "P025", "section": "PDF first page (header line + institutional affiliation)", "quote": "Published as a conference paper at ICLR 2026. Authors: Victor Oei*, Jenny Schmalfuss*†, Lukas Mehl, Madlen Bartsch, Shashank Agnihotri, Margret Keuper, Andreas Bulling, Andrés Bruhn. Affiliations: 1 University of Stuttgart, 2 NVIDIA, 3 University of Mannheim, 4 MPI for Informatics", "notes": "P025 RobustSpring is now ICLR 2026 ACCEPTED (was 'preprint' in paper_index.md — needs venue update). Affiliations: Stuttgart + NVIDIA + Mannheim + MPI Informatics. First non-China-dominant paper in the recent ★★★ set.", "confidence": "high"}, "C056": {"claim_id": "C056", "kind": "finding", "paper_id": "P009", "section": "PDF first page (author byline)", "quote": "Chuang-Wei Liu, Qijun Chen Senior Member IEEE, Rui Fan Senior Member IEEE", "notes": "P009 VFM-Strengths affiliation NOT shown on first page surface text. Senior authors Qijun Chen + Rui Fan are well-known Tongji University researchers (autonomous driving / stereo). Treat as Tongji with medium confidence pending body extraction.", "confidence": "medium"}, "C057": {"claim_id": "C057", "kind": "finding", "paper_id": "P012", "section": "PDF first page", "quote": "Youmin Zhang, Matteo Poggi, Stefano Mattoccia. CVLAB, Department of Computer Science and Engineering (DISI), University of Bologna, Italy", "notes": "P012 TemporalStereo = U Bologna CVLAB. Same group as P017 Tosi survey + P021 Stereo Anywhere (Bartolomei). Bologna stereo group is now confirmed in 3 indexed papers — second-largest concentration after HUST.", "confidence": "high"}, "C058": {"claim_id": "C058", "kind": "finding", "paper_id": "P013", "section": "PDF first page", "quote": "Ziang Cheng 1,2*, Jiayu Yang 1,2*, Hongdong Li 2. 1 Tencent XR Vision Labs, 2 Australian National University", "notes": "P013 Stereo Matching in Time = Tencent XR + ANU. Industry-academic collab; explicit XR application focus matches the title.", "confidence": "high"}, "C059": {"claim_id": "C059", "kind": "finding", "paper_id": "P014", "section": "PDF first page", "quote": "Qiong Chang, Tsutomu Maruyama", "notes": "P014 Real-Time HQ Stereo on GPU. Tsutomu Maruyama is University of Tsukuba (computer engineering). Treat institution as 'Tsukuba (likely)' pending full author affiliation footnote extraction.", "confidence": "medium"}, "C060": {"claim_id": "C060", "kind": "finding", "paper_id": "P015", "section": "PDF first page", "quote": "Qiong Chang, Aolong Zha, Weimin Wang, Xin Liu, Masaki Onishi, Lei Lei, Meng Joo Er, Tsutomu Maruyama", "notes": "P015 Embedded GPU stereo. Same Qiong Chang + Maruyama as P014. Includes Masaki Onishi (AIST?). Multi-author Japanese institution group.", "confidence": "medium"}, "C061": {"claim_id": "C061", "kind": "finding", "paper_id": "P018", "section": "PDF first page", "quote": "Mahmoud Tahmasebi (Atlantic Technological University, Sligo, Ireland — MISHE Center); Saif Huq (York College of Pennsylvania, USA); Kevin Meehan (Atlantic Technological University)", "notes": "P018 DCVSMNet = Atlantic Technological University (Ireland) + York College PA (US). Notable for being the ONLY non-China-non-Western-tier-1-AI-center paper in the ★★★ set; smaller-institution research with peer-reviewed published journal_ref.", "confidence": "high"}, "C062": {"claim_id": "C062", "kind": "finding", "paper_id": "P019", "section": "PDF first page", "quote": "Yun Wang, Zhengjie Yang*, Jiahao Zheng, Zhanjie Zhang, Dapeng Oliver Wu*, Yulan Guo", "notes": "P019 SMFormer: Yun Wang + Dapeng Wu also appear in P022 PPMStereo (CityU HK + CUHK SZ + Fudan + SYSU per C053). Yulan Guo is Sun Yat-sen University. Treat as 'Sun Yat-sen + collab (multi)' with medium confidence.", "confidence": "medium"}, "C063": {"claim_id": "C063", "kind": "finding", "paper_id": "P020", "section": "PDF first page", "quote": "Tushar Anand*, Maheswar Bora*, Antitza Dantcheva†, Abhijit Das*", "notes": "P020 DenVisCoM author byline. Antitza Dantcheva is INRIA (research scientist, France). The * vs † separation suggests two affiliations. Treat as 'INRIA + Indian co-affiliation' pending body extraction.", "confidence": "medium"}, "C064": {"claim_id": "C064", "kind": "finding", "paper_id": "P023", "section": "PDF first page", "quote": "Jiawei Zhang 1, Jiahe Li 1, Lei Huang 2, Xiaohan Yu 3, Lin Gu 4,5, Jin Zheng 1, Xiao Bai 1*. 1 Beihang University SKLCCSE; 2 Beihang U Institute of AI; 3 Macquarie U Australia; 4 RIKEN AIP; 5 University of Tokyo", "notes": "P023 Robust Syn-to-Real: Beihang (primary) + Macquarie + RIKEN AIP + U Tokyo. Multi-institution Asia-Pacific collab.", "confidence": "high"}, "C065": {"claim_id": "C065", "kind": "finding", "paper_id": "P026", "section": "PDF first page", "quote": "Zihua Liu 1, Yizhou Li 2, and Masatoshi Okutomi 3. Tokyo Institute of Technology, Japan", "notes": "P026 GOAT = Tokyo Institute of Technology, Japan. Single-institution paper.", "confidence": "high"}, "C066": {"claim_id": "C066", "kind": "finding", "paper_id": "P016", "section": "PDF body (affiliation footnotes extracted via plain-text pdftotext)", "quote": "1 Institute for Experiential Robotics, Northeastern University; 2 Khoury College of Computer Sciences, Northeastern University; 3 Department of Electrical and Computer Engineering, Northeastern University, Boston, MA, 02115, USA", "notes": "P016 StereoVoxelNet = Northeastern University Boston (RIVeR Lab). All 18 ★★★ papers now have institution data. The plain-text pdftotext (without -layout) was needed to surface the footnotes for this paper.", "confidence": "high"}, "C067": {"claim_id": "C067", "kind": "finding", "paper_id": "P017", "section": "Cross-paper institution analysis (synthesis-derived from C043-C066)", "quote": "Among 18 ★★★ papers in the survey, two institutions dominate: HUST (3 papers — P002 IGEV-Stereo, P003 IGEV++, P004 Selective-Stereo) and U Bologna (3 papers — P012 TemporalStereo, P017 Survey, P021 Stereo Anywhere). Each holds 17% of ★★★ output. Combined: 6/18 = 33% of ★★★ output from two institutions. Including ★★ papers, HUST extends to 5 papers (P010 MonSter++, P011 CGI-Stereo) and Bologna stays at 3-4 (P007 Stereo Anything has Matteo Poggi as co-affiliation). Geographic breakdown of ★★★ subset: ~11/18 China-affiliated (HUST/Wuhan/Fudan/CityU/SYSU/CUHK/Sun-Yat-sen/Tencent/Insta360/DLUT/HKUST GZ), ~5/18 Europe (Bologna/Stuttgart/Mannheim/MPI/INRIA), ~3/18 US (Princeton/NVIDIA-Research/Northeastern), ~2/18 Japan (Tokyo Tech). No institution exceeds the 60% bias threshold; no country exceeds 60% in the ★★★ subset (China is closest at ~61% if counting all China-affiliated multi-author papers).", "notes": "Synthesis-derived from C043-C066 institution claims. The HUST + Bologna concentration is a real lab-clustering finding: Gangwei Xu is co-author of 3 HUST papers; Matteo Poggi appears in P007 + P012 + the broader Bologna group's 3 papers. Cross-pollination evident: Poggi appears in P007 (Wuhan-led) and P012 (Bologna-led); HUST authors Gangwei Xu + Xianqi Wang appear in P002+P004+P010+P011.", "confidence": "high"}}, "chart_data": [{"paper_id": "P001", "model": "RAFT-Stereo", "architecture": "Recurrent-RAFT", "params_M": "11.12", "accuracy_inv": "5.72", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "380", "latency_trt_ms": "", "hardware": "RTX 3090", "precision": "FP32", "source_status": "P004 Tab2 + P007 Tab II"}, {"paper_id": "P002", "model": "IGEV-Stereo", "architecture": "Hybrid", "params_M": "12.60", "accuracy_inv": "5.51", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "180", "latency_trt_ms": "", "hardware": "RTX 3090", "precision": "FP32", "source_status": "P002 Tab5 + P007 Tab II"}, {"paper_id": "P004a", "model": "Selective-RAFT", "architecture": "Transformer", "params_M": "11.65", "accuracy_inv": "", "val_set": "SF EPE 0.47 (no Mean P007)", "latency_torch_ms": "450", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P004 Tab2+6"}, {"paper_id": "P004b", "model": "Selective-IGEV", "architecture": "Transformer", "params_M": "13.14", "accuracy_inv": "7.28", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "240", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P004 Tab2+6 + P007 Tab II"}, {"paper_id": "P005", "model": "FoundationStereo", "architecture": "Foundation-VFM", "params_M": "", "accuracy_inv": "3.85", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "A100 (training)", "precision": "FP32", "source_status": "P005 + P007 Tab II"}, {"paper_id": "P006a", "model": "DEFOM-Stereo-ViT-S", "architecture": "Foundation-VFM", "params_M": "18.51", "accuracy_inv": "", "val_set": "SF EPE 0.46 (no Mean P007)", "latency_torch_ms": "255", "latency_trt_ms": "", "hardware": "RTX 4090", "precision": "FP32", "source_status": "P006 Tab 2"}, {"paper_id": "P006b", "model": "DEFOM-Stereo-ViT-L", "architecture": "Foundation-VFM", "params_M": "47.30", "accuracy_inv": "3.59", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "316", "latency_trt_ms": "", "hardware": "RTX 4090", "precision": "FP32", "source_status": "P006 Tab 2 + P007 Tab II"}, {"paper_id": "P007", "model": "StereoAnything", "architecture": "Foundation-VFM", "params_M": "", "accuracy_inv": "2.68", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "P006v", "model": "DLNR", "architecture": "CNN", "params_M": "57.37", "accuracy_inv": "", "val_set": "SF EPE 0.49", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P004 Tab 2"}, {"paper_id": "P010", "model": "MonSter", "architecture": "Hybrid", "params_M": "", "accuracy_inv": "3.70", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "PSMNet", "model": "PSMNet", "architecture": "CNN", "params_M": "", "accuracy_inv": "28.55", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "GwcNet", "model": "GwcNet", "architecture": "CNN", "params_M": "", "accuracy_inv": "23.16", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "CFNet", "model": "CFNet", "architecture": "CNN", "params_M": "", "accuracy_inv": "14.33", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "COEX", "model": "COEX", "architecture": "CNN", "params_M": "", "accuracy_inv": "14.92", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "FADNet", "model": "FADNet++", "architecture": "CNN", "params_M": "", "accuracy_inv": "17.77", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "LightS-L", "model": "LightStereo-L", "architecture": "CNN", "params_M": "", "accuracy_inv": "10.41", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "DSMNet", "model": "DSMNet", "architecture": "CNN", "params_M": "", "accuracy_inv": "6.75", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "", "latency_trt_ms": "", "hardware": "unknown", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "NMRF", "model": "NMRF", "architecture": "Hybrid", "params_M": "", "accuracy_inv": "5.15", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "90", "latency_trt_ms": "", "hardware": "various (paper-self-reported via P006 Tab 3)", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "SBase", "model": "StereoBase", "architecture": "Hybrid", "params_M": "", "accuracy_inv": "5.77", "val_set": "zero-shot Mean (P007 Tab II)", "latency_torch_ms": "290", "latency_trt_ms": "", "hardware": "various (paper-self-reported via P006 Tab 3)", "precision": "FP32", "source_status": "P007 Tab II"}, {"paper_id": "P016", "model": "StereoVoxelNet", "architecture": "CNN", "params_M": "5.40", "accuracy_inv": "", "val_set": "no zero-shot Mean (occupancy task; not in P007 Tab II)", "latency_torch_ms": "28.6", "latency_trt_ms": "", "hardware": "RTX 3090", "precision": "FP32", "source_status": "P016 §IV.B + Tab III"}], "chart_specs": {"01": {"title": "Params (M) vs Accuracy (zero-shot Mean ↓)", "x": "params_M", "y": "accuracy_inv", "x_label": "Params (M)", "y_label": "zero-shot Mean (lower is better)", "x_type": "log"}, "02": {"title": "Torch latency (ms) vs Accuracy", "x": "latency_torch_ms", "y": "accuracy_inv", "x_label": "Torch latency (ms)", "y_label": "zero-shot Mean (lower is better)", "x_type": "log"}, "03": {"title": "TensorRT latency (ms) vs Accuracy", "x": "latency_trt_ms", "y": "accuracy_inv", "x_label": "TensorRT latency (ms)", "y_label": "zero-shot Mean (lower is better)", "x_type": "log"}}, "toc": [{"id": "edge-foundation-stereo-matching-survey-stereo-matching-edge-fm-v11", "level": 2, "text": "Edge &amp; Foundation Stereo Matching Survey (stereo-matching-edge-fm) v1.1"}, {"id": "contents", "level": 3, "text": "Contents"}, {"id": "1", "level": 3, "text": "§1 Research question and scope"}, {"id": "3", "level": 3, "text": "§3 Taxonomy and timeline"}, {"id": "3-5", "level": 3, "text": "§3.5 Datasets: canonical and emergent (v1.1 added)"}, {"id": "4", "level": 3, "text": "§4 Method-route comparison"}, {"id": "5", "level": 3, "text": "§5 Per-paper deep-dives — flagship models"}, {"id": "6", "level": 3, "text": "§6 Benchmarks: the unified zero-shot Mean metric"}, {"id": "8", "level": 3, "text": "§8 Cross-cutting analysis: charts"}, {"id": "9", "level": 3, "text": "§9 Per-data-type analysis"}, {"id": "10", "level": 3, "text": "§10 Open challenges"}, {"id": "11", "level": 3, "text": "§11 Key research teams"}, {"id": "12", "level": 3, "text": "§12 Direct Q&amp;A"}, {"id": "13", "level": 3, "text": "§13 Reading list and Round 3 task list"}, {"id": "14", "level": 3, "text": "§14 Reproducibility tier (v1.1 added)"}, {"id": "10-1", "level": 3, "text": "§10.1 Open challenges (v1.1 supplement)"}, {"id": "6-1", "level": 3, "text": "§6.1 Cross-method speed-track (v1.1 added)"}]};
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flexsearch@0.7.43/dist/flexsearch.bundle.min.js" defer></script>
+
+  <script>
+/* deep-survey-bfs HTML viewer client-side runtime
+   Reads window.__SURVEY_DATA__ which is injected by render_html.py:
+     papers:       { Pxxx: {title, authors, year, venue, stars, repro, arxiv, ...}, ... }
+     claims:       { Cxxx: {paper_id, kind, section, quote, confidence, depends_on, ...}, ... }
+     chart_data:   array of rows from chart_data.csv (key/value objects)
+     chart_specs:  { chart_id: {title, x, y, hover_template, ...} }
+     toc:          [{id, level, text}, ...]
+*/
+(function () {
+  "use strict";
+  const data = window.__SURVEY_DATA__ || { papers: {}, claims: {}, chart_data: [], chart_specs: {}, toc: [] };
+
+  /* ---------- theme toggle ---------- */
+  const themeBtn = document.getElementById("theme-toggle");
+  const root = document.documentElement;
+  const stored = localStorage.getItem("dsb-theme");
+  if (stored) root.dataset.theme = stored;
+  if (themeBtn) {
+    themeBtn.addEventListener("click", () => {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("dsb-theme", next);
+      // Re-render mermaid + plotly to pick up theme
+      reRenderMermaid();
+      reRenderPlotly();
+    });
+  }
+
+  /* ---------- tooltip ---------- */
+  const tip = document.getElementById("tooltip");
+  function showTooltip(el, html) {
+    tip.innerHTML = html;
+    tip.setAttribute("aria-hidden", "false");
+    const rect = el.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    const margin = 6;
+    let top = rect.bottom + window.scrollY + margin;
+    let left = rect.left + window.scrollX;
+    if (left + tipRect.width > window.scrollX + window.innerWidth - 12) {
+      left = window.scrollX + window.innerWidth - tipRect.width - 12;
+    }
+    if (top + tipRect.height > window.scrollY + window.innerHeight - 12) {
+      top = rect.top + window.scrollY - tipRect.height - margin;
+    }
+    tip.style.top = top + "px";
+    tip.style.left = left + "px";
+  }
+  function hideTooltip() { tip.setAttribute("aria-hidden", "true"); }
+
+  function paperCardHTML(pid) {
+    const p = data.papers[pid];
+    if (!p) return `<div class="t-title">${pid}</div><div class="t-meta">unknown paper</div>`;
+    const stars = p.stars || "";
+    const venue = [p.year, p.venue].filter(Boolean).join(" · ");
+    const arxiv = p.arxiv ? `<a class="t-link" href="https://arxiv.org/abs/${p.arxiv}" target="_blank" rel="noopener">arXiv:${p.arxiv}</a>` : "";
+    const repro = p.repro && p.repro !== "pending" ? `<div class="t-meta">Repro: ${escapeHtml(p.repro)}</div>` : "";
+    return `<div class="t-title">${pid} ${stars} ${escapeHtml(p.title || "")}</div>
+            <div class="t-meta">${escapeHtml(venue)}${p.authors ? " · " + escapeHtml(p.authors) : ""}</div>
+            ${repro}
+            ${arxiv}`;
+  }
+  function claimCardHTML(cid) {
+    const c = data.claims[cid];
+    if (!c) return `<div class="t-title">${cid}</div><div class="t-meta">unknown claim</div>`;
+    const paper = data.papers[c.paper_id] || {};
+    const kind = c.kind ? `<span style="background:rgba(255,255,255,0.12);padding:1px 5px;border-radius:3px;">${escapeHtml(c.kind)}</span>` : "";
+    const conf = c.confidence ? ` · confidence: ${escapeHtml(c.confidence)}` : "";
+    const truncated = (c.quote || "").slice(0, 280) + ((c.quote || "").length > 280 ? "…" : "");
+    return `<div class="t-title">${cid} ${kind}</div>
+            <div class="t-meta">${c.paper_id}${paper.title ? " — " + escapeHtml(paper.title) : ""} · ${escapeHtml(c.section || "")}${conf}</div>
+            <div class="t-quote">${escapeHtml(truncated)}</div>`;
+  }
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
+  }
+
+  document.addEventListener("mouseover", (e) => {
+    const el = e.target.closest(".paper-ref, .claim-ref");
+    if (!el) return;
+    const isPaper = el.classList.contains("paper-ref");
+    const id = el.dataset.id;
+    if (!id) return;
+    showTooltip(el, isPaper ? paperCardHTML(id) : claimCardHTML(id));
+  });
+  document.addEventListener("mouseout", (e) => {
+    const el = e.target.closest(".paper-ref, .claim-ref");
+    if (el) hideTooltip();
+  });
+  document.addEventListener("scroll", hideTooltip, { passive: true });
+
+  /* ---------- TOC scroll-spy ---------- */
+  const tocLinks = Array.from(document.querySelectorAll(".toc a"));
+  const headings = tocLinks
+    .map(a => document.getElementById(a.getAttribute("href").slice(1)))
+    .filter(Boolean);
+  function updateActiveTOC() {
+    const y = window.scrollY + 100;
+    let active = headings[0];
+    for (const h of headings) {
+      if (h.offsetTop <= y) active = h;
+      else break;
+    }
+    tocLinks.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + active.id));
+  }
+  if (headings.length) {
+    window.addEventListener("scroll", updateActiveTOC, { passive: true });
+    updateActiveTOC();
+  }
+
+  /* ---------- search (FlexSearch when available, fallback to regex) ---------- */
+  const searchInput = document.getElementById("search-input");
+  const searchResults = document.getElementById("search-results");
+  let searchIndex = null;
+
+  function buildSearchEntries() {
+    const entries = [];
+    Object.entries(data.papers).forEach(([pid, p]) => {
+      entries.push({
+        id: "paper:" + pid,
+        kind: "paper",
+        title: pid + " " + (p.title || ""),
+        body: [p.authors, p.venue, p.year, p.note].filter(Boolean).join(" "),
+        anchor: "paper-" + pid
+      });
+    });
+    Object.entries(data.claims).forEach(([cid, c]) => {
+      entries.push({
+        id: "claim:" + cid,
+        kind: "claim",
+        title: cid + " (" + (c.paper_id || "") + ")",
+        body: (c.quote || "") + " " + (c.section || ""),
+        anchor: "claim-" + cid
+      });
+    });
+    (data.toc || []).forEach((h) => {
+      entries.push({ id: "section:" + h.id, kind: "section", title: h.text, body: "", anchor: h.id });
+    });
+    return entries;
+  }
+  const entries = buildSearchEntries();
+  if (window.FlexSearch && entries.length) {
+    searchIndex = new FlexSearch.Document({
+      tokenize: "forward",
+      document: { id: "id", index: ["title", "body"], store: ["kind", "title", "body", "anchor"] }
+    });
+    entries.forEach(e => searchIndex.add(e));
+  }
+  function fallbackSearch(q) {
+    const re = new RegExp(q.split(/\s+/).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i");
+    return entries.filter(e => re.test(e.title) || re.test(e.body)).slice(0, 30);
+  }
+  function flexSearchQuery(q) {
+    const out = [];
+    const seen = new Set();
+    const results = searchIndex.search(q, { limit: 25, enrich: true });
+    results.forEach(field => {
+      field.result.forEach(r => {
+        if (seen.has(r.id)) return;
+        seen.add(r.id);
+        out.push(r.doc);
+      });
+    });
+    return out.slice(0, 30);
+  }
+  function renderResults(items, q) {
+    if (!items.length) {
+      searchResults.innerHTML = `<div class="res"><span class="res-snippet">no matches</span></div>`;
+    } else {
+      searchResults.innerHTML = items.map(it => {
+        const snippet = (it.body || "").slice(0, 140);
+        return `<div class="res" data-anchor="${it.anchor}">
+                  <span class="res-kind">${it.kind}</span>
+                  <span class="res-title">${escapeHtml(it.title)}</span>
+                  <div class="res-snippet">${escapeHtml(snippet)}</div>
+                </div>`;
+      }).join("");
+    }
+    searchResults.hidden = false;
+  }
+  let searchTimer = null;
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim();
+      clearTimeout(searchTimer);
+      if (!q) { searchResults.hidden = true; return; }
+      searchTimer = setTimeout(() => {
+        const items = searchIndex ? flexSearchQuery(q) : fallbackSearch(q);
+        renderResults(items, q);
+      }, 100);
+    });
+    searchInput.addEventListener("blur", () => setTimeout(() => searchResults.hidden = true, 200));
+    searchInput.addEventListener("focus", () => { if (searchInput.value.trim()) searchResults.hidden = false; });
+  }
+  if (searchResults) {
+    searchResults.addEventListener("mousedown", (e) => {
+      const r = e.target.closest(".res");
+      if (!r) return;
+      const a = r.dataset.anchor;
+      if (a) {
+        const target = document.getElementById(a);
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      searchResults.hidden = true;
+    });
+  }
+
+  /* ---------- sortable tables ---------- */
+  document.querySelectorAll(".content table").forEach(tbl => {
+    const ths = tbl.tHead ? Array.from(tbl.tHead.rows[0].cells) : [];
+    if (!ths.length || !tbl.tBodies[0]) return;
+    ths.forEach((th, idx) => {
+      th.classList.add("sortable");
+      th.addEventListener("click", () => {
+        const tbody = tbl.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        const dir = th.classList.contains("sort-asc") ? -1 : 1;
+        ths.forEach(t => t.classList.remove("sort-asc", "sort-desc"));
+        th.classList.add(dir === 1 ? "sort-asc" : "sort-desc");
+        rows.sort((a, b) => {
+          const av = a.cells[idx] ? a.cells[idx].textContent.trim() : "";
+          const bv = b.cells[idx] ? b.cells[idx].textContent.trim() : "";
+          const an = parseFloat(av), bn = parseFloat(bv);
+          if (!isNaN(an) && !isNaN(bn)) return (an - bn) * dir;
+          return av.localeCompare(bv) * dir;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    });
+  });
+
+  /* ---------- mermaid ---------- */
+  function reRenderMermaid() {
+    if (!window.mermaid) return;
+    document.querySelectorAll(".mermaid").forEach(el => {
+      if (el.dataset.processed === "true") {
+        // Mermaid v10+ does not auto re-render; replace with original source.
+        if (el.dataset.src) {
+          el.innerHTML = el.dataset.src;
+          el.removeAttribute("data-processed");
+        }
+      } else {
+        el.dataset.src = el.textContent;
+      }
+    });
+    try {
+      window.mermaid.initialize({
+        startOnLoad: false,
+        theme: root.dataset.theme === "dark" ? "dark" : "default",
+        securityLevel: "loose",
+        flowchart: { htmlLabels: true, curve: "basis" }
+      });
+      window.mermaid.run({ querySelector: ".mermaid:not([data-processed=true])" });
+    } catch (e) { console.warn("mermaid render failed", e); }
+  }
+  if (window.mermaid) {
+    document.querySelectorAll(".mermaid").forEach(el => { el.dataset.src = el.textContent; });
+    reRenderMermaid();
+  } else {
+    document.querySelectorAll(".mermaid").forEach(el => {
+      const fallback = document.createElement("div");
+      fallback.className = "chart-fallback";
+      fallback.textContent = "(Mermaid not loaded — diagram source below)";
+      el.parentNode.insertBefore(fallback, el);
+    });
+  }
+
+  /* ---------- plotly charts ---------- */
+  function reRenderPlotly() {
+    if (!window.Plotly) return;
+    document.querySelectorAll(".plotly-chart").forEach(div => {
+      const cid = div.dataset.chart;
+      const spec = (data.chart_specs || {})[cid];
+      if (!spec) return;
+      const rows = (data.chart_data || []).filter(r => !spec.filter || spec.filter.split(",").every(f => {
+        const [k, v] = f.split("=");
+        return String(r[k] || "") === v;
+      }));
+      const xField = spec.x, yField = spec.y;
+      const x = rows.map(r => parseFloat(r[xField])).map(v => isNaN(v) ? null : v);
+      const y = rows.map(r => parseFloat(r[yField])).map(v => isNaN(v) ? null : v);
+      const text = rows.map(r => {
+        const parts = [r.paper_id, r.model, r.architecture];
+        if (r.hardware) parts.push(r.hardware);
+        return parts.filter(Boolean).join(" · ");
+      });
+      const dark = root.dataset.theme === "dark";
+      const layout = {
+        title: spec.title || "",
+        xaxis: { title: spec.x_label || xField, type: spec.x_type || "linear" },
+        yaxis: { title: spec.y_label || yField, type: spec.y_type || "linear" },
+        margin: { t: 40, l: 60, r: 20, b: 50 },
+        paper_bgcolor: dark ? "#18181b" : "#f7f7f4",
+        plot_bgcolor: dark ? "#0a0a0a" : "#ffffff",
+        font: { color: dark ? "#e4e4e7" : "#18181b", size: 12 },
+        hovermode: "closest"
+      };
+      const trace = {
+        type: "scatter", mode: "markers+text",
+        x, y, text,
+        textposition: "top center",
+        textfont: { size: 10 },
+        marker: { size: 12, color: spec.color || (dark ? "#60a5fa" : "#2563eb"), line: { width: 1, color: dark ? "#27272a" : "#e4e4e7" } },
+        hovertemplate: "<b>%{text}</b><br>" + (spec.x_label || xField) + ": %{x}<br>" + (spec.y_label || yField) + ": %{y}<extra></extra>"
+      };
+      try {
+        window.Plotly.newPlot(div, [trace], layout, { displaylogo: false, responsive: true });
+      } catch (e) { console.warn("plotly render failed", cid, e); }
+    });
+  }
+  if (window.Plotly) reRenderPlotly();
+  else {
+    document.querySelectorAll(".plotly-chart").forEach(div => {
+      div.innerHTML = `<div class="chart-fallback">(Plotly not loaded — chart data available in __SURVEY_DATA__.chart_data)</div>`;
+    });
+  }
+})();
+
+  </script>
+</body>
+</html>
