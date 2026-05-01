@@ -9,12 +9,18 @@ gap-driven, not curiosity-driven.
    any `bias-trigger` flags from the bias audit.
 
 2. For each gap, the row already names a `search_strategy`. If it is empty
-   or stale, design a fresh strategy:
+   or stale, design a fresh strategy. Load
+   `references/arxiv-query-patterns.md` if rewriting an arXiv query.
    - Different keyword set than Round 1 (synonyms, sub-domain terms).
    - Different source (e.g., switch to OpenReview if arXiv saturated).
    - Different time window (e.g., cite-trace older seminal works that
      keyword-search missed).
    - Different geographic / institutional cluster if bias trigger.
+   - **Numeric-claim gaps** (latency tables, accuracy on specific
+     val sets, parameter counts) are not solved by additional keyword
+     search; they are extraction tasks. Load
+     `references/evidence-extraction.md` and walk the source hierarchy
+     for each affected paper.
 
 3. Execute targeted searches. Constrain Round N to gap-relevant additions
    only — do not re-run broad search. Cap at 5-15 new papers per Round N.

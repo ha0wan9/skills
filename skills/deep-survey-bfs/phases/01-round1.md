@@ -8,8 +8,12 @@ initial paper index.
 1. Read `index.md`. Keep the research question and sub-question list visible
    while searching.
 
-2. Load `references/source-coverage.md`. Decide the search budget per source
-   (default: 30-50 candidate hits per source, ~20 reaching the index).
+2. Load `references/source-coverage.md` and
+   `references/arxiv-query-patterns.md`. Decide the search budget per
+   source (default: 30-50 candidate hits per source, ~20 reaching the
+   index). For arXiv queries, prefer `ti:`-anchored templates over
+   `all:`; the patterns reference shows six concrete query intents
+   with worked examples.
 
 3. Search each source in this order:
    - **arXiv** — keyword + category filter. Primary breadth source.

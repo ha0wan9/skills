@@ -70,14 +70,21 @@ State the detected phase, `survey-id`, study root, and reason before loading.
 1. Read exactly one phase file after resolution.
 2. Load `references/source-coverage.md` during `round1` and `roundn` whenever
    you need to recall how to query each source.
-3. Load `references/paper-rating-rubric.md` whenever you score papers.
-4. Load `references/coverage-matrix.md` during `audit` and at every `roundn`
+3. Load `references/arxiv-query-patterns.md` before composing any arXiv
+   query. The default `all:` query returns recency-sorted noise; the
+   reference defines six template intents and their field specifiers.
+4. Load `references/paper-rating-rubric.md` whenever you score papers.
+5. Load `references/coverage-matrix.md` during `audit` and at every `roundn`
    re-audit.
-5. Load `references/claims-discipline.md` before writing any synthesis section.
-6. Load `references/taxonomy-revision.md` during `synthesize` and after every
+6. Load `references/evidence-extraction.md` whenever a phase needs to
+   extract numeric claims from a paper PDF, paperswithcode, OpenReview
+   supplementary, or a repo README. Required reading before populating
+   `chart_data.csv`-style structured tables.
+7. Load `references/claims-discipline.md` before writing any synthesis section.
+8. Load `references/taxonomy-revision.md` during `synthesize` and after every
    `roundn` that adds ≥3 papers.
-7. Load `references/bias-audit.md` during `audit`.
-8. Load templates only when scaffolding the matching artifact.
+9. Load `references/bias-audit.md` during `audit`.
+10. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 

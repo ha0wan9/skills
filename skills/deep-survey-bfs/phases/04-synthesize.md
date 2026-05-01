@@ -7,10 +7,14 @@ artifacts.
 ## Steps
 
 1. Read `index.md`, `paper_index.md`, `coverage_matrix.md`. Load
-   `references/claims-discipline.md` and `references/taxonomy-revision.md`.
+   `references/claims-discipline.md`, `references/evidence-extraction.md`,
+   and `references/taxonomy-revision.md`.
 
 2. Build `claims.jsonl` first. For every fact you intend to assert in
-   prose, write a row:
+   prose, write a row. The evidence-extraction reference defines the
+   source hierarchy (paper PDF → paperswithcode → OpenReview supp →
+   repo README → project page) and per-field extraction recipes for
+   metric / latency / parameter-count claims.
    ```json
    {"claim_id": "C001", "paper_id": "P004",
     "section": "Table 2", "quote": "...verbatim...",

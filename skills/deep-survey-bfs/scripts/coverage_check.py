@@ -26,19 +26,36 @@ DIMENSIONS = ["theory", "experiment", "survey", "critical-review", "dataset"]
 
 
 def parse_subquestions(index_text: str) -> list[str]:
+    """Extract SQ ids from the '## Sub-Questions' section.
+
+    Handles all of these list-item shapes:
+        1. SQ1 — ...
+        1. **SQ1** — ...
+        1. **SQ1**: ...
+        - SQ1: ...
+        * **SQ1** ...
+    The regex tolerates optional leading bullet (digit. or - or *) and
+    optional surrounding markdown bold (**...**).
+    """
     m = re.search(r"## Sub-Questions\s*\n(.*?)(?=\n## )", index_text, re.S)
     if not m:
         return []
-    out = []
+    pattern = re.compile(
+        r"^\s*(?:\d+\.|[-*])\s+\*{0,2}(SQ\d+)\*{0,2}\b"
+    )
+    out: list[str] = []
     for line in m.group(1).splitlines():
-        m2 = re.match(r"^\s*\d+\.\s+(SQ\d+)\b", line)
-        if m2:
-            out.append(m2.group(1))
+        hit = pattern.match(line)
+        if hit:
+            out.append(hit.group(1))
     return out
 
 
 def parse_active_dims(index_text: str) -> dict[str, set[str]]:
-    """Return SQ -> set of active dimensions, parsed from the markdown table."""
+    """Return SQ -> set of active dimensions, parsed from the markdown table.
+
+    Tolerates `**SQ1**` markdown-bold cells.
+    """
     m = re.search(
         r"## Active Evidence Dimensions\s*\n(.*?)(?=\n## )",
         index_text,
@@ -59,7 +76,7 @@ def parse_active_dims(index_text: str) -> dict[str, set[str]]:
             continue
         if cells[0].startswith("---"):
             continue
-        sq = cells[0]
+        sq = re.sub(r"\*+", "", cells[0]).strip()
         dims = set()
         for i, dim_name in enumerate(header):
             value = cells[i + 1] if i + 1 < len(cells) else ""
