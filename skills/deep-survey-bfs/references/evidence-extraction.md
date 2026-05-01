@@ -3,9 +3,10 @@
 ## Contents
 
 - [Why Extraction is a Phase, Not a Script](#why-extraction-is-a-phase-not-a-script)
-- [Source Hierarchy](#source-hierarchy) — paper PDF / paperswithcode / OpenReview / repo README
+- [Source Hierarchy By Claim Type](#source-hierarchy-by-claim-type) — different claims have different best sources
 - [What to Extract](#what-to-extract) — fields per claim type
-- [Extraction Recipes](#extraction-recipes)
+- [Extraction Recipes](#extraction-recipes) — six recipes, R1-R6
+- [The `extract_paper_metrics.py` Helper](#the-extract_paper_metricspy-helper) — semi-automate PDF table surfacing
 - [Verbatim Quote Discipline](#verbatim-quote-discipline)
 - [Common Pitfalls](#common-pitfalls)
 
@@ -28,26 +29,70 @@ the paper PDF and extract the metric table" script. Reasons:
 So extraction is an **agent task** in Round N, guided by this reference.
 The extractor (you) reads each paper and writes claim rows.
 
-## Source Hierarchy
+## Source Hierarchy By Claim Type
 
-For a paper P00X, in this priority order:
+The right primary source depends on what you're extracting. Picking the
+wrong one causes wasted lookups: paper PDFs rarely contain TensorRT
+latency, repo READMEs rarely contain ETH3D Bad-1 numbers.
 
-1. **Paper PDF** (arXiv abs page → "Download PDF"). The authoritative
-   numbers are in the paper's tables. Quote directly.
-2. **paperswithcode.com page** for the paper. Aggregates KITTI 2015 /
-   SceneFlow / ETH3D / Middlebury rankings with citations to the paper's
-   table. Useful when the paper has multiple versions and PWC indexes
-   the canonical one.
-3. **OpenReview** (if a venue submission exists). Includes
-   supplementary material, reviewer-asked clarifications, and
-   sometimes additional ablations the camera-ready paper omits.
-4. **GitHub repo README + checkpoints page**. Often has the exact
-   numbers the README author tested, including the latency tables that
-   the camera-ready paper compressed.
-5. **Author's project page** (linked from the paper's first page).
+### A. Accuracy / benchmark metrics (KITTI / Scene Flow / Middlebury / ETH3D)
 
-Use the highest-priority source that has the specific number you need.
-Always record which source you used in the claim row.
+Primary order:
+1. **Paper PDF** (arXiv abs page → "Download PDF"). Authoritative
+   for benchmark numbers; reported in tables.
+2. **OpenReview** supplementary if available — sometimes contains
+   ablations the camera-ready dropped.
+3. **paperswithcode.com** if reachable (often redirects now); cross-
+   checks paper number vs leaderboard ranking.
+4. **GitHub repo README** as last fallback — sometimes the README
+   reports newer numbers than the paper after author revisions.
+
+### B. Parameter counts / model size
+
+Primary order:
+1. **Paper PDF**, but only if there's a comparison table with a
+   `Params (M)` column. Many papers omit param counts entirely.
+2. **GitHub repo README** — sometimes the README includes a model-zoo
+   table with param counts per checkpoint.
+3. **`print(model)` from the repo's load-checkpoint snippet** — last
+   resort; record as confidence:medium since it's the user's own
+   computation, not author-stated.
+
+### C. Latency / FPS / TensorRT / Jetson / FP16 deployment
+
+**Primary source is the GitHub repo README, NOT the paper.** Most
+papers do not publish latency on common HW; deployment numbers live in
+repo READMEs, supplementary docs, or vendor/project blog posts.
+
+Primary order:
+1. **GitHub repo README + repo `inference_*.py` / `benchmark.py`**
+2. **Repo `readme_jetson.md` / `readme_deployment.md`** if present.
+3. **Vendor whitepapers** (NVIDIA developer blog, Qualcomm AI hub)
+   for canonical TRT timings of public models.
+4. **Project page** (paper.first_page link → home page) sometimes
+   has a "speed" section.
+5. **Paper supplementary** as fallback.
+6. **arXiv abstracts and main paper body** — almost never have these
+   numbers; do not search here first.
+
+### D. Architecture / pretraining / dataset claims
+
+Primary order:
+1. **Paper PDF** (Methods section, Implementation Details, Tables 1-2).
+2. **Project page**.
+3. **GitHub repo README**.
+
+### E. Failure modes / limitations / negative results
+
+Primary order:
+1. **Paper PDF** Discussion / Limitations section.
+2. **Paper supplementary** if present.
+3. **OpenReview review thread** — reviewers often surface limitations
+   the authors downplayed.
+4. **Critical-review papers** that cite the model and discuss its
+   weaknesses.
+
+Always record which source you used in the claim row's `section` field.
 
 ## What to Extract
 
@@ -114,21 +159,90 @@ row in `claims.jsonl`:
    submission). Use the most recent README and record the commit hash
    you saw.
 
-### R5. Latency on a specific HW
+### R5. Latency on a specific HW (server class — RTX / A100)
 
-This is the hardest: most papers don't publish HW-specific latency.
-Where to check:
+For server-class latency where the paper itself reported a number:
 
-1. The paper's "deployment" / "speed" section if it has one.
-2. The repo's `inference_*.py` or `benchmark.py` scripts (sometimes
-   include reference numbers).
-3. Issues / discussions on GitHub: search for "Jetson", "TensorRT",
-   "FPS", "latency".
-4. Vendor whitepapers (NVIDIA, Qualcomm) sometimes benchmark public
-   models on their HW.
-5. If a paper claims "real-time on Jetson" without numbers, treat the
-   claim as `confidence: low` and quote the unsupported claim
-   verbatim, do not infer a number.
+1. The paper's Implementation Details / Experiments section.
+2. The repo's `inference_*.py` or `benchmark.py` scripts.
+3. The paper's comparison table's "Run-time" / "FPS" column.
+
+If the paper does not specify hardware for a runtime number, mark the
+quote `confidence: medium` and add a note "HW unspecified in source".
+Cross-paper runtime comparisons require same HW; otherwise note the
+mismatch.
+
+### R6. Edge / TensorRT / Jetson / Mobile latency hunt
+
+**Most adversarial extraction case** — most papers do not publish edge
+or TRT latency. The right pivot order:
+
+1. **Repo README first.** Search for `TensorRT`, `TRT`, `ONNX`,
+   `Jetson`, `Orin`, `Nano`, `FP16`, `INT8`, `engine`, `trtexec`.
+   Authors often add deployment notes after camera-ready and document
+   them only in the repo. Quote the README verbatim with the commit
+   SHA.
+2. **Repo dedicated deployment doc** (e.g. `readme_jetson.md`,
+   `deployment.md`, `docs/deploy.md`).
+3. **Project page** (linked from paper's first page) — sometimes
+   carries a "Speed" or "Runtime" panel.
+4. **Vendor whitepaper / developer blog** (NVIDIA developer blog,
+   Qualcomm AI Hub, Intel OpenVINO model zoo) — they sometimes
+   publish canonical TRT timings of academic models.
+5. **GitHub Issues** in the repo: search for "Jetson", "TensorRT",
+   "FPS", "latency", "speed". Authors sometimes answer with numbers
+   they didn't publish.
+6. **Paper supplementary** — last resort; rarely has it.
+
+If the claim is "X% faster" or "real-time" without an absolute number,
+quote it verbatim with `confidence: low` and `notes: "relative claim,
+no absolute ms"`. **Do not derive an absolute number** by combining
+the relative claim with a paper-side latency unless the two are on the
+same hardware tier.
+
+If after this pivot a model has no TRT/edge data, that is a real
+finding — record it in the survey's open-challenges section as
+"deployment data not disclosed" rather than fabricating.
+
+## The `extract_paper_metrics.py` Helper
+
+For Recipes R1, R2, R5 the agent needs to download a paper PDF, run
+`pdftotext -layout`, then locate candidate metric tables. The skill
+ships `scripts/extract_paper_metrics.py` to compress this into one
+command.
+
+```bash
+# By arXiv ID — auto-downloads, caches under /tmp/deep-survey-pdf-cache/
+python3 skills/deep-survey-bfs/scripts/extract_paper_metrics.py 2303.06615
+
+# Narrow to a specific metric domain
+python3 .../extract_paper_metrics.py 2303.06615 --metric "KITTI|EPE|Bad" --max-hits 4
+
+# Filter to candidates near table-header lines only
+python3 .../extract_paper_metrics.py 2303.06615 --tables-only
+
+# Direct PDF path
+python3 .../extract_paper_metrics.py /tmp/foundation.pdf
+```
+
+The script:
+- Caches downloaded PDFs and their `pdftotext` output under
+  `/tmp/deep-survey-pdf-cache/` (override with `DEEP_SURVEY_PDF_CACHE`
+  env var).
+- Prefers candidates that are within 5 lines of a Table header
+  signature.
+- Outputs windowed line-numbered context around each candidate so the
+  agent can quote-verify before writing the claim row.
+- Does not decide which number is "the" answer; the agent must read
+  each window and select the right table cell.
+
+Use it for Recipes R1 (paper PDF), R2 (paperswithcode redirect to PDF
+fallback), and R5 (paper-side runtime). For Recipe R6 (edge / TRT) the
+helper does not apply — pivot to repo README via WebFetch instead.
+
+Time savings: extraction that previously took 90-180 seconds per
+paper (download + pdftotext + manual grep + table reading) drops to
+20-40 seconds per paper.
 
 ## Verbatim Quote Discipline
 

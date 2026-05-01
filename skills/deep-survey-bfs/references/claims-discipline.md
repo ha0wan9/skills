@@ -42,6 +42,13 @@ Required: `claim_id`, `kind`, `paper_id`, `section`, `quote` (or
 Optional but encouraged:
 - `notes`: brief context for the claim (e.g., "reported on TUEG split")
 - `confidence`: low | medium | high (used when paper hedges its own claim)
+- `depends_on`: list of other `claim_id`s this claim relies on. Most
+  common use: a runtime claim was originally `confidence: medium`
+  because hardware was unspecified; later, a separate claim confirms
+  the hardware. Add the hardware-claim id to `depends_on`. The
+  validator (`claims_validate.py`) prints a promotion hint when all
+  depends_on targets are confidence=high, so the agent can decide
+  whether to lift the dependent claim's confidence ceiling.
 
 ## Build Order
 

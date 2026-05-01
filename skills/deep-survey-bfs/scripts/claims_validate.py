@@ -106,6 +106,33 @@ def main(argv: list[str]) -> int:
             elif sb and claims[sb].get("status") == "superseded":
                 errors.append(f"{cid}: superseded_by {sb} is itself superseded")
 
+    # Verify depends_on references and report eligible confidence promotions
+    promotion_hints: list[str] = []
+    for cid, obj in claims.items():
+        deps = obj.get("depends_on")
+        if not deps:
+            continue
+        if not isinstance(deps, list):
+            errors.append(f"{cid}: depends_on must be a list of claim_ids")
+            continue
+        for dep in deps:
+            if dep not in claims:
+                errors.append(f"{cid}: depends_on target {dep} does not exist")
+                continue
+            if claims[dep].get("status") == "superseded":
+                errors.append(
+                    f"{cid}: depends_on target {dep} is superseded; update or remove the dependency"
+                )
+        # Propagation hint: if this claim is confidence=medium and all its
+        # active deps are now confidence=high, suggest promotion.
+        if obj.get("confidence") == "medium" and deps and not errors:
+            dep_confidences = [claims[d].get("confidence") for d in deps if d in claims]
+            if dep_confidences and all(c == "high" for c in dep_confidences):
+                promotion_hints.append(
+                    f"{cid}: all depends_on targets are confidence=high; "
+                    f"consider promoting {cid} from medium to high"
+                )
+
     # Check survey.md references
     if survey_path.is_file():
         survey_text = survey_path.read_text(encoding="utf-8")
@@ -126,6 +153,10 @@ def main(argv: list[str]) -> int:
             print(f"  - {e}")
         return 1
     print(f"ok: {len(claims)} claims, {len(paper_ids)} papers, all references resolve")
+    if promotion_hints:
+        print(f"\nconfidence-promotion hints ({len(promotion_hints)}):")
+        for h in promotion_hints:
+            print(f"  - {h}")
     return 0
 
 

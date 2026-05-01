@@ -44,6 +44,11 @@
       "type": ["string", "null"],
       "description": "If status='superseded', the claim_id that supersedes this one."
     },
+    "depends_on": {
+      "type": ["array", "null"],
+      "items": {"type": "string", "pattern": "^C\\d{3,5}$"},
+      "description": "Other claim_ids this claim depends on. Used by the validator's confidence-propagation rule: if any depends_on target lifts from medium to high (e.g., a hardware spec is later confirmed), the dependent claim's confidence ceiling can be re-evaluated. Example: a runtime claim with confidence=medium because hardware was unspecified may depend_on a later hardware-confirmation claim, which when present allows promoting the runtime claim to high."
+    },
     "notes": {
       "type": ["string", "null"]
     },

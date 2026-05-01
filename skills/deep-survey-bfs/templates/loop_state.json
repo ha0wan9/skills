@@ -1,0 +1,36 @@
+{
+  "_schema": "deep-survey-bfs.loop_state.v1",
+  "_purpose": "Persistent loop state for /loop dynamic-mode survey iteration. Read at the start of each fired iteration so the agent does not re-derive context from artifacts. Write before ScheduleWakeup so the next firing has fresh state.",
+  "survey_id": "<survey-id>",
+  "iteration": 0,
+  "started_utc": "<YYYY-MM-DDThh:mmZ>",
+  "last_updated_utc": "<YYYY-MM-DDThh:mmZ>",
+  "phase": "round1 | audit | roundn | synthesize | version",
+  "current_task": {
+    "label": "<R3-A | R3-B | R3-C | R3-D | ...>",
+    "started_utc": "<YYYY-MM-DDThh:mmZ>",
+    "target_paper_ids": ["P001", "P002"],
+    "target_metric_keywords": ["KITTI", "EPE", "Bad"],
+    "expected_artifact_changes": ["claims.jsonl rows", "chart_data.csv rows"]
+  },
+  "next_targets": [
+    {"label": "R3-B: grep RAFT-Stereo README for TensorRT", "paper_ids": ["P001"]},
+    {"label": "R3-A: extract param count for FoundationStereo", "paper_ids": ["P005"]}
+  ],
+  "blockers": [
+    "<a free-text description of anything that prevents progress, e.g., 'PDF download failed for P018', 'paperswithcode redirected to HF'>"
+  ],
+  "completed_targets": [
+    {"label": "R2-A: institution backfill", "completed_utc": "<...>"}
+  ],
+  "stop_conditions": {
+    "max_iterations": 8,
+    "all_starstarstar_extracted": false,
+    "all_critical_gaps_closed": false,
+    "human_input_required": false
+  },
+  "wakeup": {
+    "last_delay_seconds": 270,
+    "last_reason": "checking arxiv abs HTML rate limit; staying inside cache window"
+  }
+}

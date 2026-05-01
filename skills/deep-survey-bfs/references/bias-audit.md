@@ -24,9 +24,29 @@ bias. Common patterns:
 The bias audit makes these patterns visible before synthesis bakes them
 in.
 
+## Status Filter (extraction debt vs real bias)
+
+Bias detection runs on **confirmed-status rows only** by default. The
+`paper_index.md` template carries a `Status` column with values
+`confirmed`, `partial`, or `pending`. Rows with `inst-pending`,
+`year-pending`, or other partial fields skew the institution
+distribution toward the same placeholder value, falsely triggering a
+bias alert that is really an extraction debt.
+
+`scripts/bias_audit.py` skips non-confirmed rows by default; pass
+`--include-pending` to count all rows when the audit is informative
+about the extraction backlog itself rather than about real lab
+capture.
+
+When status-filtered audit shrinks the ★★★ population below 5, the
+audit lacks statistical power. Fix the extraction debt (R2-A: fetch
+arxiv abs HTML for missing institutions) before treating the audit as
+load-bearing.
+
 ## Buckets Audited
 
-Among the ★★★ papers, count distribution along:
+Among the ★★★ papers (status='confirmed' subset), count distribution
+along:
 
 | Bucket | Threshold trigger | Why |
 |---|---|---|

@@ -4,7 +4,7 @@
 
 - [Why Query Design Matters](#why-query-design-matters)
 - [Field Specifiers](#field-specifiers) — `ti:` `abs:` `au:` `cat:` `all:`
-- [Query Templates by Intent](#query-templates-by-intent)
+- [Query Templates by Intent](#query-templates-by-intent) — T1-T7
 - [Combining Filters](#combining-filters) — AND / OR / NOT
 - [Sort Order Trade-offs](#sort-order-trade-offs)
 - [Worked Examples](#worked-examples) — what each pattern returns
@@ -91,6 +91,44 @@ ti:"stereo matching" AND submittedDate:[202001010000+TO+202612312359]
 Use Semantic Scholar's citation graph instead of arXiv for forward/back
 citation traversal. arXiv has no native citation field. See
 `source-coverage.md` for the Semantic Scholar recipe.
+
+### T7. Vendor / non-paper pivot (deployment claim hunt)
+
+When the targeted claim is **deployment-side** (TensorRT engine ms,
+Jetson FPS, INT8 quant, ONNX export, edge port) and arXiv returns 0
+useful hits, **stop searching arXiv** and pivot to non-paper sources.
+This is the most common failure mode of arxiv-only surveys: deployment
+numbers don't live in paper abstracts.
+
+Pivot order:
+
+1. **GitHub repo READMEs** of the indexed models. Search for the
+   keyword in the README and any `readme_jetson.md` / `deployment.md`
+   sub-doc.
+2. **NVIDIA developer blog** (`developer.nvidia.com/blog/...`) for
+   well-known academic models — NVIDIA sometimes publishes canonical
+   TensorRT timings.
+3. **Qualcomm AI Hub model zoo** for mobile-targeted variants.
+4. **Project pages** linked from each paper's first page.
+5. **GitHub Issues** in the repos — authors often disclose latency
+   numbers in issue replies that didn't make the README.
+
+For each pivot source, record the URL and (if applicable) the commit
+SHA / page version date in the claim's `notes` field; deployment
+numbers can be re-tuned on every repo update.
+
+When this pivot produces nothing for several models, that is itself a
+finding — record "TRT latency not publicly disclosed" in the survey's
+open-challenges section. Do not fabricate by combining a relative
+claim ("6× speedup") with another paper's absolute number.
+
+### Anti-pattern reminder
+
+**Searching arXiv for `abs:TensorRT` or `abs:Jetson` for stereo
+matching returned 0 hits across three different keyword combinations
+in a real Round 2.** This is by design: deployment claims are not in
+paper abstracts. T7 pivot is the right move, not "search harder on
+arXiv".
 
 ## Combining Filters
 

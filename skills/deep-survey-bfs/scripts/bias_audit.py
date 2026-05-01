@@ -47,6 +47,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("paper_index", type=Path)
     parser.add_argument("--threshold", type=float, default=0.6,
                         help="Single-bucket dominance threshold (default 0.6).")
+    parser.add_argument(
+        "--include-pending",
+        action="store_true",
+        help="Include rows with status != 'confirmed' in the bias counts. "
+             "Default is to skip them so extraction-debt is not flagged as "
+             "lab capture.",
+    )
     args = parser.parse_args(argv)
 
     if not args.paper_index.is_file():
@@ -59,8 +66,30 @@ def main(argv: list[str] | None = None) -> int:
         print("no ★★★ papers; bias audit not applicable")
         return 0
 
+    n_total = len(starred)
+    if not args.include_pending:
+        confirmed = [r for r in starred if r.get("status", "").strip() == "confirmed"]
+        skipped = n_total - len(confirmed)
+        if skipped:
+            print(
+                f"★★★ population: {len(confirmed)}/{n_total} papers (skipped "
+                f"{skipped} with status != 'confirmed'; pass --include-pending "
+                f"to count them)\n"
+            )
+        else:
+            print(f"★★★ population: {len(confirmed)} papers\n")
+        starred = confirmed
+    else:
+        print(f"★★★ population: {n_total} papers (all rows included)\n")
+
+    if not starred:
+        print(
+            "no confirmed-status ★★★ papers; nothing to audit. Round N "
+            "should populate institution/venue and set status=confirmed."
+        )
+        return 0
+
     n = len(starred)
-    print(f"★★★ population: {n} papers\n")
 
     buckets = {
         "institution": [r.get("inst", "?") for r in starred],
