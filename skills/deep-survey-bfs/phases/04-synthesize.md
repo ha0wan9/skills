@@ -28,11 +28,17 @@ artifacts.
    - §1 Research question + scope (re-quote from `index.md`)
    - §2 Domain background (only if the topic needs it; otherwise inline)
    - §3 Taxonomy + timeline (multi-axis if applicable; see taxonomy-revision)
-   - §4 Method-route comparison table (rows: papers; columns: critical
+   - **§4 Datasets and benchmarks** — load
+     `references/datasets-section.md`. Build the canonical-vs-emergent
+     classification, the adoption heatmap, and the dataset-gaps list
+     BEFORE writing the method-route comparison. This is mandatory for
+     any survey involving performance comparison; placing it before
+     §5 grounds the reader's evaluation lens.
+   - §5 Method-route comparison table (rows: papers; columns: critical
      attributes; mark unknowns explicitly)
-   - §5 Per-paper deep-dives (one subsection per ★★★ paper, optional for
-     ★★)
-   - §6 Benchmarks / datasets
+   - §6 Per-paper deep-dives (one subsection per ★★★ paper, optional for
+     ★★; annotate with reproducibility Tier per
+     `references/reproducibility-assessment.md`)
    - §7 Downstream applications (if applicable)
    - §8 Cross-cutting analysis (multimodal, scaling, deployment)
    - §9 Key research teams (clusters from the index)
@@ -40,6 +46,7 @@ artifacts.
    - §11 Frontiers / future directions
    - §12 Direct Q&A back to original research question
    - §13 Multi-tier reading list (entry / deep / critical / overview)
+   - §14 Reproducibility tier (when ★★★ papers vary in code release)
 
 4. Write each section by pulling from claims.jsonl. Do not write a
    sentence whose key fact is not in claims.jsonl. Reference paper IDs

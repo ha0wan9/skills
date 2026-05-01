@@ -14,9 +14,9 @@
 - [§1 Research question + scope](#1)
 - [§2 Domain background](#2)  *(optional; include only if reader needs it)*
 - [§3 Taxonomy + timeline](#3)
-- [§4 Method-route comparison](#4)
-- [§5 Per-paper deep-dives](#5)
-- [§6 Benchmarks and datasets](#6)
+- [§4 Datasets and benchmarks](#4) — canonical vs emergent; adoption heatmap; dataset gaps
+- [§5 Method-route comparison](#5)
+- [§6 Per-paper deep-dives](#6)
 - [§7 Downstream applications](#7)  *(optional)*
 - [§8 Cross-cutting analysis](#8)  *(multimodal / scaling / deployment / etc., as relevant)*
 - [§9 Key research teams](#9)
@@ -24,6 +24,7 @@
 - [§11 Frontiers / future directions](#11)
 - [§12 Direct Q&A](#12)
 - [§13 Recommended reading](#13)
+- [§14 Reproducibility tier](#14)  *(optional; included when ★★★ papers vary in code release / recipe / 3p reproduction)*
 
 ---
 
@@ -52,24 +53,51 @@ milestone papers.>
 <Orthogonal cut. Make sparsity visible if any cells of (primary × secondary)
 are empty — that's a finding.>
 
-## §4 Method-route comparison {#4}
+## §4 Datasets and benchmarks {#4}
+
+> Reference: `references/datasets-section.md` for the canonical-vs-
+> emergent framing and adoption-heatmap protocol.
+
+### 4.1 Canonical datasets
+
+<Table: dataset name + canonical citation; year; size; modality;
+standard splits; standard metrics; adoption count in this survey
+(N of K ★★★ papers). Datasets the field has converged on; usually
+≥3 years old and used by ≥60% of ★★★ papers.>
+
+### 4.2 Emergent datasets
+
+<Table or short prose entries: datasets introduced in the last 1-2
+years that fill specific gaps (robustness, dynamic scenes, foundation
+zero-shot, edge deployment). For each, name the gap it fills and the
+first ★★★ paper(s) that adopted it.>
+
+### 4.3 Adoption heatmap
+
+<Coverage table: rows = ★★★ papers, columns = datasets. Reveals which
+datasets are universal, which papers evaluate narrowly, and where
+emergent datasets cluster.>
+
+### 4.4 Dataset gaps
+
+<Open frontiers: evaluation regimes the field lacks a dataset for
+within the survey time range. Bridge to §11 Frontiers.>
+
+## §5 Method-route comparison {#5}
 
 <Single comparison table: rows are papers (or canonical model names),
 columns are critical attributes (architecture, pretraining objective,
 data scale, parameter count, downstream tasks, venue). Mark unknowns
 as "not disclosed" — never speculate.>
 
-## §5 Per-paper deep-dives {#5}
+## §6 Per-paper deep-dives {#6}
 
-### 5.1 <Paper name> (P00X)
+### 6.1 <Paper name> (P00X) [Tier R*]
 
 <One subsection per ★★★ paper, optional for ★★. Each includes: source,
 institution, core contribution (3-5 bullets), why it matters (one
-sentence tying to a sub-question), known limitations.>
-
-## §6 Benchmarks and datasets {#6}
-
-<Standard datasets, evaluation protocols, what each measures.>
+sentence tying to a sub-question), known limitations, reproducibility
+tier annotation per `references/reproducibility-assessment.md`.>
 
 ## §7 Downstream applications {#7}
 

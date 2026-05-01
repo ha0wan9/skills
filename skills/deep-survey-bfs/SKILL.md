@@ -90,7 +90,14 @@ State the detected phase, `survey-id`, study root, and reason before loading.
     issues / quality / 3p reproduction) grades evidence strength
     independently of accuracy claims; `survey.md` should annotate each
     deep-dive subsection with the tier.
-11. Load templates only when scaffolding the matching artifact.
+11. Load `references/datasets-section.md` during `synthesize` whenever
+    the survey involves performance comparison. The canonical-vs-emergent
+    classification and the adoption heatmap are mandatory for any survey
+    that compares model accuracy. The skeleton places this section at §4
+    — *immediately after taxonomy and before the method-route
+    comparison* — so the reader's evaluation lens is primed before any
+    model-by-model claim.
+12. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 
