@@ -1,0 +1,22 @@
+# citations.tsv — paper-to-paper edges for the citation graph
+#
+# Tab-separated. Lines starting with '#' are comments. Header row is required.
+# Edit by hand; co-edit with `clusters.tsv` for the lineage / temporal views.
+#
+# Columns:
+#   from      paper_id of the citing/extending paper (Pxxx)
+#   to        paper_id of the cited/parent paper    (Pxxx)
+#   relation  one of:
+#               extends             — direct architectural inheritance
+#               same-team           — same lab / first-author cluster, no direct inheritance
+#               competing-route     — same problem, different design route
+#               cites               — generic citation (used by --view cites)
+#               critical-review-of  — paper specifically argues against another's claims
+#               compares-against    — head-to-head experimental comparison
+#               dataset-target      — citing paper uses cited paper as evaluation target
+#   evidence  short text pointing to where in the citing paper this is asserted
+#             (e.g. "P002 §3.1 \"we extend RAFT iterative update\"")
+#
+# Validation: scripts/citation_graph.py rejects unknown relations and any
+# paper_id not present in paper_index.md.
+from	to	relation	evidence

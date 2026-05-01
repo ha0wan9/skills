@@ -93,6 +93,23 @@ artifacts.
    Self-check failure means the survey is not ready to ship — fix
    structure before handing off.
 
+10. **(Optional) Render citation graph(s) into the survey.** Load
+    `references/citation-graph.md`. Populate `citations.tsv` (edge
+    list with `from / to / relation / evidence`) and optionally
+    `clusters.tsv` (paper → architecture/route cluster). Then render
+    one to three Mermaid figures via:
+    ```
+    python3 skill/scripts/citation_graph.py citations.tsv \
+        paper_index.md --clusters clusters.tsv \
+        --view {lineage|cites|critique|temporal|all} \
+        [--filter-stars 3]
+    ```
+    Recommended placements: `lineage` figure in §3 (route inheritance),
+    `critique` figure in §10 (open-challenges attack graph), and a
+    second `lineage` in §11 if same-team clustering is the dominant
+    finding. Skip this step when the survey is conceptual / non-
+    comparative.
+
 ## Synthesis Discipline
 
 - **Do not introduce new facts during synthesis.** If a claim is needed

@@ -1,0 +1,12 @@
+# clusters.tsv — optional paper -> cluster mapping for lineage view subgraphs
+#
+# Tab-separated. Lines starting with '#' are comments. Header row required.
+# If absent, the lineage view falls back to a flat (no-subgraph) layout.
+#
+# Columns:
+#   paper_id  Pxxx
+#   cluster   free-text cluster name (architecture family, lab, route, etc.)
+#
+# Cluster names appear verbatim as Mermaid subgraph titles, so prefer
+# short labels like "Iterative-RAFT", "Foundation-VFM", "Mamba-SSM".
+paper_id	cluster
