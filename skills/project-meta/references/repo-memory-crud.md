@@ -7,7 +7,8 @@ Use this reference when creating, reading, updating, deleting, or consolidating 
 ## Create
 
 - First, detect whether the repo already has established canonical memory files and preserve that convention when it is coherent.
-- If the repo has no bootstrap memory yet, default to creating `AGENTS.md` first.
+- Also detect the primary agent tool context. When Claude Code is primary, the canonical entrypoint is `CLAUDE.md`; when Codex is primary or the tool context is unknown, it is `AGENTS.md`.
+- If the repo has no bootstrap memory yet, default to creating the correct canonical entrypoint for the detected tool context first.
 - Create a canonical user-preference file such as `USER.md` only for explicit, stable user preferences.
 - Create a topical-memory directory such as `agents/` only when repo memory is large enough that selective loading will materially reduce irrelevant context.
 - When splitting memory, keep the project-memory loader/index short and move detailed guidance into topical files such as architecture, runtime, testing, operations, or legacy reference.

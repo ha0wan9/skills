@@ -24,7 +24,7 @@ Use `/project-meta init` as the explicit cold-start command for a repo or projec
 The init command must not depend on existing `USER.md`, because an empty project will not have local preferences yet. On init:
 
 1. Detect existing docs and conventions without assuming they are complete.
-2. Create or repair the project-level agent-facing entrypoint, usually `AGENTS.md`.
+2. Create or repair the project-level agent-facing entrypoint. When Claude Code is the primary consumer, use `CLAUDE.md` as the canonical entrypoint and `AGENTS.md` as the mirror. When Codex is primary or tool context is unknown, use `AGENTS.md`.
 3. Create or repair the shared/user-facing project entrypoint, usually `README.md` or `docs/user/`.
 4. Ensure local `USER.md` and accidental root `USER.template.md` files will be ignored by Git, using `.gitignore.template` or an equivalent ignore rule.
 5. Use the installed Project Meta `USER.template.md` as target-config input and questionnaire source. Do not copy its original body into the target repo.

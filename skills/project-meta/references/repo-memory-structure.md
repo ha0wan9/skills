@@ -14,12 +14,12 @@ Use this reference when deciding how repo memory should be organized.
 
 ## Default Model
 
-- canonical project-memory file such as `AGENTS.md`: bootstrap loader, read order, global guardrails, and topic routing
+- canonical project-memory file such as `AGENTS.md` (or `CLAUDE.md` when Claude Code is the primary agent): bootstrap loader, read order, global guardrails, and topic routing
 - topical memory files such as `agents/*.md`: detailed topical memory when the repo is broad enough to benefit from selective loading
 - canonical user-preference file such as `USER.md`: durable user collaboration preferences
 - tool-specific mirrors such as `CLAUDE.md` and `.github/copilot-instructions.md`: thin mirrors of the canonical memory
 
-If the repo already uses an established naming convention, preserve it. If not, default to `AGENTS.md`, `agents/*.md`, and `USER.md`.
+If the repo already uses an established naming convention, preserve it. If not, detect the primary agent tool: when Claude Code is primary, default to `CLAUDE.md`, `agents/*.md`, and `USER.md`; when Codex is primary or tool context is unknown, default to `AGENTS.md`, `agents/*.md`, and `USER.md`.
 
 ## Shared Docs Loading Policy
 

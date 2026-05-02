@@ -47,7 +47,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
 
 ## Core Rules
 
-- Treat the repo's canonical project-memory and user-preference files as the source of truth; treat tool-specific mirrors such as `CLAUDE.md` and `.github/copilot-instructions.md` as secondary.
+- Detect the primary agent tool before assigning canonical-vs-mirror roles. When Claude Code is the primary consumer, `CLAUDE.md` is the canonical entrypoint and `AGENTS.md` is the mirror. When Codex/GPT-5.4 is primary, `AGENTS.md` is canonical and `CLAUDE.md` is the mirror. In both cases, treat `.github/copilot-instructions.md` as secondary. See `references/mirrors-and-updates.md` for the tool-awareness policy.
 - If the repo has no established convention, default to `AGENTS.md` for project memory and `USER.md` for stable user preferences.
 - On first project init, or when the user asks to reset or change local preferences, use the installed `USER.template.md` as a questionnaire and target-config input. Ask which preset and checklist items to enable, then create or repair ignored local `USER.md` with only selected checked preferences. Prefer `scripts/render_user_preferences.py` when available. Do not copy or commit `USER.template.md` into a target repo by default.
 - Shared/user-facing docs are the primary project explanation, but primary does not mean eager full-context loading. Use selective reads unless the task requires the whole document.
@@ -75,7 +75,7 @@ Non-obvious traps the agent will hit without being warned. Keep these here, not 
 - **`templates/*.md` are skill-level seeds, not a target-repo template library.** Instantiate at semantic project paths (`agents/delegation.md`, `agents/pre-commit-delivery.md`, `agents/readme-structure.md`, etc.); do not commit a generic `agents/templates/*.md` directory in the target repo.
 - **Every instantiated artifact carries a YAML provenance frontmatter block** (`artifact_name`, `instantiated_from`, `source_reference`, `project_scope`, `owner`, `review_policy`, `last_reviewed`). Do not strip these fields when editing — the manifest and audit checks rely on them.
 - **`scripts/validate_project_meta.py` requires a git working tree** for the `check_memory_boundaries` git ignore checks. Outside one, those sub-checks are skipped (the script no longer crashes), but a full validation still requires running from the dev repo or a git checkout.
-- **Mirrors (`CLAUDE.md`, `.github/copilot-instructions.md`) are secondary**, not alternate manuals. Do not write a rule into a mirror that is not already in the canonical memory file. Sync mirrors only after canonical structure or high-priority guidance has changed.
+- **Mirror roles depend on tool context.** When Claude Code is the primary agent, `CLAUDE.md` is canonical and `AGENTS.md` is the mirror. When Codex is primary, the reverse. Always detect tool context before syncing. In both cases, write durable rules into topical files, not into the loader.
 - **`/project-meta init` does not depend on existing `USER.md`.** Do not assume preferences exist before init runs; ask for preset and checklist selection first, then render `USER.md`.
 
 ## Quick Workflow

@@ -137,7 +137,7 @@ Check:
 - `AGENTS.md` has not become a manual
 - references are not stale, overlapping, or too thin
 - multi-agent triggers are not too broad
-- mirrors are secondary to canonical memory
+- mirrors are correctly assigned based on tool context (Claude Code → `CLAUDE.md` canonical, `AGENTS.md` mirror; Codex → reverse)
 - validation is documented and passing
 
 ## Shared Command Rules
