@@ -4,11 +4,13 @@
 
 - [Default Rule](#default-rule) — single agent unless complexity justifies coordination
 - [Trigger Modes](#trigger-modes) — explicit vs complexity triggers
+- [Mandatory Subagent Dispatch](#mandatory-subagent-dispatch) — when project-meta editing recipes MUST dispatch
 - [Roles](#roles) — Lead, Planner, Explorer, Worker, Reviewer
 - [Context Package](#context-package) — fields every delegation must include
 - [Delegation Template](#delegation-template) — copyable shape
 - [Ownership Rules](#ownership-rules) — write-set boundaries
 - [Review Mechanism](#review-mechanism) — consistency, drift, routing, enforcement passes
+- [Reviewer-Between-Subtasks Protocol](#reviewer-between-subtasks-protocol) — the enforcement loop
 - [Integration Checklist](#integration-checklist) — final reconciliation before commit
 - [Failure Signals](#failure-signals) — when the protocol itself needs improvement
 
@@ -42,6 +44,27 @@ For complex work, separate planning from execution:
 2. Worker agents execute bounded subtasks with explicit ownership.
 3. Reviewer agents check the resulting artifacts against stated criteria.
 4. The lead agent integrates results and owns the final answer.
+
+## Mandatory Subagent Dispatch
+
+The complexity trigger is judgement-based; the rule below is mechanical.
+
+**MUST dispatch via subagents** (per-file Worker + Reviewer between subtasks) when a `/project-meta` editing recipe (`init`, `deliver`, or any future editing verb) touches **two or more** of:
+
+- `AGENTS.md` (or the canonical equivalent for the active host)
+- any `agents/*.md` topical file
+- any mirror file (`CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/agents.md`, `.opencode/instructions.md`, `gemini-extension.json`, `.gemini/instructions.md`)
+- any template under `templates/`
+- any script under `scripts/`
+- any hook script under `<target>/.claude/hooks/`
+
+Single-file changes stay in the conductor's context. Trivial changes (typo fixes, docs-only edits ≤10 lines) can also stay single-context with explicit acknowledgement in the delivery summary.
+
+**Why mechanical**: AP-COORD-1 (conductor edits + orchestrates simultaneously) and AP-COORD-2 (no review between subtasks) are the dominant failure modes for project-meta editing work. Judgement-based triggers under-fire when the conductor is already engaged. The file-count rule fires deterministically.
+
+**Bypass requires explicit acknowledgement.** When the conductor judges the rule does not apply (e.g. all touched files form one logically atomic change), it MUST state the bypass in the delivery summary, name the AP-COORD-* rule it is bypassing, and justify why. A delivery that silently skips dispatch is itself an AP-COORD-1 violation.
+
+The recipe owns *when* to dispatch; this reference owns *how* (Roles, Context Package, Reviewer-Between-Subtasks Protocol below).
 
 ## Roles
 
@@ -96,6 +119,29 @@ For complex changes, run at least one of these review passes before final integr
 - Drift review: checks stale, duplicated, or contradictory guidance.
 - Routing review: checks that the entrypoint points to the right reference without becoming a manual.
 - Enforcement review: identifies rules that should become a script, checklist, template, or recurring cleanup routine.
+
+## Reviewer-Between-Subtasks Protocol
+
+Once mandatory dispatch is triggered (or when the lead agent invokes it for judgement reasons), the per-subtask loop is:
+
+1. **Brief**: lead packages a context package per the Delegation Template above. Brief contains only what the worker needs — typically ≤1 page including the diff target, the rule motivating the change, the success criterion, and ≤3 surrounding-context references.
+
+2. **Worker dispatch**: fresh subagent. Worker edits the assigned file, produces a patch summary, and reports back. Worker does NOT see the lead conductor's broader context; this is the AP-COORD-1 fix.
+
+3. **Reviewer dispatch**: fresh subagent, separate from worker. Reviewer receives:
+   - the original brief
+   - the worker's diff
+   - the success criterion
+   Reviewer reports verdict: **PASS** / **BLOCKER** / **SUGGEST**.
+   - PASS: lead proceeds to the next subtask.
+   - BLOCKER: lead halts the chain, surfaces the blocker to the user. No further dispatch until the user decides (re-brief worker / re-scope / abort).
+   - SUGGEST: lead may incorporate, queue for follow-up, or accept-as-is depending on the suggestion's weight; either way, the suggestion is logged in the delivery.
+
+4. **Logging**: every dispatch records (worker subagent id, reviewer subagent id, brief hash, verdict, comment) so the chain is auditable. The delivery summary includes the chain.
+
+5. **Reviewer rotation**: do not reuse the same reviewer subagent for consecutive subtasks. A reviewer that has been part of one subtask's context will pattern-match against it; rotation keeps reviewers naïve to prior work, which is the point.
+
+6. **Lead never edits**. Once dispatch triggers, the lead's role is brief / review verdicts / integration. Lead writing files inside a dispatched chain is AP-COORD-1.
 
 ## Integration Checklist
 
