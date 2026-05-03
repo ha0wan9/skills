@@ -1,6 +1,6 @@
 ---
 name: project-meta
-description: "Bootstrap, audit, and evolve a repository or project agent-work harness with /project-meta command workflows such as /project-meta init, status, validate, deliver, and audit: canonical memory files such as AGENTS.md and local USER.md, existing agent-facing documentation framework, user-facing documentation delivery, topical references, canonical templates and project-level artifact instantiation, trigger policy, preference presets, behavior guardrails, multi-agent planning/review, mirror sync, pre-commit delivery, durable knowledge writeback, opt-in phase-lock workflow contract (brainstorm/plan/implement/review/finish gates), Claude Code hooks pack (SessionStart bootstrap / PostToolUse formatting / Stop verification with HARNESS_PROFILE), and multi-host manifest generation across Claude Code, Cursor, Codex, Copilot CLI, Gemini, OpenCode. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring a new skill in this style, or updating harness guidance after validated lessons."
+description: "Bootstrap, audit, and evolve a repository or project agent-work harness with /project-meta command workflows (init, status, validate, deliver, audit) — each implemented as its own recipe under recipes/ for lazy loading: canonical memory files such as AGENTS.md and local USER.md, existing agent-facing documentation framework, user-facing documentation delivery, topical references, canonical templates and project-level artifact instantiation, trigger policy, preference presets, behavior guardrails, multi-agent planning/review with mandatory subagent dispatch when editing recipes touch multiple harness files, mirror sync, pre-commit delivery, durable knowledge writeback, opt-in phase-lock workflow contract (brainstorm/plan/implement/review/finish gates), Claude Code hooks pack (SessionStart bootstrap / PostToolUse formatting / Stop verification with HARNESS_PROFILE), multi-host manifest generation across Claude Code, Cursor, Codex, Copilot CLI, Gemini, OpenCode, and adversarial pressure-testing of MUST-rules under time/authority/sunk-cost/exception scenarios. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring a new skill in this style, pressure-testing an existing skill, or updating harness guidance after validated lessons."
 ---
 
 # Project Meta
@@ -47,6 +47,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/anti-patterns.md`](references/anti-patterns.md)
    - [`references/writing-skills.md`](references/writing-skills.md)
    - [`references/multi-host-manifests.md`](references/multi-host-manifests.md)
+   - [`references/pressure-testing.md`](references/pressure-testing.md)
 
 ## Core Rules
 
@@ -96,19 +97,38 @@ Non-obvious traps the agent will hit without being warned. Keep these here, not 
 - **Mirror roles depend on tool context.** When Claude Code is the primary agent, `CLAUDE.md` is canonical and `AGENTS.md` is the mirror. When Codex is primary, the reverse. Always detect tool context before syncing. In both cases, write durable rules into topical files, not into the loader.
 - **`/project-meta init` does not depend on existing `USER.md`.** Do not assume preferences exist before init runs; ask for preset and checklist selection first, then render `USER.md`.
 
+## Recipes
+
+When the user invokes `/project-meta <command>`, route via the recipes directory. Each recipe owns one verb's workflow end-to-end (trigger / mode / required references / steps / output / anti-patterns). Load **one** recipe per invocation:
+
+| Verb | Mode | Recipe |
+|---|---|---|
+| `init` | editing | [`recipes/init.md`](recipes/init.md) |
+| `status` | read-only | [`recipes/status.md`](recipes/status.md) |
+| `validate` | read-only | [`recipes/validate.md`](recipes/validate.md) |
+| `deliver` | read-only | [`recipes/deliver.md`](recipes/deliver.md) |
+| `audit` | read-only by default | [`recipes/audit.md`](recipes/audit.md) |
+
+Cross-cutting policy (route contract, reserved verbs, shared rules, implementation risks) lives in [`references/cli-command-patterns.md`](references/cli-command-patterns.md). Recipes own *how each verb works*; that reference owns *what's true across all verbs*.
+
+When the request is not a `/project-meta` command but matches another trigger (bootstrap, memory CRUD, harness work, etc.), don't load a recipe — go straight to the matching reference per *When To Load References* below.
+
 ## Quick Workflow
 
-Triage by task class, then delegate to the matching reference. SKILL.md is the router; procedures live in references. If a step's *how* is more than one line, it belongs in the linked reference, not here.
+Triage by task class, then delegate to the matching recipe or reference. SKILL.md is the router; procedures live in recipes and references. If a step's *how* is more than one line, it belongs there, not here.
 
 1. Bootstrap context from canonical memory + shared docs (selective read).
-2. Classify the task: `bootstrap` / `memory-crud` / `harness-design` / `iteration` / `mirror-sync` / `coordination` / `delivery`.
+2. Classify the task:
+   - `/project-meta <verb>` command → load `recipes/<verb>.md`
+   - `bootstrap` / `memory-crud` / `harness-design` / `iteration` / `mirror-sync` / `coordination` / `delivery` (no explicit verb) → matching reference per *When To Load References*
 3. Resolve skill arbitration if a peer skill could also match — see *Skill Arbitration* above.
-4. Load the **single** reference whose scope matches the task class (see *When To Load References* below).
+4. Load the **single** recipe or reference whose scope matches the task class.
 5. If the current structure is messy, fix it as part of the task — see [`references/anti-patterns.md`](references/anti-patterns.md) AP-MEM-1..3.
-6. Apply the matching reference's procedure. Write durable lessons back to canonical memory only if they pass the *End Check*.
+6. Apply the recipe's or reference's procedure. Write durable lessons back to canonical memory only if they pass the *End Check*.
 
-Detail for each step lives in the reference owning that step:
-- step 1, 4: [`references/repo-memory-structure.md`](references/repo-memory-structure.md)
+Detail for each step lives in the artifact owning that step:
+- step 2 (verb commands): `recipes/<verb>.md`
+- step 1, 4 (no-verb tasks): [`references/repo-memory-structure.md`](references/repo-memory-structure.md)
 - step 3: *Skill Arbitration* table above + [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
 - step 5: [`references/harness-engineering.md`](references/harness-engineering.md), [`references/anti-patterns.md`](references/anti-patterns.md)
 - step 6: [`references/repo-memory-crud.md`](references/repo-memory-crud.md), [`references/agent-behavior-protocol.md`](references/agent-behavior-protocol.md)
@@ -151,6 +171,8 @@ Detail for each step lives in the reference owning that step:
   - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
 - Generating per-host plugin manifests (`.claude/`, `.cursor/`, `.opencode/`, `.github/copilot-instructions.md`, `gemini-extension.json`) from one canonical AGENTS.md / CLAUDE.md, or detecting drift between canonical and a hand-edited mirror:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
+- Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:
+  - load [`references/pressure-testing.md`](references/pressure-testing.md). Use [`templates/pressure-test-scenarios.json`](templates/pressure-test-scenarios.json) as a starting fixture; run `python3 scripts/pressure_test_skill.py SKILL_DIR SCENARIOS_FILE` to walk a verdict pass.
 
 ## End Check
 

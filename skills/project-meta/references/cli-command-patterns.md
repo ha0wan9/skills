@@ -2,157 +2,74 @@
 
 ## Contents
 
-- [Canonical Command Route Contract](#canonical-command-route-contract) — single source of truth for `/project-meta <command>` routing
-- [Supported Commands](#supported-commands) — the small stable command surface
+- [Canonical Route Contract](#canonical-route-contract) — single source of truth for `/project-meta <command>` routing
+- [Recipe Directory](#recipe-directory) — where each command's workflow lives
 - [Reserved Commands](#reserved-commands) — held until core proves stable
-- [Command Contracts](#command-contracts) — mode, references, output per command
 - [Shared Command Rules](#shared-command-rules) — read-only vs editing, delivery requirements
 - [Implementation Risks](#implementation-risks) — false CLI expectation, command surface bloat
 
-Use this reference when the user invokes `/project-meta <command>` or asks for explicit Project Meta command workflows.
+Use this reference for the cross-cutting command policy. Per-command workflows live in `recipes/<verb>.md` files; this reference holds only what's shared across all verbs.
 
-These are slash-command workflow patterns, not a separate shell binary. The command selects the workflow and reference set; the skill references keep the actual rules.
+These are slash-command workflow patterns, not a separate shell binary. The verb selects the workflow recipe; the recipe loads the references and templates it needs.
 
-## Canonical Command Route Contract
+## Canonical Route Contract
 
-This file owns the canonical `/project-meta <command>` route table. `SKILL.md` may list trigger examples and reference-loading hints, but it must not define separate command behavior. `README.md` may summarize the supported command surface for users, but it must point back to this reference for the exact workflow contract.
+The `/project-meta <command>` route table maps verbs to recipe files:
 
-Each supported command entry must define:
+| Command | Mode | Recipe |
+|---|---|---|
+| `/project-meta init` | editing | [`recipes/init.md`](../recipes/init.md) |
+| `/project-meta status` | read-only | [`recipes/status.md`](../recipes/status.md) |
+| `/project-meta validate` | read-only | [`recipes/validate.md`](../recipes/validate.md) |
+| `/project-meta deliver` | read-only | [`recipes/deliver.md`](../recipes/deliver.md) |
+| `/project-meta audit` | read-only by default | [`recipes/audit.md`](../recipes/audit.md) |
 
-- command name and read/write mode
-- purpose
-- required reference loads, if any
-- output contract
-- editing and delivery constraints
+`SKILL.md` may list trigger examples and reference-loading hints, but it must not duplicate per-command workflow contracts. `README.md` may summarize the supported command surface for users, but it must point back here for the canonical route.
 
-When a command's route, mode, required references, or output contract changes, update this file first, then adjust `SKILL.md` and `README.md` only as summaries. Validation should treat drift from this reference as a documentation defect.
+When a route or shared rule changes, update this file and the matching recipe; SKILL.md and README.md are summaries that follow.
 
-## Supported Commands
+## Recipe Directory
 
-Start with a small stable command surface:
+Each recipe file owns one verb's workflow. The recipe documents:
 
-- `/project-meta init`: cold-start or repair a project harness and local preferences.
-- `/project-meta status`: inspect the current harness state without editing files.
-- `/project-meta validate`: run configured validation checks without unrelated edits.
-- `/project-meta deliver`: prepare the pre-commit delivery for user review.
-- `/project-meta audit`: review harness health, documentation layering, triggers, mirrors, and memory boundaries.
+- Trigger (when to load)
+- Mode (read-only / editing)
+- Required references (what the recipe loads)
+- Workflow steps (the procedure)
+- Output contract (what the agent produces)
+- Anti-patterns (named AP-XXX-N references)
+
+The agent loads exactly one recipe per `/project-meta <command>` invocation. Recipes are the lazy-loaded layer between `SKILL.md` (always loaded) and references/templates (loaded when the recipe needs them).
 
 ## Reserved Commands
 
-These commands are useful but should stay reserved until the core workflows prove stable:
+These commands are useful but should stay reserved until the core five prove stable:
 
-- `/project-meta plan`: plan complex work before edits.
-- `/project-meta sync`: sync canonical docs and mirrors.
-- `/project-meta promote`: write validated lessons to the right memory layer.
-- `/project-meta prune`: remove stale or duplicated harness guidance.
-- `/project-meta doctor`: run comprehensive health checks and suggest repairs.
+- `/project-meta plan` — plan complex work before edits
+- `/project-meta sync` — sync canonical docs and mirrors (today: invoke `scripts/render_host_manifests.py` directly)
+- `/project-meta promote` — write validated lessons to the right memory layer
+- `/project-meta prune` — remove stale or duplicated harness guidance
+- `/project-meta doctor` — comprehensive health checks + suggested repairs
 
-If a user invokes a reserved command, explain that it is reserved, then either map it to the closest supported command or ask before proceeding.
+If a user invokes a reserved command, explain that it is reserved, then either map it to the closest supported command or ask before proceeding. Do not silently invoke a related command.
 
-## Command Contracts
-
-| Command | Mode | Canonical workflow owner | Required references | Output contract summary |
-| --- | --- | --- | --- | --- |
-| `/project-meta init` | editing | this file plus `references/project-lifecycle.md` | `project-lifecycle`, `repo-memory-structure`, `repo-memory-crud`, `documentation-delivery`, `execution-policy` | detected conventions, files created or repaired, preference setup, execution-rules artifact when applicable, validation, delivery |
-| `/project-meta status` | read-only | this file | none by default | current harness state, gaps, recommended next command |
-| `/project-meta validate` | read-only | this file | none by default | commands run, pass/fail, failed checks, repair suggestion |
-| `/project-meta deliver` | read-only | this file plus `references/documentation-delivery.md` | `documentation-delivery` | standard pre-commit delivery sections |
-| `/project-meta audit` | read-only by default | this file plus target-specific references | load only references relevant to audit target | harness health findings and repair recommendations |
-
-### `/project-meta init`
-
-> Lifecycle detail for the init workflow lives in [`project-lifecycle.md`](project-lifecycle.md). This entry owns only the route contract.
-
-Purpose: initialize a project harness from a cold start.
-
-Load:
-- `references/project-lifecycle.md`
-- `references/repo-memory-structure.md`
-- `references/repo-memory-crud.md`
-- `references/documentation-delivery.md`
-- `references/execution-policy.md` when the target repo will host bounded-execution agents
-
-Output:
-- project type and detected conventions
-- files created or repaired
-- preference preset selection or resulting local `USER.md`
-- offered execution-rules instantiation (`agents/execution-rules.md` plus AGENTS.md insert) when bounded-execution agents will operate in the target repo
-- validation result, including `skill/scripts/validate_target_harness.py` when run against the target
-- pre-commit delivery when changes are made
-
-If the user asks to reset or change local `USER.md` options, reuse the init preference-rendering path instead of editing stale local preferences directly. Load the installed preference template, ask for the new preset and checklist items, and render the result into ignored local `USER.md`. Prefer `scripts/render_user_preferences.py --target-root <repo> --reset` when available.
-
-### `/project-meta status`
-
-Purpose: report the current harness state without editing files.
-
-Output:
-- project type
-- canonical project-memory file
-- local user-preference status
-- shared/user-facing docs
-- agent-facing docs
-- validation commands
-- known gaps
-- recommended next command
-
-### `/project-meta validate`
-
-Purpose: run available validation checks.
-
-Output:
-- commands run
-- pass/fail result
-- failed checks and likely owner
-- next repair suggestion
-
-Do not edit files during `validate` unless the user explicitly asks for repair.
-
-### `/project-meta deliver`
-
-Purpose: produce the pre-commit delivery for review.
-
-Load:
-- `references/documentation-delivery.md`
-
-Output the standard delivery sections:
-- user-facing docs
-- agent-facing docs
-- behavior or trigger changes
-- validation
-- commit scope
-
-Do not commit as part of `deliver`; wait for user approval.
-
-### `/project-meta audit`
-
-Purpose: review harness health and layering.
-
-Load only the relevant references for the audit target. Default target is the whole harness.
-
-Check:
-- shared/user-facing docs are primary and readable by users
-- agent-facing docs contain only agent-specific execution details
-- `USER.md` is local-only when appropriate
-- `AGENTS.md` has not become a manual
-- references are not stale, overlapping, or too thin
-- multi-agent triggers are not too broad
-- mirrors are correctly assigned based on tool context (Claude Code → `CLAUDE.md` canonical, `AGENTS.md` mirror; Codex → reverse)
-- validation is documented and passing
+Promotion path: when a reserved command sees consistent demand and a stable workflow shape, promote it by adding `recipes/<verb>.md` and an entry in the route table above.
 
 ## Shared Command Rules
 
-- Commands should not duplicate reference content.
-- Command routing and workflow contracts are canonical in this file; other docs summarize or link to this route table.
-- Commands must state whether they are read-only or may edit files.
-- Read-only commands are `status`, `validate`, and `deliver` unless the user explicitly asks for repair.
-- Editing commands must show a delivery before commit when user-facing docs, agent-facing docs, trigger behavior, or validation changes.
-- Use local `USER.md` preferences only after they exist. During `init`, ask for preset selection first.
+- **No duplication**: commands must not duplicate reference content. The recipe loads the reference; the reference holds the procedure.
+- **Single source of truth**: command routing and workflow contracts are canonical here + in the recipe; other docs summarize or link.
+- **Mode declaration**: every recipe MUST state whether it is read-only or may edit files. Mixing modes silently is a contract violation.
+- **Read-only commands**: `status`, `validate`, `audit`, `deliver` — none edit by default. The user must explicitly switch to an editing recipe (`init`) for repair.
+- **Delivery before commit**: editing commands MUST show a delivery (via the `deliver` recipe contract) before any commit when user-facing docs, agent-facing docs, trigger behavior, or validation changes.
+- **Local USER.md**: use only after it exists. During `init`, ask for preset selection first (AP-LIFE-1).
+- **Subagent dispatch**: when an editing recipe touches ≥2 of {AGENTS.md, agents/*.md, mirrors, templates}, MUST dispatch per-file edits to fresh subagents with a reviewer between (AP-COORD-1, AP-COORD-2). Detail in [`multi-agent-protocols.md`](multi-agent-protocols.md).
 
 ## Implementation Risks
 
-- False CLI expectation: users may assume `/project-meta` is a shell executable. State that these are agent slash-command workflows unless a real CLI is later added.
-- Command surface bloat: too many commands can make triggering ambiguous. Keep only core commands supported until usage proves the need for more.
-- Over-triggering: ordinary implementation tasks should not invoke Project Meta unless they affect memory, docs, harness behavior, coordination, or durable lessons.
-- Unsafe automation: commands that commit, push, sync, or rewrite docs must honor local `USER.md` and pre-commit delivery rules.
-- Validation drift: command contracts must be covered by `scripts/validate_project_meta.py` so docs and behavior do not silently diverge.
+- **False CLI expectation**: users may assume `/project-meta` is a shell executable. State that these are agent slash-command workflows unless a real CLI is later added.
+- **Command surface bloat**: too many commands make triggering ambiguous. Keep the supported set small until usage proves the need for more.
+- **Over-triggering**: ordinary implementation tasks should not invoke project-meta unless they affect memory, docs, harness behavior, coordination, or durable lessons (the trigger-decision rule in `SKILL.md`).
+- **Unsafe automation**: commands that commit, push, sync, or rewrite docs MUST honor local `USER.md` and pre-commit delivery rules.
+- **Validation drift**: command contracts must be covered by `scripts/validate_target_harness.py` so docs and behavior do not silently diverge (AP-VAL-2).
+- **Recipe drift**: when a recipe's workflow changes, update the matching SKILL.md routing entry and the cli-command-patterns route table together. A recipe whose route is stale silently fires on the wrong verb.
