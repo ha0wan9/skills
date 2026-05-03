@@ -44,6 +44,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/mirrors-and-updates.md`](references/mirrors-and-updates.md)
    - [`references/harness-engineering.md`](references/harness-engineering.md)
    - [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
+   - [`references/anti-patterns.md`](references/anti-patterns.md)
 
 ## Core Rules
 
@@ -59,12 +60,27 @@ Do not use the skill for ordinary implementation work that does not touch projec
 - Keep repo memory concise, durable, and free of speculative or session-only notes.
 - Update only the canonical file that matches the lesson learned. Sync mirrors only when canonical structure or high-priority guidance changed.
 - Verify external best practices from official or primary sources when the task depends on tooling or framework guidance that may have changed.
-- Check available skills and use obvious matches immediately.
+- **MUST use this skill when its trigger conditions match.** When a request matches one of the triggers above (`/project-meta` command, bootstrap, memory CRUD, harness work, documentation delivery, iteration, coordination, or user-preference), invoke this skill before any non-trivial harness edit. If you decide to skip the skill deliberately, document the decision and the reason inline so the user can review. Soft "consider" language is the failure mode this rule replaces (see `references/anti-patterns.md` AP-SKL-2).
+- **MUST resolve trigger collisions explicitly.** When a request would also match `deep-survey-bfs` or `dl-research` (or another peer skill), state the arbitration before acting. Default contract: a *narrower* skill wins; otherwise this skill delegates to the survey or research skill with an explicit hand-off, rather than duplicating procedure (see AP-SKL-3 and the Skill Arbitration table below).
 - Treat repeated agent mistakes as missing harness: improve documentation, routing, validation, or tooling instead of only patching the immediate output.
 - Make the harness agent-legible: a concise map, versioned sources of truth, selective loading, behavior guardrails, and rules that can be verified or promoted into tooling.
 - Preserve the existing agent-facing documentation framework and pair it with user-facing documentation prepared for user review.
 - Trigger the multi-agent protocol when the user explicitly asks for it or when complexity warrants it. For complex work, separate planning from execution: a lead agent owns decomposition, context packaging, review criteria, and integration while workers handle bounded subtasks.
 - Before committing harness changes, present a concise delivery for user review that separates user-facing documentation from agent-facing documentation.
+
+## Skill Arbitration
+
+When the user's request would match `project-meta` *and* a peer skill on this marketplace, resolve as follows. Always state the resolution before acting.
+
+| Request shape | Owning skill | `project-meta`'s role |
+|---|---|---|
+| Bootstrap repo memory, audit harness, install hooks, render mirrors, sync `CLAUDE.md` / `.github/copilot-instructions.md`, change `USER.md` preferences | **`project-meta`** | acts |
+| Literature review, survey of a topic, "research X for me" *with no experimental component*, expand or audit an existing survey | **`deep-survey-bfs`** | dispatches; if no harness exists in the survey's repo, run `/project-meta init` first, then hand off |
+| DL research study (frame → experiments → eval → synthesize), launch and monitor runs, ablation design, autonomous ratchet loop | **`dl-research`** | dispatches; ditto |
+| Mixed: "research X and set up the repo for me" | **`project-meta` first**, then peer | run init/audit, then explicitly delegate the research portion |
+| Survey or research output needs to be packaged as a target-repo artifact (with provenance frontmatter, mirror sync, delivery summary) | **`project-meta`** | wraps the peer's output for delivery |
+
+If an arbitration is unclear, ask the user before invoking either skill. Never silently invoke both.
 
 ## Gotchas
 
@@ -80,17 +96,20 @@ Non-obvious traps the agent will hit without being warned. Keep these here, not 
 
 ## Quick Workflow
 
-1. Bootstrap the repo context from the canonical memory files and a lightweight read of shared docs when present.
-2. Classify the task: bootstrap, memory CRUD, harness design, project iteration, mirror sync, or complex coordination.
-3. If this is a `/project-meta` command, load `references/cli-command-patterns.md` and run the mapped workflow.
-4. Load only the reference files needed for the task classification.
-5. Decide whether repo memory should stay monolithic or use a loader plus topical files.
-6. If the current structure is missing, messy, contradictory, or clearly inefficient to load, clean it up as part of the task instead of preserving the disorder.
-7. Extract only the constraints relevant to the current task.
-8. Check whether important memory rules are merely advisory or can be made mechanically checkable.
-9. When a protocol needs a repeated output shape, use the matching skill-level canonical template seed and instantiate a concrete project artifact instead of rewriting the shape ad hoc.
-10. During the task, keep short notes only for durable reusable knowledge.
-11. Before finishing, update the correct canonical file if and only if the lesson is durable and specific enough to matter again.
+Triage by task class, then delegate to the matching reference. SKILL.md is the router; procedures live in references. If a step's *how* is more than one line, it belongs in the linked reference, not here.
+
+1. Bootstrap context from canonical memory + shared docs (selective read).
+2. Classify the task: `bootstrap` / `memory-crud` / `harness-design` / `iteration` / `mirror-sync` / `coordination` / `delivery`.
+3. Resolve skill arbitration if a peer skill could also match — see *Skill Arbitration* above.
+4. Load the **single** reference whose scope matches the task class (see *When To Load References* below).
+5. If the current structure is messy, fix it as part of the task — see [`references/anti-patterns.md`](references/anti-patterns.md) AP-MEM-1..3.
+6. Apply the matching reference's procedure. Write durable lessons back to canonical memory only if they pass the *End Check*.
+
+Detail for each step lives in the reference owning that step:
+- step 1, 4: [`references/repo-memory-structure.md`](references/repo-memory-structure.md)
+- step 3: *Skill Arbitration* table above + [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
+- step 5: [`references/harness-engineering.md`](references/harness-engineering.md), [`references/anti-patterns.md`](references/anti-patterns.md)
+- step 6: [`references/repo-memory-crud.md`](references/repo-memory-crud.md), [`references/agent-behavior-protocol.md`](references/agent-behavior-protocol.md)
 
 ## When To Load References
 
@@ -120,6 +139,8 @@ Non-obvious traps the agent will hit without being warned. Keep these here, not 
   - load [`references/harness-engineering.md`](references/harness-engineering.md)
 - User explicitly asks for multi-agent coordination, or task complexity warrants planning, delegated execution, and review:
   - load [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
+- About to write or audit a harness rule, design a skill, set up coordination, or diagnose recurring agent behaviour failures:
+  - load [`references/anti-patterns.md`](references/anti-patterns.md). Cite anti-pattern IDs (e.g. AP-SKL-2) inline when the rule you are writing fixes a named pattern, so the lineage is auditable.
 
 ## End Check
 
