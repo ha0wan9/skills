@@ -105,9 +105,16 @@ def main(argv: list[str] | None = None) -> int:
             datasets_id = sid
             break
     methods_id = None
+    methods_keywords = (
+        "method-route", "method comparison", "method route",
+        "per-paper deep-dive", "per-paper",
+        "architecture", "architectures",
+        "approach", "approaches",
+        "model comparison", "models compared",
+    )
     for sid, title, _ in sections:
         tl = title.lower()
-        if any(k in tl for k in ("method-route", "method comparison", "per-paper deep-dive", "per-paper", "method route")):
+        if any(k in tl for k in methods_keywords):
             methods_id = sid
             break
     if datasets_id is None:
@@ -115,7 +122,15 @@ def main(argv: list[str] | None = None) -> int:
             "no datasets section found (skeleton §4 requires "
             "'Datasets and benchmarks' before method comparison)"
         )
-    elif methods_id is not None:
+    if methods_id is None:
+        issues.append(
+            "no methods/architecture section found (skeleton §5 requires "
+            "a method-route comparison or per-paper deep-dives section). "
+            "If your survey calls it something else, add 'method', "
+            "'architecture', or 'approach' to the heading so the check "
+            "can locate it."
+        )
+    elif datasets_id is not None:
         try:
             d_num = float(datasets_id)
             m_num = float(methods_id)

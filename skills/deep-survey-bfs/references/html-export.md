@@ -13,6 +13,7 @@ won't run a web server.
 
 ## Contents
 
+- [Requirements](#requirements)
 - [What the viewer does](#what-the-viewer-does)
 - [How to invoke](#how-to-invoke)
 - [Inputs read](#inputs-read)
@@ -21,6 +22,41 @@ won't run a web server.
 - [CDN vs fully-offline](#cdn-vs-fully-offline)
 - [Customisation](#customisation)
 - [Anti-patterns](#anti-patterns)
+
+## Requirements
+
+`render_html.py` is the only script in this skill with a non-stdlib runtime
+dependency. Verify before invocation:
+
+```bash
+python3 -c "import markdown; print(markdown.__version__)"
+```
+
+If this fails, install:
+
+```bash
+pip install --user markdown
+# or, in a project venv:
+python3 -m pip install markdown
+```
+
+Tested with `markdown >= 3.4`. The script `sys.exit(2)` on ImportError with
+this exact remediation in the error message; if you see that, install and
+re-run.
+
+Three browser-side libraries load at runtime: `mermaid`, `plotly.js`,
+`flexsearch`. By default they CDN-load (~1.5 MB over the wire). For
+fully-offline use:
+
+```bash
+mkdir -p libs
+curl -L -o libs/mermaid.min.js     https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
+curl -L -o libs/plotly.min.js      https://cdn.plot.ly/plotly-2.35.2.min.js
+curl -L -o libs/flexsearch.min.js  https://cdn.jsdelivr.net/npm/flexsearch@0.7.43/dist/flexsearch.bundle.min.js
+python3 skill/scripts/render_html.py SURVEY_DIR survey.html --fully-offline --libs-dir libs
+```
+
+This inlines the libs and produces a ~5 MB self-contained file.
 
 ## What the viewer does
 

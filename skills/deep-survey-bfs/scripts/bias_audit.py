@@ -75,12 +75,20 @@ def main(argv: list[str] | None = None) -> int:
         print("no ★★★ papers; bias audit not applicable")
         return 0
 
+    def get_inst(row: dict) -> str:
+        # Accept any of the column-name variants seen in practice.
+        for key in ("inst", "institution", "affiliation", "lab"):
+            v = row.get(key)
+            if v:
+                return v
+        return ""
+
     def is_confirmed(row: dict) -> bool:
         explicit = row.get("status", "").strip().lower() == "confirmed"
         if explicit or args.strict_status:
             return explicit
-        # Auto-promote: a populated Inst cell counts as confirmed.
-        inst = row.get("inst", "").strip().lower()
+        # Auto-promote: a populated institution cell counts as confirmed.
+        inst = get_inst(row).strip().lower()
         if not inst or inst in {"?", "n/a", "tbd", "unknown"}:
             return False
         if inst.endswith("-pending") or inst == "pending":
@@ -113,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     n = len(starred)
 
     buckets = {
-        "institution": [r.get("inst", "?") for r in starred],
+        "institution": [get_inst(r) or "?" for r in starred],
         "year": [r.get("year", "?") for r in starred],
         "venue": [r.get("venue", "?") for r in starred],
     }

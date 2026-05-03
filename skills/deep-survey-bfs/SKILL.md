@@ -7,10 +7,14 @@ description: >-
   on a 4-dimension rubric, audit coverage with a sub-question x dimension
   matrix, fill gaps via targeted rounds, synthesize multi-axis taxonomies and
   timelines with per-paper deep-dives, audit for source/institution/year bias,
+  render Mermaid citation graphs from a manually curated edge list, export the
+  finished survey as a single self-contained interactive HTML file (TOC,
+  paper/claim tooltips, search, sortable tables, Plotly charts, dark mode),
   and version reports incrementally as new evidence (papers, datasets, weights,
   experiments) arrives. Use when the user asks for a literature review,
   comprehensive survey, "research X for me", or wants to expand/audit an
-  existing survey.
+  existing survey. A reference end-to-end example lives at
+  examples/stereo-matching-edge-fm/.
 ---
 
 # Deep Survey (BFS)
@@ -37,7 +41,9 @@ inspired by PRISMA scoping reviews adapted for LLM workflows:
    does not proceed to synthesis until every active cell has ≥1 ★★★ paper.
 4. **Round N** runs targeted searches against gaps; loops back to audit.
 5. **Synthesize** produces multi-axis taxonomy, timeline, per-paper deep-dives,
-   challenges, frontiers, direct Q&A, and a multi-tier reading list.
+   challenges, frontiers, direct Q&A, multi-tier reading list, and (optionally)
+   Mermaid citation graphs + a single-file interactive HTML render of the
+   completed survey.
 6. **Version** adds new evidence (papers, datasets, model weights, experiments)
    as delta sections without rewriting prior content.
 
@@ -97,7 +103,20 @@ State the detected phase, `survey-id`, study root, and reason before loading.
     — *immediately after taxonomy and before the method-route
     comparison* — so the reader's evaluation lens is primed before any
     model-by-model claim.
-12. Load templates only when scaffolding the matching artifact.
+12. Load `references/citation-graph.md` during `synthesize` when adding
+    a Mermaid figure for paper-to-paper relationships. Optional but
+    recommended for any survey with ≥10 ★★★ papers; mandatory when the
+    user asks for a "lineage diagram" or "who-cites-whom" view. The
+    reference defines the 7-relation taxonomy and the four views
+    (lineage / cites / critique / temporal). Skip for purely conceptual
+    surveys with no inter-paper edges.
+13. Load `references/html-export.md` during `synthesize` when the user
+    expects a deliverable beyond `survey.md` itself (single-file
+    interactive HTML). The reference documents inputs, the markdown
+    transformations, the `chart_specs.json` schema, and the
+    `--fully-offline` archival mode. **Requires `pip install markdown`
+    on the runner**; check before invocation.
+14. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 
@@ -170,6 +189,23 @@ Per-iteration loop hygiene:
    `current_task`. Add to `blockers` if a target failed.
 5. If any `stop_conditions` flip true, omit `ScheduleWakeup` and
    write a final summary instead.
+
+## Skill Arbitration
+
+This skill is the right owner when the request is *literature-only* — surveying, mapping, or auditing published work. When the request expands beyond literature, defer:
+
+| Request shape | Owner | This skill's role |
+|---|---|---|
+| Pure literature survey, comprehensive review, "research X for me" with no experimental component | **`deep-survey-bfs`** | acts |
+| DL research study (frame → experiments → eval → synthesize) where literature survey is one of several phases | **`dl-research`** | invoked by `dl-research`'s `survey` phase as a sub-step; do not freelance experiments here |
+| Repo lacks an agent harness (no `AGENTS.md` / `USER.md` / mirrors) and the user wants the survey shipped as a delivered artifact | **`project-meta` first**, then `deep-survey-bfs` | accept hand-off from `project-meta` after `init`; do not author harness from inside this skill |
+| Survey output needs to be packaged as a target-repo artifact with provenance frontmatter, mirror sync, or pre-commit delivery | **`project-meta`** | hand off the rendered survey + claims.jsonl + paper_index.md for packaging |
+
+State the resolution before acting. Never silently invoke a peer skill.
+
+## Examples
+
+A reference end-to-end run lives at [`examples/stereo-matching-edge-fm/`](examples/stereo-matching-edge-fm/). It demonstrates: 26 papers indexed (18 ★★★), 67 claims with verbatim quotes, 9 sub-questions (8 closed), §3.5 datasets canonical-vs-emergent classification, §11 institutional concentration narrative, §14 reproducibility tier, citation graph in three views, and a 99 KB single-file interactive HTML render. See [`examples/README.md`](examples/README.md) for the index. Use the example as the canonical pattern when the user asks "what should the output look like?" or when authoring new artifacts in this skill's style.
 
 ## Output Footer
 

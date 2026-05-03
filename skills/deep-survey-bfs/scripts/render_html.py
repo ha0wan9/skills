@@ -51,9 +51,17 @@ try:
     import markdown  # type: ignore
 except ImportError:
     sys.stderr.write(
-        "render_html.py requires the `markdown` library (pip install markdown).\n"
+        "render_html.py requires the `markdown` library.\n"
+        "  Install via:  pip install --user markdown\n"
+        "  Or in venv:   python3 -m pip install markdown\n"
+        "Tested against markdown>=3.4. See references/html-export.md for "
+        "the full prereq list.\n"
     )
     sys.exit(2)
+
+
+import base64
+import mimetypes
 
 
 CDN_LIBS = {
@@ -87,7 +95,8 @@ def parse_paper_index(path: Path) -> dict[str, dict]:
         out[cells[0]] = {
             "title": title,
             "authors": row.get("first author") or row.get("authors") or "",
-            "inst": row.get("inst") or row.get("institution") or "",
+            "inst": row.get("inst") or row.get("institution")
+                    or row.get("affiliation") or row.get("lab") or "",
             "year": row.get("year", ""),
             "venue": row.get("venue", ""),
             "stars": row.get("stars", ""),
@@ -203,34 +212,69 @@ def transform_mermaid(html: str) -> str:
     return MERMAID_BLOCK_RE.sub(repl, html)
 
 
-def transform_chart_imgs(html: str, chart_specs: dict[str, dict]) -> str:
-    """Replace static chart PNG <img>s and inline `<code>NN_*.png</code>` mentions
-    with Plotly placeholders.
+def transform_chart_imgs(html: str, chart_specs: dict[str, dict],
+                         survey_dir: Path) -> tuple[str, list[str]]:
+    """Replace chart-pattern <img>s with Plotly placeholders; inline other <img>s
+    via base64 so the standalone HTML keeps working.
 
-    Recognises file names of the form 0X_*.png in artifacts/ and binds them
-    to the chart spec keyed on the leading digit prefix ('01', '02', '03').
+    Chart-pattern <img>s use file names of the form 0X_*.png in artifacts/.
+    The leading digit prefix ('01', '02', '03') keys into chart_specs to
+    select the Plotly trace.
 
-    For surveys that name chart filenames in prose paragraphs without using
-    markdown image syntax, the whole paragraph that mentions the file is
-    replaced with the chart placeholder (so the prose explanation, which
-    follows in the next paragraph, becomes the caption).
+    Non-chart <img> tags (any image without the NN_ prefix or whose prefix
+    isn't in chart_specs) get base64-inlined when the source file resolves
+    relative to survey_dir; otherwise they are left as-is and a warning is
+    appended to the returned warnings list so the caller can surface them.
+
+    Inline `<code>NN_*.png</code>` mentions inside paragraphs are also
+    transformed when the prefix matches a chart spec — common in surveys
+    that name chart filenames in prose without markdown image syntax.
+
+    Returns (transformed_html, warnings).
     """
     seen_ids: set[str] = set()
+    warnings: list[str] = []
+
+    def _resolve(src: str) -> Path | None:
+        # Skip absolute URLs (http/https/data:) — they work as-is.
+        if re.match(r"^[a-z]+://", src) or src.startswith("data:"):
+            return None
+        candidate = (survey_dir / src).resolve()
+        if candidate.is_file():
+            return candidate
+        # Try with artifacts/ prefix for surveys that name files relatively.
+        alt = (survey_dir / "artifacts" / src).resolve()
+        if alt.is_file():
+            return alt
+        return None
+
+    def _inline(src: str, path: Path) -> str:
+        mime = mimetypes.guess_type(str(path))[0] or "image/png"
+        data = base64.b64encode(path.read_bytes()).decode("ascii")
+        return f'<img src="data:{mime};base64,{data}" alt="inlined-{Path(src).name}" />'
 
     def img_repl(m: re.Match) -> str:
         src = m.group(1)
+        # Try chart-placeholder match first.
         m2 = re.search(r"(\d{2})_", Path(src).name)
-        if not m2:
-            return m.group(0)
-        cid = m2.group(1)
-        if cid not in chart_specs:
-            return m.group(0)
-        seen_ids.add(cid)
-        return (
-            f'<div class="plotly-chart" data-chart="{cid}">'
-            f'<div class="chart-fallback">loading chart {cid}…</div>'
-            f'</div>'
-        )
+        if m2 and m2.group(1) in chart_specs:
+            cid = m2.group(1)
+            seen_ids.add(cid)
+            return (
+                f'<div class="plotly-chart" data-chart="{cid}">'
+                f'<div class="chart-fallback">loading chart {cid}…</div>'
+                f'</div>'
+            )
+        # Not a chart placeholder. Try to base64-inline.
+        resolved = _resolve(src)
+        if resolved is not None:
+            return _inline(src, resolved)
+        # Could not resolve — leave the img and emit a warning so user knows.
+        if not (re.match(r"^[a-z]+://", src) or src.startswith("data:")):
+            warnings.append(
+                f"img src not resolved (will be broken in standalone HTML): {src!r}"
+            )
+        return m.group(0)
 
     def code_repl(m: re.Match) -> str:
         cid = m.group("digits")
@@ -245,7 +289,33 @@ def transform_chart_imgs(html: str, chart_specs: dict[str, dict]) -> str:
 
     html = IMG_TAG_RE.sub(img_repl, html)
     html = CODE_PNG_PARAGRAPH_RE.sub(code_repl, html)
-    return html
+    return html, warnings
+
+
+def warn_chart_specs_match_data(chart_specs: dict[str, dict],
+                                chart_data: list[dict]) -> list[str]:
+    """Emit warnings when a chart spec references CSV columns that don't exist.
+
+    Catches the common silent-failure mode where DEFAULT_CHART_SPECS (stereo-
+    specific) is used against a non-stereo survey: x/y bind to columns
+    (params_M, latency_torch_ms, ...) that aren't in chart_data, every Plotly
+    trace ends up empty, and Plotly renders blank plots with the wrong title.
+    """
+    warnings: list[str] = []
+    if not chart_data or not chart_specs:
+        return warnings
+    available = {k for row in chart_data for k in row.keys()}
+    for cid, spec in chart_specs.items():
+        for axis in ("x", "y"):
+            col = spec.get(axis)
+            if col and col not in available:
+                warnings.append(
+                    f"chart_specs[{cid!r}].{axis} = {col!r} but no row in "
+                    f"chart_data.csv has that column. Plotly trace will be "
+                    f"empty. Override via chart_specs.json — see "
+                    f"references/html-export.md."
+                )
+    return warnings
 
 
 # ---------- citation graph injection ----------
@@ -399,8 +469,13 @@ def main(argv: list[str] | None = None) -> int:
     md_text = survey_md.read_text(encoding="utf-8")
     body_html, toc = render_markdown(md_text)
     body_html = transform_mermaid(body_html)
-    body_html = transform_chart_imgs(body_html, chart_specs)
+    body_html, img_warnings = transform_chart_imgs(body_html, chart_specs, sd)
     body_html = annotate_refs(body_html, papers, claims)
+
+    # Surface chart-spec / chart-data mismatches before silent empty plots.
+    spec_warnings = warn_chart_specs_match_data(chart_specs, chart_data)
+    for w in img_warnings + spec_warnings:
+        sys.stderr.write(f"warning: {w}\n")
 
     if args.include_citation_graphs:
         views = [v.strip() for v in args.include_citation_graphs.split(",") if v.strip()]
