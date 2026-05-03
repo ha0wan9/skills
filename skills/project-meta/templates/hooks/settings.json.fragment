@@ -1,0 +1,45 @@
+{
+  "_comment": "Project-meta hooks template fragment. Merge into .claude/settings.json (Claude Code). Do not commit verbatim — instantiate with project-relative script paths and your chosen HARNESS_PROFILE default.",
+  "_instantiated_from": "project-meta/templates/hooks/settings.json.fragment",
+  "_source_reference": "project-meta/templates/hooks/README.md",
+
+  "env": {
+    "HARNESS_PROFILE": "standard"
+  },
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/load-agents-md.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/format-on-edit.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/verify-before-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

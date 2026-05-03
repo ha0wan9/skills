@@ -1,0 +1,14 @@
+{
+  "_schema": "project-meta.phase-lock-state.v1",
+  "task_id": null,
+  "phase": "none",
+  "started_utc": null,
+  "last_gate_pass_utc": null,
+  "deliverables": {
+    "brainstorm": null,
+    "plan": null,
+    "implement": [],
+    "review": null
+  },
+  "_comment": "Runtime state for the phase-lock contract. Created by /project-meta init --workflow phase-lock. Updated by scripts/phase_lock_check.py and by the agent at phase transitions."
+}

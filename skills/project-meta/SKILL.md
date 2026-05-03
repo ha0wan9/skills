@@ -1,6 +1,6 @@
 ---
 name: project-meta
-description: "Bootstrap, audit, and evolve a repository or project agent-work harness with /project-meta command workflows such as /project-meta init, status, validate, deliver, and audit: canonical memory files such as AGENTS.md and local USER.md, existing agent-facing documentation framework, user-facing documentation delivery, topical references, canonical templates and project-level artifact instantiation, trigger policy, preference presets, behavior guardrails, multi-agent planning/review, mirror sync, pre-commit delivery, and durable knowledge writeback. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, or updating harness guidance after validated lessons."
+description: "Bootstrap, audit, and evolve a repository or project agent-work harness with /project-meta command workflows such as /project-meta init, status, validate, deliver, and audit: canonical memory files such as AGENTS.md and local USER.md, existing agent-facing documentation framework, user-facing documentation delivery, topical references, canonical templates and project-level artifact instantiation, trigger policy, preference presets, behavior guardrails, multi-agent planning/review, mirror sync, pre-commit delivery, durable knowledge writeback, opt-in phase-lock workflow contract (brainstorm/plan/implement/review/finish gates), Claude Code hooks pack (SessionStart bootstrap / PostToolUse formatting / Stop verification with HARNESS_PROFILE), and multi-host manifest generation across Claude Code, Cursor, Codex, Copilot CLI, Gemini, OpenCode. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring a new skill in this style, or updating harness guidance after validated lessons."
 ---
 
 # Project Meta
@@ -45,6 +45,8 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/harness-engineering.md`](references/harness-engineering.md)
    - [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
    - [`references/anti-patterns.md`](references/anti-patterns.md)
+   - [`references/writing-skills.md`](references/writing-skills.md)
+   - [`references/multi-host-manifests.md`](references/multi-host-manifests.md)
 
 ## Core Rules
 
@@ -141,6 +143,14 @@ Detail for each step lives in the reference owning that step:
   - load [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
 - About to write or audit a harness rule, design a skill, set up coordination, or diagnose recurring agent behaviour failures:
   - load [`references/anti-patterns.md`](references/anti-patterns.md). Cite anti-pattern IDs (e.g. AP-SKL-2) inline when the rule you are writing fixes a named pattern, so the lineage is auditable.
+- Need to author a new skill, audit an existing skill against the project-meta contract, or scaffold from `templates/SKILL.template.md`:
+  - load [`references/writing-skills.md`](references/writing-skills.md). The audit checklist there is the gate before publishing.
+- Installing or configuring an opt-in phase-lock workflow (brainstorm → plan → implement → review → finish gates), or diagnosing a phase-lock failure:
+  - load [`templates/phase-lock-contract.md`](templates/phase-lock-contract.md). Run `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` to verify gates locally; the script is also the Stop-hook payload.
+- Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), or switching `HARNESS_PROFILE` between minimal/standard/strict:
+  - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
+- Generating per-host plugin manifests (`.claude/`, `.cursor/`, `.opencode/`, `.github/copilot-instructions.md`, `gemini-extension.json`) from one canonical AGENTS.md / CLAUDE.md, or detecting drift between canonical and a hand-edited mirror:
+  - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 
 ## End Check
 
