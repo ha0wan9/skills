@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en" data-study-id="<study-id>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><study-title> — <repo-name> Research</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2028;
+    --panel-2: #232b35;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #4ec9ff;
+    --accent-dim: #2a7fa8;
+    --success: #3fb950;
+    --warn: #d29922;
+    --danger: #f85149;
+    --border: #30363d;
+    --code-bg: #161b22;
+  }
+  body.light {
+    --bg: #ffffff;
+    --panel: #f6f8fa;
+    --panel-2: #ffffff;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent-dim: #218bff;
+    --success: #1a7f37;
+    --warn: #9a6700;
+    --danger: #cf222e;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  header.top {
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 32px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+  header.top .row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  header.top .row2 {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  /* Compact phase bar variant that lives in the header */
+  .phase-flow.compact {
+    gap: 4px;
+    min-width: auto;
+    width: 100%;
+  }
+  .phase-flow.compact .phase-node {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    font-size: 10.5px;
+    min-width: 0;
+  }
+  .phase-flow.compact .phase-node .stat { display: none; }
+  .phase-flow.compact .phase-node .name { font-weight: 600; }
+  .phase-flow.compact .phase-node.current {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(78,201,255,0.22);
+  }
+  body.light .phase-flow.compact .phase-node.current {
+    color: #ffffff;
+  }
+  .phase-flow.compact .phase-arrow { font-size: 10px; padding: 0 1px; }
+  header.top .brand {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+  }
+  header.top .brand span.sep {
+    color: var(--text-dim);
+    margin: 0 8px;
+    font-weight: 400;
+  }
+  header.top nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    margin-left: 18px;
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  header.top nav a:hover { color: var(--accent); }
+  .theme-toggle {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 12px;
+    font-size: 12px;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 0 0 280px;
+    padding: 28px 36px 64px;
+  }
+  @media (max-width: 1100px) {
+    .container { margin-left: 0; padding: 24px 24px 64px; }
+  }
+
+  aside.toc {
+    position: fixed;
+    left: 0;
+    top: 88px;   /* below the 2-row sticky header; adjusted by JS at runtime */
+    bottom: 0;
+    width: 252px;
+    overflow-y: auto;
+    padding: 18px 16px 36px 24px;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 12.5px;
+    z-index: 50;
+  }
+  aside.toc .toc-title {
+    color: var(--text-dim);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  aside.toc .toc-phase {
+    margin: 14px 0 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  aside.toc .toc-phase a {
+    color: inherit;
+    text-decoration: none;
+  }
+  aside.toc .toc-phase .badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    vertical-align: middle;
+  }
+  aside.toc .toc-phase .badge.done    { background: rgba(63,185,80,0.18); color: var(--success); }
+  aside.toc .toc-phase .badge.active  { background: rgba(78,201,255,0.18); color: var(--accent); }
+  aside.toc .toc-phase .badge.partial { background: rgba(210,153,34,0.18); color: var(--warn); }
+  aside.toc .toc-phase .badge.pending { background: var(--panel); color: var(--text-dim); border: 1px solid var(--border); }
+  aside.toc a.toc-sub {
+    display: block;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 4px 10px;
+    margin: 1px 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 4px 4px 0;
+    line-height: 1.35;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+  }
+  aside.toc a.toc-sub:hover { color: var(--text); background: var(--panel); }
+  aside.toc a.toc-sub.current {
+    color: var(--accent);
+    background: rgba(78,201,255,0.10);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+  body.light aside.toc a.toc-sub.current { background: rgba(9,105,218,0.08); }
+  @media (max-width: 1100px) { aside.toc { display: none; } }
+
+  /* ================= Right comment rail + add button + dialog ================= */
+  aside.comment-rail {
+    position: fixed;
+    right: 0;
+    top: 88px;   /* sync with TOC top, adjusted by JS */
+    bottom: 0;
+    width: 282px;
+    overflow-y: auto;
+    padding: 14px 14px 36px;
+    border-left: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 12.5px;
+    z-index: 50;
+    display: none;
+  }
+  @media (min-width: 1500px) { aside.comment-rail { display: block; } }
+  aside.comment-rail .rail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  aside.comment-rail .rail-head .toc-title { margin-bottom: 0; }
+  aside.comment-rail .rail-actions {
+    display: flex;
+    gap: 4px;
+  }
+  aside.comment-rail .rail-actions button {
+    background: var(--panel-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    cursor: pointer;
+  }
+  aside.comment-rail .rail-actions button:hover { color: var(--accent); border-color: var(--accent); }
+  aside.comment-rail .empty-state {
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 14px 6px;
+    text-align: left;
+    line-height: 1.5;
+  }
+  aside.comment-rail .empty-state code {
+    background: var(--code-bg);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+  .comment-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: border-color 0.1s;
+  }
+  .comment-card:hover { border-color: var(--accent); }
+  .comment-card.claude-directive { border-left: 3px solid var(--accent); }
+  .comment-card .anchor-label {
+    color: var(--accent);
+    font-size: 10.5px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .comment-card .body {
+    color: var(--text);
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .comment-card .meta {
+    color: var(--text-dim);
+    font-size: 10px;
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .comment-card .meta .claude-flag {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .comment-card .meta .delete-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+  }
+  .comment-card .meta .delete-btn:hover { color: var(--danger); }
+
+  .comment-add-btn {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: 2px solid var(--bg);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    transition: transform 0.1s ease-out;
+    line-height: 1;
+    padding: 0;
+  }
+  .comment-add-btn.visible { display: flex; }
+  .comment-add-btn:hover { transform: scale(1.18); }
+
+  .comment-dialog {
+    position: fixed;
+    width: 300px;
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px;
+    z-index: 300;
+    display: none;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  .comment-dialog.visible { display: block; }
+  .comment-dialog .anchor-info {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .comment-dialog textarea {
+    width: 100%;
+    min-height: 90px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    box-sizing: border-box;
+    line-height: 1.4;
+  }
+  .comment-dialog textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .comment-dialog .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .comment-dialog .hint {
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-right: auto;
+  }
+  .comment-dialog .actions button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .comment-dialog .actions button.primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .comment-dialog .actions button:hover { opacity: 0.85; }
+
+  /* Subtle highlight on elements that have comments */
+  [data-comment-count]::before {
+    content: attr(data-comment-count);
+    position: absolute;
+    right: -34px;
+    top: 4px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  h2[data-comment-count], h3[data-comment-count] { position: relative; }
+  @media (max-width: 1500px) {
+    [data-comment-count]::before { right: -28px; }
+  }
+  @media (max-width: 1100px) {
+    .comment-add-btn, .comment-dialog { display: none !important; }
+    [data-comment-count]::before { display: none; }
+  }
+
+  /* Reserve right space at full viewport for the comment rail */
+  @media (min-width: 1500px) {
+    .container { margin-right: 296px; }
+  }
+  h1 {
+    font-size: 30px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--text);
+  }
+  h1 .study-tag {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: white;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    color: var(--text);
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .lede {
+    background: var(--panel);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 4px 4px 0;
+    color: var(--text);
+  }
+  .lede strong { color: var(--accent); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: var(--panel);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  th {
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code, p code, li code {
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: "SF Mono", Menlo, Monaco, "Roboto Mono", monospace;
+    font-size: 12.5px;
+    color: var(--accent);
+  }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .pill-ok { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+  .pill-warn { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
+  .pill-danger { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+  .pill-neutral { background: var(--panel-2); color: var(--text-dim); }
+  .pill-config { background: rgba(78, 201, 255, 0.15); color: var(--accent); }
+  .pill-module { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
+  .pill-model { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+  .chart {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
+    margin: 18px 0;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin: 18px 0;
+  }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .htrack {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 18px 0;
+  }
+  .htrack-id {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 10px;
+  }
+  .htrack h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+  }
+  .htrack .tagline {
+    color: var(--text-dim);
+    font-style: italic;
+    margin: 6px 0 14px;
+    font-size: 14px;
+  }
+  .htrack-priority {
+    float: right;
+    background: var(--panel-2);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .htrack-priority.p1 { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+  .htrack-priority.p2 { background: rgba(78, 201, 255, 0.15); color: var(--accent); }
+  .htrack-priority.p3 { background: rgba(210, 153, 34, 0.15); color: var(--warn); }
+  .risk-knob {
+    background: var(--panel-2);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    border-left: 2px solid var(--warn);
+  }
+  .risk-knob b { color: var(--warn); }
+  .wave-timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 900px) { .wave-timeline { grid-template-columns: 1fr; } }
+  .wave {
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 18px;
+    border-top: 4px solid var(--accent);
+    position: relative;
+  }
+  .wave:nth-child(2) { border-color: var(--warn); }
+  .wave:nth-child(3) { border-color: var(--success); }
+  .wave-number {
+    position: absolute;
+    top: -16px;
+    left: 14px;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wave:nth-child(2) .wave-number { border-color: var(--warn); color: var(--warn); }
+  .wave:nth-child(3) .wave-number { border-color: var(--success); color: var(--success); }
+  .wave h4 {
+    margin: 4px 0 6px;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .wave .duration {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .wave ul { margin: 0; padding-left: 18px; font-size: 14px; }
+  .wave li { margin-bottom: 6px; }
+  .callout {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warn);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 18px 0;
+    font-size: 14px;
+  }
+  .callout h4 {
+    margin: 0 0 8px;
+    color: var(--warn);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 18px 0 24px;
+  }
+  .meta-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .meta-card .label {
+    color: var(--text-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .meta-card .value {
+    color: var(--text);
+    font-weight: 500;
+    font-size: 16px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+  }
+  .meta-card .value.gate-ok { color: var(--success); }
+  .meta-card .value.gate-warn { color: var(--warn); }
+  ul.legend { list-style: none; padding: 0; font-size: 13px; color: var(--text-dim); margin: 4px 0 14px; }
+  ul.legend li { display: inline-block; margin-right: 14px; }
+  ul.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .source-list { columns: 2; column-gap: 32px; font-size: 13px; color: var(--text-dim); }
+  .source-list a { color: var(--accent); text-decoration: none; }
+  .source-list a:hover { text-decoration: underline; }
+  .source-list li { break-inside: avoid; margin-bottom: 4px; }
+  .mermaid-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
+    margin: 18px 0;
+    overflow-x: auto;
+  }
+  .footer-note {
+    color: var(--text-dim);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .footer-note a { color: var(--accent); text-decoration: none; }
+
+  /* ============== Phase tracker + extensible phase blocks ============== */
+  .phase-tracker {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin: 18px 0 32px;
+    overflow-x: auto;
+  }
+  .phase-tracker-title {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .phase-flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 880px;
+  }
+  .phase-node {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-size: 11.5px;
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .phase-node:hover { background: var(--panel); color: var(--text); }
+  .phase-node .name { display: block; font-weight: 600; }
+  .phase-node .stat { display: block; font-size: 10px; margin-top: 2px; opacity: 0.7; }
+  .phase-node.done { background: rgba(63,185,80,0.10); border-color: rgba(63,185,80,0.4); color: var(--success); }
+  .phase-node.active { background: rgba(78,201,255,0.12); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .phase-node.pending { opacity: 0.6; }
+  .phase-arrow { color: var(--text-dim); font-size: 11px; flex: 0; }
+  .phase-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    margin: 32px 0;
+    overflow: hidden;
+  }
+  .phase-section.pending { opacity: 0.7; }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-2);
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-header h2 {
+    margin: 0;
+    border: none;
+    padding: 0;
+    font-size: 20px;
+  }
+  .phase-header h2 .phase-num {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  .phase-section.done .phase-header h2 .phase-num { background: var(--success); color: white; }
+  .phase-section.pending .phase-header h2 .phase-num { background: var(--text-dim); }
+  .phase-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+  .phase-status.done { background: rgba(63,185,80,0.15); color: var(--success); }
+  .phase-status.active { background: rgba(78,201,255,0.15); color: var(--accent); }
+  .phase-status.pending { background: var(--panel); color: var(--text-dim); border: 1px solid var(--border); }
+  .phase-body { padding: 20px 28px 28px; }
+  .phase-body .lede { margin-top: 8px; }
+  .placeholder-note {
+    background: var(--panel-2);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    color: var(--text-dim);
+    font-size: 13.5px;
+  }
+  .placeholder-note .pn-title {
+    color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .placeholder-note ul { margin: 8px 0 0; padding-left: 20px; }
+  .placeholder-note li { margin: 3px 0; }
+  .placeholder-note code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .extend-hint {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: var(--code-bg);
+    border-radius: 4px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .extend-hint b { color: var(--accent); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row1">
+    <div class="brand"><repo-name><span class="sep">·</span>RESEARCH<span class="sep">·</span><study-id></div>
+    <button class="theme-toggle" onclick="document.body.classList.toggle('light'); rerenderCharts(); rerenderMermaid();">Theme</button>
+  </div>
+  <div class="row2">
+    <div class="phase-flow compact" id="phase-bar">
+      <a class="phase-node pending" data-phase="frame" href="#phase-frame"><span class="name">P1 Frame</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="survey" href="#phase-survey"><span class="name">P2 Survey</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="design" href="#phase-design"><span class="name">P3 Design</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="prepare" href="#phase-prepare"><span class="name">P4 Prepare</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="launch" href="#phase-launch"><span class="name">P5 Launch</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="monitor" href="#phase-monitor"><span class="name">P6 Monitor</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="evaluate" href="#phase-evaluate"><span class="name">P7 Evaluate</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="synthesize" href="#phase-synthesize"><span class="name">P8 Synthesize</span></a>
+      <span class="phase-arrow">→</span>
+      <a class="phase-node pending" data-phase="audit" href="#phase-audit"><span class="name">P9 Audit</span></a>
+    </div>
+  </div>
+</header>
+
+<aside class="comment-rail" id="comment-rail">
+  <div class="rail-head">
+    <div class="toc-title">Comments</div>
+    <div class="rail-actions">
+      <button id="comments-export" title="Download comments as JSON">Export</button>
+      <button id="comments-import" title="Load a comments JSON file">Import</button>
+      <button id="comments-clear" title="Delete all comments (export first to keep them)">Clear</button>
+    </div>
+  </div>
+  <div class="empty-state" id="comments-empty">
+    Hover near the right edge of any section to add a comment.<br><br>
+    Use <code>/claude</code> anywhere in the text to flag a comment for <code>/dl-research</code> follow-up. Export the JSON to feed it into the audit script.
+  </div>
+  <div id="comments-list"></div>
+</aside>
+
+<button class="comment-add-btn" id="comment-add" title="Add comment at this position">+</button>
+
+<div class="comment-dialog" id="comment-dialog">
+  <div class="anchor-info" id="dialog-anchor"></div>
+  <textarea id="dialog-textarea" placeholder="Comment… use /claude to flag for dl-research"></textarea>
+  <div class="actions">
+    <span class="hint">⌘/Ctrl+Enter to save · Esc to cancel</span>
+    <button id="dialog-cancel">Cancel</button>
+    <button class="primary" id="dialog-save">Save</button>
+  </div>
+</div>
+
+<aside class="toc" id="toc">
+  <div class="toc-title">Contents</div>
+
+  <div class="toc-phase"><a href="#phase-frame">P1 · Frame</a> <span class="badge pending">pending</span></div>
+  <a class="toc-sub" href="#frame-gates">1.1 Gates and baselines</a>
+  <a class="toc-sub" href="#frame-scope">1.2 Scope and protocol</a>
+  <a class="toc-sub" href="#frame-open">1.3 Open questions</a>
+
+  <div class="toc-phase"><a href="#phase-survey">P2 · Survey</a> <span class="badge pending">pending</span></div>
+  <a class="toc-sub" href="#survey-code">2.1 Code-truth anatomy</a>
+  <a class="toc-sub" href="#survey-evidence">2.2 Prior runs and probes</a>
+  <a class="toc-sub" href="#survey-external">2.3 External references</a>
+
+  <div class="toc-phase"><a href="#phase-design">P3 · Design</a> <span class="badge pending">pending</span></div>
+  <a class="toc-sub" href="#design-tracks">3.1 Hypothesis tracks</a>
+  <a class="toc-sub" href="#design-schedule">3.2 Schedule and gates</a>
+
+  <div class="toc-phase"><a href="#phase-prepare">P4 · Prepare</a> <span class="badge pending">pending</span></div>
+  <a class="toc-sub" href="#phase-prepare">Per-experiment manifests</a>
+
+  <div class="toc-phase"><a href="#phase-launch">P5 · Launch</a> <span class="badge pending">pending</span></div>
+  <a class="toc-sub" href="#phase-launch">Tracked runs (ledger)</a>
+
+  <div class="toc-phase"><a href="#phase-monitor">P6 · Monitor</a> <span class="badge pending">pending</span></div>
+  <div class="toc-phase"><a href="#phase-evaluate">P7 · Evaluate</a> <span class="badge pending">pending</span></div>
+  <div class="toc-phase"><a href="#phase-synthesize">P8 · Synthesize</a> <span class="badge pending">pending</span></div>
+  <div class="toc-phase"><a href="#phase-audit">P9 · Audit</a> <span class="badge pending">pending</span></div>
+
+  <div class="toc-phase" style="margin-top:24px"><a href="#sources">Sources</a></div>
+</aside>
+
+<div class="container">
+
+  <h1><study-title> <span class="study-tag"><status> · <YYYY-MM-DD></span></h1>
+  <div class="subtitle"><one-line subtitle: the framing of this study and its intended audience>.</div>
+
+  <div class="lede">
+    <strong>The question.</strong> <One paragraph: the research question this study answers,
+    the decision it feeds, the success criterion, and the hard constraints. Cite the baseline
+    being improved or replaced, the metric direction, and the budget envelope. Avoid jargon
+    that a clean-context reviewer would not understand.>
+  </div>
+
+  <!-- Phase bar moved to sticky header; TOC moved to fixed left aside.
+       Current section + current phase are highlighted live by scroll-spy. -->
+
+
+  <!-- ============================================================ -->
+  <section class="phase-section pending" id="phase-frame">
+    <div class="phase-header">
+      <h2><span class="phase-num">P1</span>Frame — question, scope, gates</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+
+  <p class="subtitle">Locks the contractual surface of the study: what we measure, what counts as success, what's protected. Survey and Design depend on this; protocol changes here invalidate downstream measurements.</p>
+
+  <!-- ============================================================ -->
+  <!-- GOALS TRACKING (M0.5) — live from /api/objectives/latest        -->
+  <!-- ============================================================ -->
+  <section class="goals-tracker" id="goals-tracker">
+    <style>
+      .goals-tracker {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 18px 0 28px;
+      }
+      .goals-tracker .gt-head {
+        display: flex; align-items: baseline; gap: 12px;
+        padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
+      }
+      .goals-tracker .gt-head .gt-title {
+        font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+        letter-spacing: 0.6px; font-weight: 700;
+      }
+      .goals-tracker .gt-head .gt-meta { color: var(--text-dim); font-size: 11.5px; margin-left: auto; }
+      .goals-tracker .gt-cols {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+      }
+      @media (max-width: 1100px) { .goals-tracker .gt-cols { grid-template-columns: 1fr; } }
+      .goals-tracker .gt-col h4 {
+        margin: 0 0 8px; font-size: 11px; color: var(--text-dim);
+        text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+      }
+      .goals-tracker .goal {
+        background: var(--panel-2); border-radius: 6px; padding: 10px 12px;
+        margin-bottom: 8px; font-size: 12.5px;
+      }
+      .goals-tracker .goal .gtitle { color: var(--text); font-weight: 600; font-size: 13px; }
+      .goals-tracker .goal .gline { color: var(--text-dim); font-size: 12px; margin-top: 4px; }
+      .goals-tracker .goal .status {
+        display: inline-block; padding: 1px 7px; border-radius: 8px;
+        font-size: 10.5px; font-weight: 700; margin-left: 6px;
+        text-transform: uppercase; letter-spacing: 0.3px;
+      }
+      .goals-tracker .status-pass        { background: rgba(63,185,80,0.15); color: var(--success); }
+      .goals-tracker .status-achieved    { background: rgba(63,185,80,0.15); color: var(--success); }
+      .goals-tracker .status-fail        { background: rgba(248,81,73,0.15); color: var(--danger); }
+      .goals-tracker .status-in_progress { background: rgba(78,201,255,0.15); color: var(--accent); }
+      .goals-tracker .status-blocked     { background: rgba(210,153,34,0.15); color: var(--warn); }
+      .goals-tracker .status-pending     { background: var(--code-bg); color: var(--text-dim); }
+      .goals-tracker .status-na          { background: var(--code-bg); color: var(--text-dim); }
+      .goals-tracker .progressbar {
+        height: 6px; background: var(--code-bg); border-radius: 3px; margin-top: 6px; overflow: hidden;
+      }
+      .goals-tracker .progressbar > div { height: 100%; background: var(--accent); transition: width .3s; }
+      .goals-tracker .progressbar.achieved > div { background: var(--success); }
+      .goals-tracker .progressbar.blocked  > div { background: var(--warn); }
+      .goals-tracker .rec {
+        margin-top: 14px; padding: 12px 14px;
+        background: var(--code-bg); border-left: 3px solid var(--accent);
+        border-radius: 0 6px 6px 0;
+      }
+      .goals-tracker .rec .rl { font-size: 11px; color: var(--text-dim);
+        text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 4px; }
+      .goals-tracker .rec .rb { font-size: 13px; color: var(--text); line-height: 1.45; white-space: pre-wrap; }
+      .goals-tracker .rec .rid { font-family: "SF Mono", Menlo, Monaco, monospace;
+        font-size: 11px; color: var(--accent); margin-left: 6px; }
+      .goals-tracker .empty {
+        padding: 18px 6px; color: var(--text-dim); font-size: 12.5px; text-align: center;
+      }
+      .goals-tracker .empty code {
+        background: var(--code-bg); padding: 1px 6px; border-radius: 3px; color: var(--accent);
+      }
+    </style>
+    <div class="gt-head">
+      <span class="gt-title">Goals Tracking · live from <code style="font-size:11px;background:var(--code-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/api/objectives/latest</code></span>
+      <span class="gt-meta" id="gt-meta">loading…</span>
+    </div>
+    <div id="gt-body">
+      <div class="empty">Loading goals snapshot…</div>
+    </div>
+  </section>
+<script>
+(function() {
+  function renderTracker(snap) {
+    var body = document.getElementById("gt-body");
+    var meta = document.getElementById("gt-meta");
+    if (!snap || snap.status === "no_snapshots_yet" || snap.status === "parse_error" || !snap.goal_states) {
+      var hint = snap && snap.hint ? snap.hint : "run scripts/objectives_snapshot.py --study <study-dir>";
+      meta.textContent = "no snapshot yet";
+      body.innerHTML = '<div class="empty">No objectives snapshot yet. Generate one with<br><code>' + escapeHtml(hint) + '</code></div>';
+      return;
+    }
+    meta.textContent = snap.id + " · " + snap.captured_utc + " · " + snap.triggered_by;
+
+    var byType = {gate: [], milestone: [], exit_criterion: []};
+    snap.goal_states.forEach(function(g) {
+      if (byType[g.type]) byType[g.type].push(g);
+    });
+    function chip(status) {
+      var cls = "status-" + (status||"pending").replace(/\W/g,"_");
+      return '<span class="status ' + cls + '">' + (status||"pending") + '</span>';
+    }
+    function gateCard(g) {
+      var line = "";
+      if (g.leader_variant) {
+        line = "leader: <b>" + escapeHtml(g.leader_variant) + "</b>"
+             + " · " + (g.leader_value || "?") + " " + (g.target_unit || "")
+             + (g.headroom != null ? "  · " + (g.headroom >= 0 ? "+" : "") + g.headroom + " ms headroom" : "");
+      } else if (g.reason) {
+        line = escapeHtml(g.reason);
+      } else {
+        line = g.target != null ? ("target: " + g.target + " " + (g.target_unit||"")) : "—";
+      }
+      return '<div class="goal">'
+        + '<div class="gtitle">' + escapeHtml(g.title || g.goal_id) + chip(g.status) + '</div>'
+        + '<div class="gline">' + line + '</div>'
+        + '</div>';
+    }
+    function milestoneCard(g) {
+      var pct = (typeof g.progress_pct === "number") ? g.progress_pct : 0;
+      var barCls = g.status === "achieved" ? "achieved" : (g.status === "blocked" ? "blocked" : "");
+      var line = g.progress_label || (g.reason || "—");
+      var due = g.due_date_utc ? "  · due " + g.due_date_utc.slice(0,10) : "";
+      return '<div class="goal">'
+        + '<div class="gtitle">' + escapeHtml(g.title || g.goal_id) + chip(g.status) + '</div>'
+        + '<div class="gline">' + escapeHtml(line) + due + '</div>'
+        + '<div class="progressbar ' + barCls + '"><div style="width:' + pct + '%"></div></div>'
+        + '</div>';
+    }
+    function exitCard(g) {
+      var m = g.conditions_met != null ? g.conditions_met : 0;
+      var t = g.conditions_total != null ? g.conditions_total : 0;
+      var line = (t > 0) ? (m + "/" + t + " conditions met") : (g.reason || "—");
+      return '<div class="goal">'
+        + '<div class="gtitle">' + escapeHtml(g.title || g.goal_id) + chip(g.status) + '</div>'
+        + '<div class="gline">' + escapeHtml(line) + '</div>'
+        + '</div>';
+    }
+    var cols = '<div class="gt-cols">'
+      + '<div class="gt-col"><h4>Gates (hard)</h4>' + byType.gate.map(gateCard).join("") + '</div>'
+      + '<div class="gt-col"><h4>Milestones</h4>' + byType.milestone.map(milestoneCard).join("") + '</div>'
+      + '<div class="gt-col"><h4>Exit criteria</h4>' + byType.exit_criterion.map(exitCard).join("") + '</div>'
+      + '</div>';
+
+    var rec = snap.recommended_next_move || {};
+    var recHtml = "";
+    if (rec.headline) {
+      recHtml = '<div class="rec">'
+        + '<div class="rl">Recommended next move<span class="rid">rule: ' + escapeHtml(rec.rule_id || "—") + '</span></div>'
+        + '<div class="rb">' + escapeHtml(rec.headline.trim()) + '</div>'
+        + '</div>';
+    }
+    body.innerHTML = cols + recHtml;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+  // Resolve study id from URL (when served via research-server) or from <html data-study-id>.
+  // The template's `<html data-study-id="<study-id>">` placeholder is replaced when the file
+  // is instantiated into agents/research/<study-id>/report.html; the URL path takes priority
+  // so the same file works for any study when served by scripts/research_server.py.
+  var studyId = (function() {
+    var m = location.pathname.match(/\/([a-z0-9][a-z0-9-]*)\//);
+    if (m && !m[1].startsWith("_")) return m[1];
+    var attr = document.documentElement.getAttribute("data-study-id") || "";
+    return attr && !/^</.test(attr) ? attr : null;
+  })();
+  function showServerHint(err) {
+    var body = document.getElementById("gt-body");
+    var meta = document.getElementById("gt-meta");
+    meta.textContent = studyId ? "fetch failed" : "no study id";
+    var path = studyId ? ("/" + escapeHtml(studyId) + "/") : "/";
+    body.innerHTML = '<div class="empty">'
+      + 'Goals tracker requires <code>research_server.py</code> serving this study.<br>'
+      + 'Start the server with<br>'
+      + '<code>python scripts/research_server.py --port 8765</code><br>'
+      + 'then open <code>http://127.0.0.1:8765' + path + '</code><br>'
+      + (err !== undefined ? '<span style="font-size:11px;opacity:.7">(error: ' + escapeHtml(String(err)) + ')</span>' : '')
+      + '</div>';
+  }
+  if (!studyId) {
+    showServerHint();
+  } else {
+    fetch("/" + studyId + "/api/objectives/latest", {cache: "no-store"})
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(renderTracker)
+      .catch(showServerHint);
+  }
+})();
+</script>
+
+  <h3 id="frame-gates">1.1 Gates and baselines</h3>
+
+  <div class="meta-grid">
+    <div class="meta-card">
+      <div class="label">Primary metric</div>
+      <div class="value gate-warn"><metric-name></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><minimize | maximize></div>
+    </div>
+    <div class="meta-card">
+      <div class="label">Decision gate</div>
+      <div class="value gate-warn"><observable threshold></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><how the gate is computed></div>
+    </div>
+    <div class="meta-card">
+      <div class="label">Baseline / control</div>
+      <div class="value" style="font-size:13px;"><baseline-run-id></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><checkpoint, run, or paper number></div>
+    </div>
+    <div class="meta-card">
+      <div class="label">Budget</div>
+      <div class="value" style="font-size:13px;"><wall-clock / compute / trial cap></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><stop policy summary></div>
+    </div>
+    <div class="meta-card">
+      <div class="label">Seed policy</div>
+      <div class="value" style="font-size:13px;"><fixed | sweep | repeated></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><reasoning></div>
+    </div>
+    <div class="meta-card">
+      <div class="label">Eval split / data version</div>
+      <div class="value" style="font-size:13px;"><data-version-source></div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:4px;"><pinned in adapter.yaml></div>
+    </div>
+  </div>
+
+  <h3 id="frame-scope">1.2 Scope and protocol</h3>
+
+  <div class="grid-2">
+    <div>
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>In scope</td><td><files / configs / modules research may change></td></tr>
+          <tr><td>Out of scope</td><td><files / configs / modules off-limits></td></tr>
+          <tr><td>Protected files</td><td><eval harness, metric parser, split definitions, seeds></td></tr>
+          <tr><td>Editable surface</td><td><list from adapter.yaml.editable_surface></td></tr>
+          <tr><td>Tracking backend</td><td><tracker, ledger, or runs.jsonl></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <h4>Protocol-change rule</h4>
+      <p>Any edit to protected files, the metric parser, the baseline source, the eval split, or the seed
+      policy <b>after a run launches</b> invalidates that run. Record the change, reason, approver, and
+      effective run ID in <code>protocol-changes.md</code> <em>before</em> the deviating run.</p>
+    </div>
+  </div>
+
+  <h3 id="frame-open">1.3 Open questions (block Design promotion until answered)</h3>
+
+  <div class="callout">
+    <h4>1. <question title></h4>
+    <p><expand the question; cite what is unknown and what would resolve it></p>
+  </div>
+  <div class="callout">
+    <h4>2. <question title></h4>
+    <p><expand the question></p>
+  </div>
+  <div class="placeholder-note">
+    <div class="pn-title">Promotion to Design</div>
+    Frame is complete when every gate has a measurable threshold, every protected file is named, the
+    baseline is reproducible from this report alone, and every open question above has a written
+    answer or an explicit "deferred to Wave N" note.
+  </div>
+
+    </div><!-- /.phase-body -->
+  </section><!-- /#phase-frame -->
+
+  <!-- ============================================================ -->
+  <section class="phase-section pending" id="phase-survey">
+    <div class="phase-header">
+      <h2><span class="phase-num">P2</span>Survey — code truth, prior runs, prior art</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+
+  <p class="subtitle">Evidence only — no decisions. Three sources: (1) code-level decomposition of the baseline, (2) measurements from prior runs or probes on the same eval split, (3) external references that map onto the constraints in Frame. Grows as new probes land.</p>
+
+  <h2 id="survey-code">2.1 Code-truth anatomy</h2>
+
+  <p>Where the cost lives in the baseline, decomposed from the actual implementation rather than the paper. The example chart and architecture diagram below are illustrative placeholders — replace them with the project-specific decomposition.</p>
+
+  <div class="grid-2">
+    <div class="chart" id="chart-anatomy-donut" style="height: 380px;"></div>
+    <div class="chart" id="chart-anatomy-bar" style="height: 380px;"></div>
+  </div>
+
+  <h3>Architecture flow</h3>
+  <div class="mermaid-box">
+    <div class="mermaid">
+flowchart TD
+  classDef big fill:#f85149,stroke:#fff,color:#fff,stroke-width:2px
+  classDef mid fill:#d29922,stroke:#fff,color:#fff,stroke-width:1px
+  classDef small fill:#2a7fa8,stroke:#fff,color:#fff,stroke-width:1px
+  classDef io fill:#161b22,stroke:#4ec9ff,color:#4ec9ff,stroke-width:2px
+
+  IN["&lt;input&gt;"]:::io
+  A["&lt;component A&gt;<br/>&lt;cost · share%&gt;"]:::mid
+  B["&lt;component B (hotspot)&gt;<br/>&lt;cost · share%&gt;"]:::big
+  C["&lt;component C&gt;<br/>&lt;cost · share%&gt;"]:::small
+  D["&lt;component D (hotspot)&gt;<br/>&lt;cost · share%&gt;"]:::big
+  OUT["&lt;output&gt;"]:::io
+
+  IN --> A --> B --> C --> D --> OUT
+    </div>
+  </div>
+
+  <ul class="legend">
+    <li><span class="sw" style="background:#f85149"></span>Hotspot</li>
+    <li><span class="sw" style="background:#d29922"></span>Mid</li>
+    <li><span class="sw" style="background:#2a7fa8"></span>Small</li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="survey-evidence">2.2 Prior runs and probes</h2>
+
+  <p>Measured evidence from past runs that informs this study. Each chart should declare the recipe / eval split / date in its title; numbers without that header are not citable in Design.</p>
+
+  <div class="chart" id="chart-prior-runs" style="height: 360px;"></div>
+
+  <div class="placeholder-note">
+    <div class="pn-title">Where each evidence chart should come from</div>
+    <ul>
+      <li><b>Prior probe sweeps</b> — short / canonical-recipe measurements; replace the example data block in the <code>&lt;script&gt;</code> section.</li>
+      <li><b>Per-component breakdowns</b> — stacked bars by op-group or by sub-module; one row per variant.</li>
+      <li><b>Ledger-derived plots</b> — read directly from <code>runs.jsonl</code> via a small loader (preferred over hand-curated data once a study has &gt; 5 runs).</li>
+    </ul>
+    <div class="extend-hint"><b>Refresh rule:</b> every chart's title must name the recipe and the data source path; if a number is shown without provenance, an audit flags it.</div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="survey-external">2.3 External references</h2>
+
+  <p>Best-fit prior art for the constraints set in Frame. Cite only references that touch the actual decision (the metric, the architecture surface, or the deployment target).</p>
+  <table>
+    <thead>
+      <tr><th>Reference</th><th>Year</th><th>Venue</th><th>Idea worth borrowing</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><a href="<url>" style="color:var(--accent)">&lt;Paper / repo title&gt;</a></td><td>&lt;YYYY&gt;</td><td>&lt;venue&gt;</td><td>&lt;the specific technique we may borrow and why it fits the constraints&gt;</td></tr>
+      <tr><td><a href="<url>" style="color:var(--accent)">&lt;Paper / repo title&gt;</a></td><td>&lt;YYYY&gt;</td><td>&lt;venue&gt;</td><td>&lt;…&gt;</td></tr>
+      <tr><td><a href="<url>" style="color:var(--accent)">&lt;Paper / repo title&gt;</a></td><td>&lt;YYYY&gt;</td><td>&lt;venue&gt;</td><td>&lt;…&gt;</td></tr>
+    </tbody>
+  </table>
+
+    </div><!-- /.phase-body -->
+  </section><!-- /#phase-survey -->
+
+  <!-- ============================================================ -->
+  <section class="phase-section pending" id="phase-design">
+    <div class="phase-header">
+      <h2><span class="phase-num">P3</span>Design — hypothesis tracks, experiments, schedule</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+
+  <p class="subtitle">Decisions: which experiments will run, gated by what, in which order. Each hypothesis track (H<i>n</i>) holds one or more experiments (H<i>n</i>.E<i>m</i>); every E becomes a ledger row in Prepare.</p>
+
+  <h2 id="design-tracks">3.1 Hypothesis tracks</h2>
+
+  <p>Order by <strong>expected impact × cheapness × independence</strong>. The two-axis matrix below scores each candidate experiment on the levers that move the primary metric vs the constraints they spend.</p>
+
+  <h3>Decision matrix</h3>
+  <div class="chart" id="chart-matrix" style="height: 460px;"></div>
+  <ul class="legend">
+    <li>Dot size = expected impact</li>
+    <li><span class="sw" style="background:#3fb950"></span>Helps the cheap axis</li>
+    <li><span class="sw" style="background:#4ec9ff"></span>Helps the metric axis</li>
+    <li><span class="sw" style="background:#d29922"></span>Trade-off</li>
+  </ul>
+
+  <h3>Implementation legend</h3>
+  <ul class="legend">
+    <li><span class="pill pill-config">⚙ config</span></li>
+    <li><span class="pill pill-module">⚒ module</span></li>
+    <li><span class="pill pill-model">⚗ model + new artifact</span></li>
+  </ul>
+
+  <!-- H1 (example track) -->
+  <div class="htrack">
+    <span class="htrack-priority p1">Priority · Wave 1</span>
+    <h3><span class="htrack-id">H1</span> &lt;track name — the lever this track pulls&gt;</h3>
+    <div class="tagline">&lt;one-line tagline: why this track is on the shortlist&gt;</div>
+    <table>
+      <thead><tr><th>E</th><th>Change</th><th>Est. Δ metric</th><th>Risk</th><th>Impl</th></tr></thead>
+      <tbody>
+        <tr><td>H1.E1</td><td>&lt;experiment-name — what changes vs control&gt;</td><td>&lt;expected effect on primary metric&gt;</td><td>&lt;known risk to mitigate&gt;</td><td><span class="pill pill-config">⚙</span></td></tr>
+        <tr><td>H1.E2</td><td>&lt;experiment-name&gt;</td><td>&lt;…&gt;</td><td>&lt;…&gt;</td><td><span class="pill pill-module">⚒</span></td></tr>
+      </tbody>
+    </table>
+    <div class="risk-knob"><b>Risk knob.</b> &lt;the single most likely failure mode of this track and how to mitigate it&gt;</div>
+  </div>
+
+  <!-- H2 (example track) -->
+  <div class="htrack">
+    <span class="htrack-priority p2">Priority · Wave 2</span>
+    <h3><span class="htrack-id">H2</span> &lt;track name&gt;</h3>
+    <div class="tagline">&lt;one-line tagline&gt;</div>
+    <table>
+      <thead><tr><th>E</th><th>Change</th><th>Est. Δ metric</th><th>Risk</th><th>Impl</th></tr></thead>
+      <tbody>
+        <tr><td>H2.E1</td><td>&lt;experiment-name&gt;</td><td>&lt;…&gt;</td><td>&lt;…&gt;</td><td><span class="pill pill-model">⚗</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="placeholder-note">
+    <div class="pn-title">How many tracks?</div>
+    Two to six tracks is the usual range. Each track should pull a <em>distinct</em> lever — if H<i>n</i>
+    and H<i>m</i> compete on the same axis, merge them. Each E within a track should be cheap to
+    discriminate via probe; promote only candidates that survive a probe to a full training slot.
+  </div>
+
+  <h2 id="design-schedule">3.2 Schedule and gates</h2>
+
+  <p>Each wave's exit criterion is the input to the next wave's design choice. Pre-register the
+  promotion rule at design time, not after seeing results.</p>
+
+  <div class="wave-timeline">
+    <div class="wave">
+      <div class="wave-number">1</div>
+      <h4>&lt;Wave 1 name — cheap probes&gt;</h4>
+      <div class="duration">&lt;duration · cost shape&gt;</div>
+      <ul>
+        <li>&lt;probe / config-only experiment 1&gt;</li>
+        <li>&lt;probe / config-only experiment 2&gt;</li>
+      </ul>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);"><b>Exit:</b> &lt;the observable that decides what enters Wave 2&gt;</div>
+    </div>
+    <div class="wave">
+      <div class="wave-number">2</div>
+      <h4>&lt;Wave 2 name — controlled training&gt;</h4>
+      <div class="duration">&lt;duration · cost shape&gt;</div>
+      <ul>
+        <li>&lt;full-training experiment 1&gt;</li>
+        <li>&lt;full-training experiment 2&gt;</li>
+      </ul>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);"><b>Exit:</b> &lt;decision rule for promotion to Wave 3&gt;</div>
+    </div>
+    <div class="wave">
+      <div class="wave-number">3</div>
+      <h4>&lt;Wave 3 name — finishing moves&gt;</h4>
+      <div class="duration">&lt;duration · cost shape&gt;</div>
+      <ul>
+        <li>&lt;refinement on Wave-2 winner&gt;</li>
+        <li>&lt;final eval vs baseline&gt;</li>
+      </ul>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);"><b>Exit:</b> shippable candidate or documented negative result.</div>
+    </div>
+  </div>
+
+    </div><!-- /.phase-body -->
+  </section><!-- /#phase-design -->
+
+  <!-- ============================================================ -->
+  <!-- ===== EXTENSIBLE PHASE SCAFFOLDING — dl-research lifecycle ===== -->
+  <!-- ============================================================ -->
+
+  <section class="phase-section pending" id="phase-prepare">
+    <div class="phase-header">
+      <h2><span class="phase-num">P4</span>Prepare</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Configs, scripts, data versions, and jobs reproducible per E. Ledger rows created here with <code>prepared=true, launched=false</code>.</p>
+
+      <table>
+        <thead><tr><th>Experiment</th><th>Status</th><th>Manifest</th><th>Artifact</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td colspan="5" style="color:var(--text-dim);font-style:italic;">No experiments prepared yet — populate one row per E from <code>runs.jsonl</code> when each prepares.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content per E</div>
+        <ul>
+          <li><b>Per-experiment manifest</b> — config files, model wiring, export script, shape / smoke validation log</li>
+          <li><b>Data version pin</b> — split/version identifier per train + eval set (matches <code>data_version_source</code> in adapter.yaml)</li>
+          <li><b>Reproducibility log</b> — commit hash; container image; Python env summary</li>
+          <li><b>Pre-launch checklist</b> — dry-run completed; smoke test passed; ledger row written</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> render rows from the study's <code>runs.jsonl</code> at this anchor — either statically (paste rows in) or via a small fetch loader against the served file.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase-section pending" id="phase-launch">
+    <div class="phase-header">
+      <h2><span class="phase-num">P5</span>Launch</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Planned experiments become tracked runs in the configured backend. Every launch — including crashes — gets a ledger row.</p>
+
+      <table>
+        <thead><tr><th>Experiment</th><th>Kind</th><th>Backend</th><th>Status</th><th>Primary metric</th><th>Run dir / link</th></tr></thead>
+        <tbody>
+          <tr><td colspan="6" style="color:var(--text-dim);font-style:italic;">No runs launched yet.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content</div>
+        <ul>
+          <li><b>Launch log</b> — task / job ID, backend, worker, status, launch timestamp per E</li>
+          <li><b>Pretrained source</b> — checkpoint path / task ID / model ID per E</li>
+          <li><b>Cross-reference</b> — link each row to the study's <code>runs.jsonl</code> entry</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> read from the configured <code>tracking_backend</code> declared in <code>adapter.yaml</code>; one row per non-discarded experiment.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase-section pending" id="phase-monitor">
+    <div class="phase-header">
+      <h2><span class="phase-num">P6</span>Monitor</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Health, cost, and live state of running experiments.</p>
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content</div>
+        <ul>
+          <li><b>Live status panel</b> — running / completed / failed counts per track</li>
+          <li><b>Training curves</b> — train + val loss / metric per active run</li>
+          <li><b>Anomaly flags</b> — NaN losses, plateau detection, resource spikes</li>
+          <li><b>Wall-clock vs budget</b> — burn-down per track</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> add Plotly charts fed by the project's training analyzer or tracker API; one panel per active experiment.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase-section pending" id="phase-evaluate">
+    <div class="phase-header">
+      <h2><span class="phase-num">P7</span>Evaluate</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Completed runs vs gates and baselines. Apply the pre-registered decision rule from Design.</p>
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content</div>
+        <ul>
+          <li><b>Per-E results table</b> — primary metric and guardrails vs baseline, with gate pass/fail flags</li>
+          <li><b>Component / sub-module breakdown</b> — reuse the stacked-bar format from the example chart in Survey, one row per candidate</li>
+          <li><b>Pareto plot</b> — primary metric vs cost; extend the <a href="#design-tracks" style="color:var(--accent);">decision matrix</a> with measured points</li>
+          <li><b>Pairwise comparison links</b> — per critical pair, link to the deeper-dive artifact (e.g. an HTML diff page)</li>
+          <li><b>Verdict per E</b> — pass / partial / fail with reasoning</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> (1) parse measured numbers into the JS data block in the <code>&lt;script&gt;</code> section (replace the example arrays); (2) one row per evaluated E; (3) record verdicts in the per-E table.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase-section pending" id="phase-synthesize">
+    <div class="phase-header">
+      <h2><span class="phase-num">P8</span>Synthesize</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Final answer + research graph + recommendation. Promote the winner per the decision rule.</p>
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content</div>
+        <ul>
+          <li><b>Verdict</b> — winner across tracks; gate compliance summary</li>
+          <li><b>Research graph</b> (Mermaid + JSON, per <code>research_graph.schema.json</code>) — node per H/E, edges by dependency, terminal node marks the winning route</li>
+          <li><b>What changed vs baseline</b> — user-facing summary (no implementation detail)</li>
+          <li><b>Promotion artifacts</b> — checkpoint, exported artifact, cost-side number, link to the comparison eval</li>
+          <li><b>What's next</b> — follow-up directions, fork study IDs</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> embed the rendered research graph; cross-link to whatever user-facing summary the project uses (release notes, internal tracker, etc.).</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="phase-section pending" id="phase-audit">
+    <div class="phase-header">
+      <h2><span class="phase-num">P9</span>Audit</h2>
+      <span class="phase-status pending">Pending</span>
+    </div>
+    <div class="phase-body">
+      <p class="subtitle">Claims, protocol, budget, and reproducibility still valid? Run before any external publication or downstream release.</p>
+      <div class="placeholder-note">
+        <div class="pn-title">Expected content</div>
+        <ul>
+          <li><b>Protocol-change ledger</b> — every recipe / metric / parser change with date and approver</li>
+          <li><b>Reproducibility check</b> — winner re-runs from clean commit + container hash</li>
+          <li><b>Seed-sensitivity probe</b> — winner re-trained at a second seed; uplift &gt; noise floor?</li>
+          <li><b>Graph consistency check</b> — Mermaid and JSON agree on H/E nodes, verdicts, winning route</li>
+          <li><b>Audit verdict</b> — aligned / warnings / drift / invalid</li>
+        </ul>
+        <div class="extend-hint"><b>To populate:</b> run <code>dl-research audit &lt;study-id&gt;</code>; paste verdict block at this anchor.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <h2 id="sources">Sources</h2>
+
+  <h3>External</h3>
+  <ul class="source-list">
+    <li><a href="<url>">&lt;Cited paper or repo · year · venue&gt;</a></li>
+    <li><a href="<url>">&lt;Cited paper or repo&gt;</a></li>
+    <li><a href="<url>">&lt;Cited paper or repo&gt;</a></li>
+  </ul>
+
+  <h3>Internal</h3>
+  <ul class="source-list">
+    <li><a href="adapter.yaml">adapter.yaml</a> — gates, recipe, baselines, editable surface</li>
+    <li><a href="index.md">index.md</a> — study record (markdown source of truth)</li>
+    <li><a href="runs.jsonl">runs.jsonl</a> — ledger</li>
+    <li><a href="research_graph.mmd">research_graph.mmd</a> · <a href="research_graph.json">research_graph.json</a> — synthesis graph</li>
+  </ul>
+
+  <div class="footer-note">
+    Generated &lt;YYYY-MM-DD&gt; · &lt;study-id&gt; · companion to <a href="index.md">index.md</a>
+  </div>
+</div>
+
+<script>
+// ============== chart data (EXAMPLE / PLACEHOLDER) ==============
+// Replace the arrays below with the project's measured numbers. Names, units,
+// and titles are deliberately generic so the chart shells render before any
+// real measurement lands.
+
+const ANATOMY = [
+  { name: "Component A (hotspot)", cost: 12.0, cls: "big" },
+  { name: "Component B (hotspot)", cost: 8.0,  cls: "big" },
+  { name: "Component C",           cost: 1.7,  cls: "mid" },
+  { name: "Component D",           cost: 1.0,  cls: "small" },
+  { name: "Component E",           cost: 1.0,  cls: "small" },
+  { name: "Other / overhead",      cost: 1.3,  cls: "small" },
+];
+
+const PRIOR_RUNS = [
+  // Example: variant name, signed Δ on the primary metric vs baseline, status pill class
+  { name: "variant-a", delta: -0.07, status: "win" },
+  { name: "variant-b", delta:  0.42, status: "ok" },
+  { name: "variant-c", delta:  0.59, status: "ok" },
+  { name: "variant-d", delta:  1.02, status: "borderline" },
+  { name: "variant-e", delta:  1.68, status: "over" },
+  { name: "variant-f", delta:  4.49, status: "out" },
+];
+
+const HMATRIX = [
+  // x = cost-axis lever (negative = cheaper), y = metric-axis lever (qualitative 0-3)
+  { id: "H1.E1", x: -3.0, y: 1.0, size: 60, color: "#3fb950", label: "Example cheaper variant 1" },
+  { id: "H1.E2", x: -1.5, y: 0.5, size: 50, color: "#3fb950", label: "Example cheaper variant 2" },
+  { id: "H2.E1", x:  0.0, y: 2.0, size: 70, color: "#4ec9ff", label: "Example accuracy-only variant" },
+  { id: "H2.E2", x:  0.5, y: 2.7, size: 80, color: "#d29922", label: "Example trade-off variant" },
+];
+
+function themeColors() {
+  const light = document.body.classList.contains("light");
+  return {
+    paper: light ? "#ffffff" : "#1a2028",
+    plot: light ? "#ffffff" : "#1a2028",
+    text: light ? "#1f2328" : "#e6edf3",
+    grid: light ? "#d0d7de" : "#30363d",
+    axis: light ? "#656d76" : "#8b949e",
+  };
+}
+
+function renderAnatomy() {
+  const c = themeColors();
+  const colors = ANATOMY.map(d => d.cls === "big" ? "#f85149" : d.cls === "mid" ? "#d29922" : "#2a7fa8");
+  Plotly.newPlot("chart-anatomy-donut", [{
+    type: "pie",
+    hole: 0.55,
+    values: ANATOMY.map(d => d.cost),
+    labels: ANATOMY.map(d => d.name),
+    marker: { colors, line: { color: c.paper, width: 2 } },
+    textinfo: "percent",
+    textfont: { color: "#ffffff", size: 12 },
+    hovertemplate: "<b>%{label}</b><br>%{value:.2f} (%{percent})<extra></extra>",
+  }], {
+    title: { text: "Baseline cost decomposition (example)", font: { color: c.text, size: 14 } },
+    paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+    showlegend: true,
+    legend: { font: { color: c.text, size: 11 }, x: 1.0, y: 0.5 },
+    margin: { t: 40, l: 10, r: 10, b: 10 },
+  }, { displayModeBar: false });
+
+  Plotly.newPlot("chart-anatomy-bar", [{
+    type: "bar",
+    orientation: "h",
+    x: ANATOMY.map(d => d.cost),
+    y: ANATOMY.map(d => d.name),
+    marker: { color: colors },
+    text: ANATOMY.map(d => d.cost.toFixed(2)),
+    textposition: "outside",
+    textfont: { color: c.text, size: 11 },
+    hovertemplate: "<b>%{y}</b><br>%{x:.2f}<extra></extra>",
+  }], {
+    title: { text: "Per-component cost (example)", font: { color: c.text, size: 14 } },
+    paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+    xaxis: { color: c.axis, gridcolor: c.grid, range: [0, 14], title: { text: "cost (unit)", font: { color: c.axis } } },
+    yaxis: { color: c.text, autorange: "reversed" },
+    margin: { t: 40, l: 230, r: 60, b: 40 },
+  }, { displayModeBar: false });
+}
+
+function renderPriorRuns() {
+  const c = themeColors();
+  const colors = PRIOR_RUNS.map(d =>
+    d.status === "win" ? "#3fb950" :
+    d.status === "ok" ? "#4ec9ff" :
+    d.status === "borderline" ? "#d29922" :
+    d.status === "over" ? "#d29922" : "#f85149"
+  );
+  Plotly.newPlot("chart-prior-runs", [{
+    type: "bar",
+    orientation: "h",
+    x: PRIOR_RUNS.map(d => d.delta),
+    y: PRIOR_RUNS.map(d => d.name),
+    marker: { color: colors },
+    text: PRIOR_RUNS.map(d => (d.delta > 0 ? "+" : "") + d.delta.toFixed(2)),
+    textposition: "outside",
+    textfont: { color: c.text, size: 11 },
+    hovertemplate: "<b>%{y}</b><br>Δ vs baseline: %{x:.2f}<extra></extra>",
+  }], {
+    title: { text: "Prior runs Δ on primary metric vs baseline (example)", font: { color: c.text, size: 14 } },
+    paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+    xaxis: {
+      color: c.axis, gridcolor: c.grid, range: [-1, 6],
+      title: { text: "Δ primary metric (positive = worse, signed)", font: { color: c.axis } },
+      zeroline: true, zerolinecolor: c.text, zerolinewidth: 2,
+    },
+    yaxis: { color: c.text, autorange: "reversed" },
+    margin: { t: 40, l: 170, r: 80, b: 50 },
+  }, { displayModeBar: false });
+}
+
+function renderMatrix() {
+  const c = themeColors();
+  Plotly.newPlot("chart-matrix", [{
+    type: "scatter",
+    mode: "markers+text",
+    x: HMATRIX.map(d => d.x),
+    y: HMATRIX.map(d => d.y),
+    text: HMATRIX.map(d => d.id),
+    textposition: "top center",
+    textfont: { color: c.text, size: 10 },
+    marker: {
+      size: HMATRIX.map(d => d.size),
+      color: HMATRIX.map(d => d.color),
+      opacity: 0.78,
+      line: { color: c.paper, width: 1.5 },
+    },
+    hovertemplate: "<b>%{customdata[0]}</b><br>%{customdata[1]}<br>cost-axis: %{x:.2f}<br>metric-axis: %{y:.1f}<extra></extra>",
+    customdata: HMATRIX.map(d => [d.id, d.label]),
+  }], {
+    title: { text: "Decision matrix — cost lever × metric lever (example)", font: { color: c.text, size: 14 } },
+    paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+    xaxis: {
+      title: { text: "Cost lever — Δ cost (negative = cheaper)", font: { color: c.axis } },
+      color: c.axis, gridcolor: c.grid, range: [-4, 3],
+      zeroline: true, zerolinecolor: c.text, zerolinewidth: 1.5,
+    },
+    yaxis: {
+      title: { text: "Metric lever — expected uplift (qualitative)", font: { color: c.axis } },
+      color: c.axis, gridcolor: c.grid, range: [-1.5, 3.5],
+      zeroline: true, zerolinecolor: c.text, zerolinewidth: 1.5,
+      tickvals: [0, 1, 2, 3],
+      ticktext: ["neutral", "low", "moderate", "high"],
+    },
+    margin: { t: 40, l: 80, r: 40, b: 60 },
+    shapes: [
+      { type: "rect", x0: -4, x1: 0, y0: 0, y1: 3.5, fillcolor: "rgba(63,185,80,0.06)", line: { width: 0 } },
+      { type: "rect", x0: 0, x1: 3, y0: 0, y1: 3.5, fillcolor: "rgba(78,201,255,0.06)", line: { width: 0 } },
+      { type: "rect", x0: 0, x1: 3, y0: -1.5, y1: 0, fillcolor: "rgba(248,81,73,0.04)", line: { width: 0 } },
+    ],
+    annotations: [
+      { x: -3.7, y: 3.3, text: "★ Pareto-win<br>(cheaper + better)", showarrow: false, font: { color: "#3fb950", size: 11 }, xanchor: "left" },
+      { x: 2.7, y: 3.3, text: "Spend for metric", showarrow: false, font: { color: "#4ec9ff", size: 11 }, xanchor: "right" },
+      { x: 2.7, y: -1.3, text: "Avoid", showarrow: false, font: { color: "#f85149", size: 11 }, xanchor: "right" },
+    ],
+  }, { displayModeBar: false });
+}
+
+function rerenderCharts() {
+  renderAnatomy();
+  renderPriorRuns();
+  renderMatrix();
+}
+
+function rerenderMermaid() {
+  document.querySelectorAll(".mermaid").forEach(el => {
+    if (el.dataset.processed) {
+      el.removeAttribute("data-processed");
+      el.innerHTML = el.dataset.src || el.innerHTML;
+    } else {
+      el.dataset.src = el.innerHTML;
+    }
+  });
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: document.body.classList.contains("light") ? "default" : "dark",
+    themeVariables: {
+      fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    },
+  });
+  mermaid.run({ querySelector: ".mermaid" });
+}
+
+// ============== scroll-spy: highlight current phase + subsection ==============
+function setupScrollSpy() {
+  const phaseBar = document.getElementById("phase-bar");
+  const tocLinks = Array.from(document.querySelectorAll("aside.toc a.toc-sub"));
+  const phaseNodes = Array.from(phaseBar ? phaseBar.querySelectorAll(".phase-node") : []);
+  const tocByHref = {};
+  tocLinks.forEach(a => { tocByHref[a.getAttribute("href").slice(1)] = a; });
+  const phaseByName = {};
+  phaseNodes.forEach(p => { phaseByName[p.dataset.phase] = p; });
+
+  // All h2/h3 with an id that we want to spy on (anything that has a TOC entry).
+  const watched = Array.from(document.querySelectorAll("h2[id], h3[id]"))
+    .filter(h => tocByHref[h.id]);
+
+  // Recompute the sticky-header offset every call so theme/zoom changes don't break it.
+  function headerOffset() {
+    const hdr = document.querySelector("header.top");
+    return hdr ? hdr.getBoundingClientRect().height + 12 : 100;
+  }
+
+  function findPhase(el) {
+    let cur = el;
+    while (cur && cur !== document.body) {
+      if (cur.id && cur.id.startsWith("phase-")) return cur.id.replace("phase-", "");
+      cur = cur.parentElement;
+    }
+    return null;
+  }
+
+  function update() {
+    const off = headerOffset();
+    const scrollY = window.scrollY;
+    // Pick the last heading whose top has passed the offset.
+    let current = null;
+    for (const h of watched) {
+      if (h.offsetTop - off <= scrollY) current = h;
+      else break;
+    }
+    // Highlight TOC sub
+    tocLinks.forEach(a => a.classList.remove("current"));
+    if (current && tocByHref[current.id]) tocByHref[current.id].classList.add("current");
+    // Highlight phase node
+    const phase = current ? findPhase(current) : null;
+    phaseNodes.forEach(p => p.classList.remove("current"));
+    if (phase && phaseByName[phase]) phaseByName[phase].classList.add("current");
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => { update(); ticking = false; });
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+
+  // Recompute toc top offset against actual header height
+  const toc = document.getElementById("toc");
+  function placeToc() {
+    if (!toc) return;
+    const hdr = document.querySelector("header.top");
+    if (hdr) toc.style.top = hdr.getBoundingClientRect().height + "px";
+  }
+  placeToc();
+  window.addEventListener("resize", placeToc);
+
+  update();
+}
+
+// ============== research comments — anchored notes + /claude flag ==============
+const COMMENT_KEY = "research_comments::" + ((location.pathname.split("/").pop()) || "report");
+
+function loadComments() {
+  try { return JSON.parse(localStorage.getItem(COMMENT_KEY)) || []; }
+  catch { return []; }
+}
+function saveComments(arr) { localStorage.setItem(COMMENT_KEY, JSON.stringify(arr)); }
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+// Locate the best anchor (heading id) for a given client-y position.
+function findAnchorForY(clientY) {
+  const containerEl = document.querySelector(".container");
+  if (!containerEl) return null;
+  const headings = Array.from(document.querySelectorAll(".container h2[id], .container h3[id]"));
+  const scrollY = window.scrollY;
+  let chosen = null;
+  for (const h of headings) {
+    if (h.offsetTop - scrollY <= clientY) chosen = h;
+    else break;
+  }
+  return chosen;
+}
+
+function renderCommentCounts(comments) {
+  // Reset all counts
+  document.querySelectorAll("[data-comment-count]").forEach(el => el.removeAttribute("data-comment-count"));
+  // Group by anchor id
+  const byAnchor = {};
+  comments.forEach(c => { byAnchor[c.anchor_id] = (byAnchor[c.anchor_id] || 0) + 1; });
+  Object.keys(byAnchor).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute("data-comment-count", String(byAnchor[id]));
+  });
+}
+
+function renderCommentRail() {
+  const list = document.getElementById("comments-list");
+  const empty = document.getElementById("comments-empty");
+  if (!list) return;
+  const comments = loadComments();
+  list.innerHTML = "";
+  empty.style.display = comments.length ? "none" : "block";
+
+  // Sort by anchor's y-position, then by creation time
+  comments.sort((a, b) => {
+    const ea = document.getElementById(a.anchor_id);
+    const eb = document.getElementById(b.anchor_id);
+    const ya = ea ? ea.offsetTop : 0;
+    const yb = eb ? eb.offsetTop : 0;
+    if (ya !== yb) return ya - yb;
+    return (a.created_utc || "").localeCompare(b.created_utc || "");
+  });
+
+  comments.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "comment-card" + (c.claude_directive ? " claude-directive" : "");
+    card.dataset.id = c.id;
+    const flag = c.claude_directive ? '<span class="claude-flag">/claude</span>' : "";
+    const when = c.created_utc ? new Date(c.created_utc).toLocaleString() : "";
+    card.innerHTML =
+      '<div class="anchor-label">§ ' + escapeHtml(c.anchor_label || c.anchor_id || "?") + '</div>' +
+      '<div class="body">' + escapeHtml(c.body || "") + '</div>' +
+      '<div class="meta">' +
+        '<span>' + escapeHtml(c.author || "you") + '</span><span>·</span>' +
+        '<span>' + escapeHtml(when) + '</span>' + flag +
+        '<button class="delete-btn" data-id="' + c.id + '" title="Delete">×</button>' +
+      '</div>';
+    card.addEventListener("click", (e) => {
+      if (e.target.classList.contains("delete-btn")) return;
+      const target = document.getElementById(c.anchor_id);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    list.appendChild(card);
+  });
+
+  // Wire delete buttons
+  list.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      saveComments(loadComments().filter(c => c.id !== id));
+      renderCommentRail();
+      renderCommentCounts(loadComments());
+    });
+  });
+
+  renderCommentCounts(comments);
+}
+
+function setupComments() {
+  const containerEl = document.querySelector(".container");
+  const btn = document.getElementById("comment-add");
+  const dialog = document.getElementById("comment-dialog");
+  const textarea = document.getElementById("dialog-textarea");
+  const anchorInfo = document.getElementById("dialog-anchor");
+  if (!containerEl || !btn || !dialog) return;
+  let activeAnchor = null;
+  let lastY = 0;
+
+  // Trigger zone: x in (container.right - 8, container.right + 80), y > header.
+  document.addEventListener("mousemove", (e) => {
+    if (dialog.classList.contains("visible")) return;
+    if (window.innerWidth < 1100) return;
+    const rect = containerEl.getBoundingClientRect();
+    const hdr = document.querySelector("header.top");
+    const hdrH = hdr ? hdr.getBoundingClientRect().height + 8 : 100;
+    if (e.clientY < hdrH) { btn.classList.remove("visible"); return; }
+    if (e.clientX >= rect.right - 8 && e.clientX <= rect.right + 80) {
+      btn.style.top = (e.clientY - 12) + "px";
+      btn.style.left = (rect.right + 8) + "px";
+      btn.classList.add("visible");
+      lastY = e.clientY;
+    } else if (!btn.matches(":hover")) {
+      btn.classList.remove("visible");
+    }
+  });
+
+  btn.addEventListener("click", () => {
+    const anchor = findAnchorForY(lastY + 12);
+    if (!anchor) { alert("No section found near this position"); return; }
+    activeAnchor = anchor;
+    anchorInfo.textContent = "§ " + anchor.textContent.trim().slice(0, 100);
+    textarea.value = "";
+    // Position dialog to the left of the button
+    const bRect = btn.getBoundingClientRect();
+    let left = bRect.left - 308;
+    if (left < 8) left = 8;
+    let top = bRect.top - 6;
+    if (top + 200 > window.innerHeight) top = Math.max(80, window.innerHeight - 220);
+    dialog.style.top = top + "px";
+    dialog.style.left = left + "px";
+    dialog.classList.add("visible");
+    btn.classList.remove("visible");
+    setTimeout(() => textarea.focus(), 0);
+  });
+
+  function closeDialog() {
+    dialog.classList.remove("visible");
+    activeAnchor = null;
+  }
+
+  function saveDraft() {
+    const body = textarea.value.trim();
+    if (!body || !activeAnchor) { closeDialog(); return; }
+    const comments = loadComments();
+    comments.push({
+      id: "c-" + Date.now() + "-" + Math.floor(Math.random() * 999),
+      anchor_id: activeAnchor.id,
+      anchor_label: activeAnchor.textContent.trim().slice(0, 100),
+      created_utc: new Date().toISOString(),
+      author: localStorage.getItem("research_comment_author") || "you",
+      body: body,
+      claude_directive: /\/claude\b/.test(body),
+      status: "open",
+    });
+    saveComments(comments);
+    closeDialog();
+    renderCommentRail();
+  }
+
+  document.getElementById("dialog-cancel").addEventListener("click", closeDialog);
+  document.getElementById("dialog-save").addEventListener("click", saveDraft);
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveDraft(); }
+    else if (e.key === "Escape") { e.preventDefault(); closeDialog(); }
+  });
+
+  document.getElementById("comments-export").addEventListener("click", () => {
+    const c = loadComments();
+    const docName = (location.pathname.split("/").pop() || "report");
+    const payload = {
+      doc: docName,
+      exported_utc: new Date().toISOString(),
+      author: localStorage.getItem("research_comment_author") || "you",
+      comments: c,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = docName.replace(/\.html$/, "") + "__comments.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById("comments-import").addEventListener("click", () => {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "application/json";
+    inp.addEventListener("change", (ev) => {
+      const f = ev.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const j = JSON.parse(r.result);
+          if (j && Array.isArray(j.comments)) {
+            const merge = confirm(
+              "Found " + j.comments.length + " comments in file.\n" +
+              "OK = merge with existing\nCancel = replace existing"
+            );
+            const existing = loadComments();
+            const next = merge
+              ? [...existing.filter(e => !j.comments.find(n => n.id === e.id)), ...j.comments]
+              : j.comments;
+            saveComments(next);
+            renderCommentRail();
+          }
+        } catch { alert("Invalid JSON"); }
+      };
+      r.readAsText(f);
+    });
+    inp.click();
+  });
+
+  document.getElementById("comments-clear").addEventListener("click", () => {
+    if (confirm("Clear all comments?\n(Export first if you want to keep them.)")) {
+      saveComments([]);
+      renderCommentRail();
+    }
+  });
+
+  renderCommentRail();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  rerenderCharts();
+  rerenderMermaid();
+  setupScrollSpy();
+  setupComments();
+});
+</script>
+</body>
+</html>

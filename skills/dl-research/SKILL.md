@@ -102,6 +102,22 @@ procedure file.
    adjudicating reviewer disagreement.
 7. Load templates only when scaffolding or repairing an artifact.
 
+## Optional Front-End
+
+`templates/frontend/report.html` is a project-agnostic HTML report
+skeleton (theme system, 9-phase sticky flow bar, fixed TOC, comment
+rail, goals tracker, Plotly + Mermaid hooks). `scripts/research_server.py`
+is a stdlib HTTP host that serves the per-study reports and sidecars
+from `agents/research/<study-id>/` and exposes `/api/role`,
+`/api/studies`, `/<study-id>/api/state`, and
+`/<study-id>/api/objectives/latest`.
+
+The front-end is **optional**. The protocol works without it; do not
+load `templates/frontend/` unless the user is instantiating a report,
+adding a visualisation, or wiring the server. See
+`templates/frontend/README.md` for placeholders, the goals-tracker
+JSONL schema, and customisation notes.
+
 ## Cross-Cutting Invariants
 
 - Never skip `frame`; an audit needs a stable question, scope, budget, and
