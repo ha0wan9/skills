@@ -1,20 +1,16 @@
 ---
 name: deep-survey-bfs
 description: >-
-  Conduct rigorous breadth-first literature surveys on technical topics: frame
-  the research question with a sub-question decomposition, run a broad
-  multi-source search (arXiv, OpenReview, DBLP, Semantic Scholar), score papers
-  on a 4-dimension rubric, audit coverage with a sub-question x dimension
-  matrix, fill gaps via targeted rounds, synthesize multi-axis taxonomies and
-  timelines with per-paper deep-dives, audit for source/institution/year bias,
-  render Mermaid citation graphs from a manually curated edge list, export the
-  finished survey as a single self-contained interactive HTML file (TOC,
-  paper/claim tooltips, search, sortable tables, Plotly charts, dark mode),
-  and version reports incrementally as new evidence (papers, datasets, weights,
-  experiments) arrives. Use when the user asks for a literature review,
-  comprehensive survey, "research X for me", or wants to expand/audit an
-  existing survey. A reference end-to-end example lives at
-  examples/stereo-matching-edge-fm/.
+  Conduct rigorous breadth-first literature surveys: decompose the question
+  into sub-questions, run a broad multi-source search (arXiv, OpenReview, DBLP,
+  Semantic Scholar), score papers on a 4-dimension rubric, gate completeness
+  with a sub-question x dimension coverage matrix, fill gaps via targeted
+  rounds, synthesize multi-axis taxonomies, timelines, and per-paper
+  deep-dives, audit source/institution/year bias, render Mermaid citation
+  graphs, and export a single self-contained interactive HTML report,
+  versioned incrementally as new evidence arrives. Use when the user asks for
+  a literature review, comprehensive survey, "research X for me", or to
+  expand/audit an existing survey.
 ---
 
 # Deep Survey (BFS)

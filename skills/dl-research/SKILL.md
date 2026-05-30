@@ -139,6 +139,18 @@ JSONL schema, and customisation notes.
 - A result can be promoted only if the decision rule for this study permits it.
 - Do not change secrets or credentials as part of research workflow setup.
 
+## Skill Arbitration
+
+This skill owns DL research studies with an experimental component. When a
+request would also match a peer skill on this marketplace, resolve as follows
+and state the resolution before acting. Never silently invoke a peer.
+
+| Request shape | Owner | This skill's role |
+|---|---|---|
+| DL research study (frame → design → experiments → evaluate → synthesize), launch/monitor runs, ablation design, autonomous ratchet loop | **`dl-research`** | acts |
+| Pure literature survey / comprehensive review / "research X for me" with no experimental component | **`deep-survey-bfs`** | the `survey` phase invokes it as a sub-step; do not freelance a survey here |
+| Bootstrap or repair the repo's agent harness (`AGENTS.md`/`USER.md`/mirrors/hooks), or package a study's output as a target-repo artifact with provenance + delivery | **`project-meta`** | accept the hand-off; if no harness exists, run `/project-meta init` first, then resume the study |
+
 ## Gotchas
 
 Non-obvious traps the agent will hit without being warned. Keep these here, not
