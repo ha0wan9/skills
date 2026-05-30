@@ -25,6 +25,9 @@
       "strict": false,
       "skills": [
         "./skills/dl-research"
+      ],
+      "agents": [
+        "./skills/dl-research/agents/methodology-critic.md"
       ]
     },
     {
@@ -34,6 +37,9 @@
       "strict": false,
       "skills": [
         "./skills/deep-survey-bfs"
+      ],
+      "agents": [
+        "./skills/deep-survey-bfs/agents/claims-adversary.md"
       ]
     }
   ]

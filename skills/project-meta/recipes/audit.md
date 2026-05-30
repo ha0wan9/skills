@@ -22,6 +22,7 @@ Load only the references relevant to the audit target:
 - [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — when memory layout is in scope
 - [`references/mirrors-and-updates.md`](../references/mirrors-and-updates.md) — when mirrors are in scope
 - [`references/writing-skills.md`](../references/writing-skills.md) — when auditing a skill (not a project)
+- [`references/skill-critics.md`](../references/skill-critics.md) — when auditing a skill/marketplace; the critic suite that feeds the authoring + enforcement dimensions
 - [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when host manifests are in scope
 
 ## Audit dimensions
@@ -71,11 +72,12 @@ Score each dimension as **ABSENT / PARTIAL / ENFORCED**.
 ## Workflow
 
 1. **Scope the audit**: full harness, single skill, mirrors only, etc. Default scope = full harness.
-2. **Run `validate_target_harness.py`** as the structural floor — record PASS/WARN/FAIL.
-3. **Walk the dimensions** above, scoring each item.
-4. **Group findings** by severity (BLOCKER / MAJOR / MINOR / NIT) and by owner (template, reference, script, instantiated artifact, mirror).
-5. **Cite anti-pattern IDs** for every finding that matches a named pattern. Findings without a matching AP-XXX-N are candidates for adding new entries to the catalog.
-6. **Recommend the next command**: typically `init` for missing artifacts, targeted edits for structural issues, or a follow-up `audit` after the user fixes findings.
+2. **Run `validate_target_harness.py`** as the structural floor — record PASS/WARN/FAIL. When the target is a skill or the marketplace, also run the deterministic critic suite (`references/skill-critics.md`); its output is the mechanical evidence for the *Skill / harness authoring* and *Validation & enforcement* dimensions below.
+3. **Dispatch reviewer-agent critics** when the audit target includes a survey or a study artifact: `deep-survey-bfs/agents/claims-adversary.md` for a `survey.md`, `dl-research/agents/methodology-critic.md` for a study. Skip for a plain harness/memory audit.
+4. **Walk the dimensions** above, scoring each item.
+5. **Group findings** by severity (BLOCKER / MAJOR / MINOR / NIT) and by owner (template, reference, script, instantiated artifact, mirror).
+6. **Cite anti-pattern IDs** for every finding that matches a named pattern. Findings without a matching AP-XXX-N are candidates for adding new entries to the catalog.
+7. **Recommend the next command**: typically `init` for missing artifacts, targeted edits for structural issues, or a follow-up `audit` after the user fixes findings.
 
 ## Output contract
 
