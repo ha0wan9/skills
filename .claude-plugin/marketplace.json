@@ -41,6 +41,15 @@
       "agents": [
         "./skills/deep-survey-bfs/agents/claims-adversary.md"
       ]
+    },
+    {
+      "name": "profile-creator",
+      "description": "Create a new Claude Code config profile in a multi-claude setup: a ~/.claude-<name>/ dir with its own CLAUDE_CONFIG_DIR, a ~/.local/bin launcher, and a shared-plugins symlink. Plugin administration is centralized via the ccplug wrapper so installLocation/installPath never drift across profiles. Use to add a new multi-claude profile, spin up an isolated config directory for a different account/context, or onboard a profile to the shared plugin store.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/profile-creator"
+      ]
     }
   ]
 }
