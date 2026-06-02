@@ -1,12 +1,12 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts three skills under `skills/`: [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), and [`deep-survey-bfs`](skills/deep-survey-bfs/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), and [`calendar-crud-workflow`](skills/calendar-crud-workflow/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
 1. Read this file (`AGENTS.md`) for repo layout and routing.
 2. Inspect [`README.md`](README.md) lightly — read it selectively at cold start instead of eagerly loading the whole file. Use the bounded doc context extractor (see below) when only a section is needed.
-3. Read the relevant skill's `SKILL.md` when a task touches that skill: [`skills/project-meta/SKILL.md`](skills/project-meta/SKILL.md) or [`skills/dl-research/SKILL.md`](skills/dl-research/SKILL.md).
+3. Read the relevant skill's `SKILL.md` when a task touches that skill.
 4. Read [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) when adding, removing, or renaming a plugin.
 5. Check local `USER.md` only if it exists at the repo root; it is local-only and Git-ignored.
 
@@ -20,6 +20,8 @@
 | `skills/project-meta/` | full project-meta skill, including its own SKILL.md, references, templates, agents/openai.yaml |
 | `skills/dl-research/` | full dl-research skill, including phases, modes, references, templates, agents/openai.yaml |
 | `skills/deep-survey-bfs/` | full deep-survey-bfs skill, including phases, references, templates, scripts (`arxiv_search.py`, `coverage_check.py`, `claims_validate.py`, `bias_audit.py`), agents/openai.yaml |
+| `skills/profile-creator/` | multi-Claude profile creation skill with shared plugin-store conventions |
+| `skills/calendar-crud-workflow/` | calendar event CRUD workflow skill for stable calendars, title prefixes, searchable tags, source links, and safe batch operations |
 | `scripts/validate_project_meta.py` | dev-only validator; not shipped to install. Validates the project-meta skill content under `skills/project-meta/` |
 
 ## Bounded Doc Loading
@@ -57,10 +59,11 @@ When editing this repo as agent work:
 
 ## Adding A New Skill
 
-1. Create `skills/<new-skill-name>/SKILL.md` with name + description frontmatter.
-2. Add a plugin entry to `.claude-plugin/marketplace.json` with `name`, `description`, `source: "./"`, `strict: false`, and `skills: ["./skills/<new-skill-name>"]`.
-3. Update this `AGENTS.md` and `README.md` with the new skill in the routing table.
+1. Create `skills/<new-skill-name>/SKILL.md` with name + description frontmatter. The `SKILL.md` `description` is the **canonical** description for the skill.
+2. Add a plugin entry to `.claude-plugin/marketplace.json` with `name`, `version`, `description`, `source: "./"`, `strict: false`, and `skills: ["./skills/<new-skill-name>"]`. The plugin `description` MUST be copied **verbatim** from the skill's `SKILL.md` frontmatter — do not paraphrase. This keeps install-time discovery and trigger-time matching in sync (drift here is how the manifest goes stale).
+3. Update this `AGENTS.md` and `README.md` with the new skill in the routing table, and refresh the marketplace `metadata.description` to mention the new plugin.
 4. If the new skill needs a dev validator, place it under top-level `scripts/`, not inside `skills/<name>/`, so it is not shipped.
+5. When a skill's `SKILL.md` description changes, re-copy it into the matching `marketplace.json` plugin `description` in the same change.
 
 ## Mirrors
 
