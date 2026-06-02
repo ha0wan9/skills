@@ -1,0 +1,12 @@
+{
+  "pack_id": "fixture-pack",
+  "assets": [
+    {
+      "name": "sample-card",
+      "module": "component",
+      "path": "assets/sample-card.ppm",
+      "sketch_refs": ["sample-dashboard-wireframe"],
+      "originality_check": "fixture asset for contact sheet rendering"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), and [`calendar-crud-workflow`](skills/calendar-crud-workflow/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), and [`sketch-asset-generator`](skills/sketch-asset-generator/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
@@ -22,6 +22,7 @@
 | `skills/deep-survey-bfs/` | full deep-survey-bfs skill, including phases, references, templates, scripts (`arxiv_search.py`, `coverage_check.py`, `claims_validate.py`, `bias_audit.py`), agents/openai.yaml |
 | `skills/profile-creator/` | multi-Claude profile creation skill with shared plugin-store conventions |
 | `skills/calendar-crud-workflow/` | calendar event CRUD workflow skill for stable calendars, title prefixes, searchable tags, source links, and safe batch operations |
+| `skills/sketch-asset-generator/` | extraction-first design-system asset packs from sketches or source UI; direct token/SVG/code extraction by default, GPT Image fallback; ships `scripts/validate_asset_pack.py` and `scripts/render_contact_sheet.py`, schema, references, and example fixtures |
 | `scripts/validate_project_meta.py` | dev-only validator; not shipped to install. Validates the project-meta skill content under `skills/project-meta/` |
 
 ## Bounded Doc Loading

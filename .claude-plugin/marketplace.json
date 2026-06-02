@@ -5,7 +5,7 @@
     "email": "haoran.wang@stereolabs.com"
   },
   "metadata": {
-    "description": "Agent harness skills: project-meta (repo memory + execution governance), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (multi-Claude config profiles), and calendar-crud-workflow (safe calendar event CRUD).",
+    "description": "Agent harness skills: project-meta (repo memory + execution governance), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (multi-Claude config profiles), calendar-crud-workflow (safe calendar event CRUD), and sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback).",
     "version": "1.0.0"
   },
   "plugins": [
@@ -63,6 +63,16 @@
       "strict": false,
       "skills": [
         "./skills/calendar-crud-workflow"
+      ]
+    },
+    {
+      "name": "sketch-asset-generator",
+      "version": "1.0.0",
+      "description": "Generate structured, modular, reusable, original visual asset packs from user-provided design sketches, wireframes, whiteboard photos, Figma or Sketch screenshots, low-fidelity UI mocks, moodboards, component layout sketches, or existing UI source (CSS, SVG, components). Prefer extracting assets directly from user-owned resources (design tokens, vectors, component code); use GPT Image generation only when an asset cannot be extracted from any user resource. Use when turning sketches or source UI into design-system-ready assets, asset-pack.yaml briefs, design tokens, SVG and component primitives, manifests, contact sheets, or validation reports, using public design systems only as structural references and never copying third-party brand visuals. Works whether the running agent is Claude or Codex.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/sketch-asset-generator"
       ]
     }
   ]
