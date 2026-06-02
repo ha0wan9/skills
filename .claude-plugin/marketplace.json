@@ -5,13 +5,14 @@
     "email": "haoran.wang@stereolabs.com"
   },
   "metadata": {
-    "description": "Agent harness skills: project-meta for repo memory and execution governance, dl-research for rigorous DL research workflows.",
+    "description": "Agent harness skills: project-meta (repo memory + execution governance), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (multi-Claude config profiles), and calendar-crud-workflow (safe calendar event CRUD).",
     "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "project-meta",
-      "description": "Bootstrap, audit, and evolve a repository agent-work harness. Generates AGENTS.md, USER.md preferences, project-specific artifacts from skill-level templates, execution rules, and pre-commit delivery. Use when starting work in a repo, repairing memory layout, evolving agent instructions, coordinating complex work, or running /project-meta init|status|validate|deliver|audit.",
+      "version": "1.0.0",
+      "description": "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -20,7 +21,8 @@
     },
     {
       "name": "dl-research",
-      "description": "Guide rigorous Deep Learning research studies: initialize a project research adapter, frame questions, survey evidence, design controlled experiments, prepare/launch/monitor runs, evaluate results, synthesize findings, audit methodology, or run a bounded autonomous ratchet loop.",
+      "version": "1.0.0",
+      "description": "Guide rigorous Deep Learning research studies: initialize a project research adapter, frame questions, survey evidence, design controlled experiments, prepare/launch/monitor runs, evaluate results, synthesize findings, audit methodology, or run a bounded autonomous ratchet loop. Use for project-agnostic model training, ablation, optimization, and research workflow orchestration.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -32,7 +34,8 @@
     },
     {
       "name": "deep-survey-bfs",
-      "description": "Conduct rigorous breadth-first literature surveys: frame the research question with sub-question decomposition, broad multi-source search (arXiv/OpenReview/DBLP/Semantic Scholar), 4-dimension paper rating, sub-question x dimension coverage matrix gap audit, targeted gap-filling rounds, multi-axis taxonomy + timeline + per-paper deep-dives synthesis, source/institution/year/method bias audit, citation-graph (Mermaid) rendering, single-file interactive HTML export with tooltips/search/Plotly/dark-mode, and incremental versioned reports as new evidence arrives. Reference example: skills/deep-survey-bfs/examples/stereo-matching-edge-fm/ (26 papers, 67 claims, full HTML render). Use when the user asks for a literature review, comprehensive survey, or wants to expand/audit an existing survey.",
+      "version": "1.0.0",
+      "description": "Conduct rigorous breadth-first literature surveys: decompose the question into sub-questions, run a broad multi-source search (arXiv, OpenReview, DBLP, Semantic Scholar), score papers on a 4-dimension rubric, gate completeness with a sub-question x dimension coverage matrix, fill gaps via targeted rounds, synthesize multi-axis taxonomies, timelines, and per-paper deep-dives, audit source/institution/year bias, render Mermaid citation graphs, and export a single self-contained interactive HTML report, versioned incrementally as new evidence arrives. Use when the user asks for a literature review, comprehensive survey, \"research X for me\", or to expand/audit an existing survey.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -44,11 +47,22 @@
     },
     {
       "name": "profile-creator",
-      "description": "Create a new Claude Code config profile in a multi-claude setup: a ~/.claude-<name>/ dir with its own CLAUDE_CONFIG_DIR, a ~/.local/bin launcher, and a shared-plugins symlink. Plugin administration is centralized via the ccplug wrapper so installLocation/installPath never drift across profiles. Use to add a new multi-claude profile, spin up an isolated config directory for a different account/context, or onboard a profile to the shared plugin store.",
+      "version": "1.0.0",
+      "description": "Create a new Claude Code config profile in the user's multi-claude setup — a new ~/.claude-<name>/ dir with its own CLAUDE_CONFIG_DIR, a launcher script in ~/.local/bin, and a symlinked plugins/ dir so plugins stay shared across all profiles. Trigger when the user asks to \"add a new multi-claude profile\", \"create a claude-X profile\", \"spin up a new claude config\", or wants an isolated config directory for a different account/context.",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/profile-creator"
+      ]
+    },
+    {
+      "name": "calendar-crud-workflow",
+      "version": "1.0.0",
+      "description": "Standardize calendar event CRUD from fuzzy requests into stable calendars, title prefixes, searchable description tags, source links, and safe batch create/update/delete workflows. Use when the user asks to schedule, classify, bulk add, migrate, tag, color, or clean up calendar events across Google Calendar, Apple/iOS Calendar, Notion Calendar, or MCP calendar tools, especially when deciding between separate calendars, title labels, event colors, and description tags.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/calendar-crud-workflow"
       ]
     }
   ]

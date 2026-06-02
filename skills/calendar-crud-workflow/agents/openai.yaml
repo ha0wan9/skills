@@ -1,0 +1,4 @@
+interface:
+  display_name: "Calendar CRUD Workflow"
+  short_description: "Normalize fuzzy scheduling into safe calendar CRUD."
+  default_prompt: "Use $calendar-crud-workflow to classify, create, update, move, or delete calendar events with stable calendars, title prefixes, searchable tags, source links, and safe batch verification."

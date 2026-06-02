@@ -7,6 +7,7 @@ fresh repos without installing PyYAML or a test framework.
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -49,6 +50,9 @@ REQUIRED_TEMPLATES = {
 LOCAL_USER_TEMPLATE = "templates/user-preferences.md"
 FORBIDDEN_PROJECT_TEMPLATE_PREFIX = "agents/templates/"
 
+# After the recipe split (one file per verb), the route table maps verb -> recipe
+# and each recipe owns its own "Required references" section. `required_refs` are
+# therefore validated against the recipe file `recipes/<verb>.md`, not the route row.
 COMMAND_ROUTE_EXPECTATIONS = {
     "/project-meta init": {
         "mode": "editing",
@@ -62,19 +66,35 @@ COMMAND_ROUTE_EXPECTATIONS = {
     },
     "/project-meta status": {
         "mode": "read-only",
-        "required_refs": ("none by default",),
+        "required_refs": (
+            "repo-memory-structure",
+            "mirrors-and-updates",
+        ),
     },
     "/project-meta validate": {
         "mode": "read-only",
-        "required_refs": ("none by default",),
+        "required_refs": (
+            "harness-engineering",
+            "repo-memory-structure",
+            "anti-patterns",
+            "skill-critics",
+        ),
     },
     "/project-meta deliver": {
         "mode": "read-only",
-        "required_refs": ("documentation-delivery",),
+        "required_refs": (
+            "documentation-delivery",
+            "multi-agent-protocols",
+            "multi-host-manifests",
+        ),
     },
     "/project-meta audit": {
         "mode": "read-only by default",
-        "required_refs": ("load only references relevant to audit target",),
+        "required_refs": (
+            "harness-engineering",
+            "anti-patterns",
+            "repo-memory-structure",
+        ),
     },
 }
 
@@ -371,7 +391,7 @@ def check_skill_metadata() -> None:
     require("<" not in description and ">" not in description, "Description uses angle brackets")
     for token in (
         "agent-work harness",
-        "/project-meta command workflows",
+        "/project-meta commands",
         "/project-meta init",
         "AGENTS.md",
         "USER.md",
@@ -388,6 +408,24 @@ def check_skill_metadata() -> None:
         "durable knowledge",
     ):
         require(token in description, f"Description missing trigger token: {token}")
+
+
+def check_marketplace_description_sync() -> None:
+    """The project-meta SKILL.md description is canonical; the marketplace plugin
+    entry must copy it verbatim and carry a version. Prevents the manifest from
+    silently drifting away from the skill's trigger text (the drift that lets
+    install-time discovery and trigger-time matching diverge)."""
+    skill_desc = parse_simple_frontmatter(read("SKILL.md")).get("description", "")
+    manifest = json.loads(read_repo(".claude-plugin/marketplace.json"))
+    plugins = {p.get("name"): p for p in manifest.get("plugins", [])}
+    require("project-meta" in plugins, "marketplace.json missing project-meta plugin entry")
+    entry = plugins["project-meta"]
+    require(
+        entry.get("description") == skill_desc,
+        "marketplace.json project-meta description must match SKILL.md verbatim "
+        "(re-copy the SKILL.md description into the plugin entry)",
+    )
+    require(entry.get("version"), "marketplace.json project-meta entry must declare a version")
 
 
 def check_reference_routing() -> None:
@@ -469,8 +507,8 @@ def check_memory_boundaries() -> None:
 def check_protocol_completeness() -> None:
     cli = read("references/cli-command-patterns.md")
     for token in (
-        "Canonical Command Route Contract",
-        "Supported Commands",
+        "Canonical Route Contract",
+        "Recipe Directory",
         "/project-meta init",
         "/project-meta status",
         "/project-meta validate",
@@ -478,14 +516,16 @@ def check_protocol_completeness() -> None:
         "/project-meta audit",
         "Reserved Commands",
         "not a separate shell binary",
-        "Command routing and workflow contracts are canonical in this file",
+        "command routing and workflow contracts are canonical here",
         "Implementation Risks",
         "Command surface bloat",
     ):
         require(token in cli, f"CLI command patterns missing: {token}")
+    # The USER.md reset/update route moved into the init recipe during the recipe split.
+    init_recipe = read("recipes/init.md")
     require(
-        "scripts/render_user_preferences.py --target-root <repo> --reset" in cli,
-        "CLI command patterns must route USER.md reset/update to the renderer",
+        "scripts/render_user_preferences.py --target-root <repo> --reset" in init_recipe,
+        "init recipe must route USER.md reset/update to the renderer",
     )
 
     multi = read("references/multi-agent-protocols.md")
@@ -642,11 +682,11 @@ def check_protocol_completeness() -> None:
 def check_command_route_contract() -> None:
     cli = read("references/cli-command-patterns.md")
     require(
-        "| Command | Mode | Canonical workflow owner | Required references | Output contract summary |" in cli,
+        "| Command | Mode | Recipe |" in cli,
         "CLI command route table header is missing or changed",
     )
     require(
-        "Command routing and workflow contracts are canonical in this file" in cli,
+        "command routing and workflow contracts are canonical here" in cli,
         "CLI command patterns must declare canonical route ownership",
     )
 
@@ -663,8 +703,19 @@ def check_command_route_contract() -> None:
             f"| {expectation['mode']} |" in row,
             f"{command} route mode must be {expectation['mode']}",
         )
+        # The route table maps verb -> recipe; the recipe owns the references.
+        verb = command.split()[-1]
+        recipe_path = f"recipes/{verb}.md"
+        require(
+            recipe_path in row,
+            f"{command} route table must link its recipe {recipe_path}",
+        )
+        recipe = read(recipe_path)
         for ref in expectation["required_refs"]:
-            require(ref in row, f"{command} route table missing required reference: {ref}")
+            require(
+                ref in recipe,
+                f"{recipe_path} missing required reference: {ref}",
+            )
 
 
 def check_ui_metadata() -> None:
@@ -1037,6 +1088,7 @@ def check_user_preference_renderer() -> None:
 CHECKS = (
     check_required_files,
     check_skill_metadata,
+    check_marketplace_description_sync,
     check_reference_routing,
     check_memory_boundaries,
     check_protocol_completeness,
