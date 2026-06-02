@@ -15,6 +15,29 @@ Each skill in `skills/` is independently installable by name. The plugin manifes
 | `calendar-crud-workflow` | [`skills/calendar-crud-workflow/`](skills/calendar-crud-workflow/) | Standardize calendar event CRUD from fuzzy scheduling requests into stable calendars, title prefixes, searchable tags, source links, and safe batch operations. |
 | `sketch-asset-generator` | [`skills/sketch-asset-generator/`](skills/sketch-asset-generator/) | Turn sketches or existing UI source into reviewable design-system asset packs (tokens, SVG/component primitives, manifests, contact sheets, validation reports). Extraction-first: extract directly from user-owned resources by default, use GPT Image only as a fallback. Runs under Claude or Codex. |
 
+## Compatibility
+
+The `SKILL.md` format is portable across runtimes (Claude Code, [Codex](https://developers.openai.com/codex/skills), [OpenClaw](https://docs.openclaw.ai/tools/skills) / [ClawHub](https://github.com/openclaw/clawhub)). Two independent axes are tracked per skill in each `SKILL.md` frontmatter under `metadata` (mirrored here and in `marketplace.json`):
+
+- **`compat`** — runtimes the skill *runs on* (capability).
+- **`published`** — registries where it is *live* today (distribution).
+
+```yaml
+metadata:
+  compat: [claude-code, codex, openclaw]   # runs on
+  published: [claude-marketplace]          # live in
+```
+
+| Plugin | Claude Code | Codex | OpenClaw | Published |
+|---|:--:|:--:|:--:|---|
+| `calendar-crud-workflow` | ✅ | ✅ | ✅ | Claude Marketplace |
+| `deep-survey-bfs` | ✅ | ✅ | ✅ | Claude Marketplace |
+| `dl-research` | ✅ | ✅ | ✅ | Claude Marketplace |
+| `project-meta` | ✅ | ✅ | ⚠️ | Claude Marketplace |
+| `profile-creator` | ✅ | ❌ | ❌ | Claude Marketplace |
+
+✅ supported · ⚠️ untested (installs Claude Code / Codex harness artifacts) · ❌ not supported by design. `profile-creator` manages Claude Code config dirs (`~/.claude-<name>`, `CLAUDE_CONFIG_DIR`, `ccplug`) and is intrinsically Claude-Code-only. All skills are currently published only to the Claude Code marketplace; `compat` runtimes beyond that are format-portable but not yet listed in their native registries.
+
 ## Install
 
 This repo is a Claude Code plugin marketplace. Install the marketplace once, then install any plugin by name.

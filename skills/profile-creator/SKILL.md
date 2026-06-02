@@ -1,9 +1,13 @@
 ---
 name: profile-creator
 description: Create a new Claude Code config profile in the user's multi-claude setup — a new ~/.claude-<name>/ dir with its own CLAUDE_CONFIG_DIR, a launcher script in ~/.local/bin, and a symlinked plugins/ dir so plugins stay shared across all profiles. Trigger when the user asks to "add a new multi-claude profile", "create a claude-X profile", "spin up a new claude config", or wants an isolated config directory for a different account/context.
+metadata: {version: 1.0.0, compat: [claude-code], published: [claude-marketplace]}
 ---
 
 # profile-creator
+
+> **Runtimes:** Claude Code only &nbsp;|&nbsp; **Published:** Claude Marketplace
+> _Claude-Code-specific by design — manages `~/.claude-<name>` config dirs, `CLAUDE_CONFIG_DIR`, and `ccplug`._
 
 This user runs Claude Code with multiple profiles. Each profile is a separate config directory (`~/.claude-<name>/`) selected via the `CLAUDE_CONFIG_DIR` env var, with a launcher script at `~/.local/bin/claude-<name>` that sets the env and execs `claude`.
 

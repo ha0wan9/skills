@@ -1,9 +1,12 @@
 ---
 name: calendar-crud-workflow
 description: Standardize calendar event CRUD from fuzzy requests into stable calendars, title prefixes, searchable description tags, source links, and safe batch create/update/delete workflows. Use when the user asks to schedule, classify, bulk add, migrate, tag, color, or clean up calendar events across Google Calendar, Apple/iOS Calendar, Notion Calendar, or MCP calendar tools, especially when deciding between separate calendars, title labels, event colors, and description tags.
+metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Calendar CRUD Workflow
+
+> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Use this skill to turn vague scheduling requests into safe, normalized calendar operations. The goal is stable cross-device behavior, searchable metadata, and reversible bulk changes.
 

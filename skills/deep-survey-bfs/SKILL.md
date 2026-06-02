@@ -11,9 +11,12 @@ description: >-
   versioned incrementally as new evidence arrives. Use when the user asks for
   a literature review, comprehensive survey, "research X for me", or to
   expand/audit an existing survey.
+metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Deep Survey (BFS)
+
+> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Thin router for breadth-first literature surveys. Resolve the phase, resolve
 `survey-id`, then load only the procedure file you need. Survey artifacts live
