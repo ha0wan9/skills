@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sketch Asset Pack",
+  "type": "object",
+  "required": ["pack_id", "status", "source_refs", "sketches", "generation", "modules"],
+  "properties": {
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "ready", "generated", "reviewed"]
+    },
+    "description": {
+      "type": "string"
+    },
+    "source_refs": {
+      "type": "object",
+      "required": ["public_structure_refs", "excluded_visual_refs"],
+      "properties": {
+        "public_structure_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "url", "use"]
+          }
+        },
+        "excluded_visual_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sketches": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "path", "purpose", "module_targets", "rights"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "path": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "module_targets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "rights": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "required": ["provider", "model", "quality", "size", "output_format", "dry_run"]
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "sketch_refs", "outputs", "prompt_brief", "acceptance_criteria", "license_notes"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["foundation", "icon", "diagram", "component", "pattern", "illustration", "background"]
+          },
+          "sketch_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "output_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "outputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "format", "size"]
+            }
+          },
+          "prompt_brief": {
+            "type": "string"
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "license_notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

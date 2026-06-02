@@ -13,6 +13,7 @@ Each skill in `skills/` is independently installable by name. The plugin manifes
 | `deep-survey-bfs` | [`skills/deep-survey-bfs/`](skills/deep-survey-bfs/) | Breadth-first literature surveys with hard coverage gates: frame → Round 1 broad search → gap audit (sub-question × dimension matrix) → Round N gap-fill → synthesize multi-axis taxonomy + per-paper deep-dives + multi-tier reading list. Anti-hallucination via `claims.jsonl` contract. |
 | `profile-creator` | [`skills/profile-creator/`](skills/profile-creator/) | Create isolated Claude Code config profiles that share one plugin store through a centralized `ccplug` admin wrapper. |
 | `calendar-crud-workflow` | [`skills/calendar-crud-workflow/`](skills/calendar-crud-workflow/) | Standardize calendar event CRUD from fuzzy scheduling requests into stable calendars, title prefixes, searchable tags, source links, and safe batch operations. |
+| `sketch-asset-generator` | [`skills/sketch-asset-generator/`](skills/sketch-asset-generator/) | Turn sketches or existing UI source into reviewable design-system asset packs (tokens, SVG/component primitives, manifests, contact sheets, validation reports). Extraction-first: extract directly from user-owned resources by default, use GPT Image only as a fallback. Runs under Claude or Codex. |
 
 ## Install
 
@@ -27,6 +28,7 @@ From a git repo URL (`git@github.com:ha0wan9/skills.git` or `https://github.com/
 /plugin install deep-survey-bfs@ha0wan9-skills
 /plugin install profile-creator@ha0wan9-skills
 /plugin install calendar-crud-workflow@ha0wan9-skills
+/plugin install sketch-asset-generator@ha0wan9-skills
 ```
 
 Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace.json` and copies the referenced skill directory into the user's plugin store. Skills install independently; you can install one without the other.
@@ -39,6 +41,7 @@ cp -R /path/to/skills/skills/dl-research     ~/.claude/skills/dl-research
 cp -R /path/to/skills/skills/deep-survey-bfs ~/.claude/skills/deep-survey-bfs
 cp -R /path/to/skills/skills/profile-creator ~/.claude/skills/profile-creator
 cp -R /path/to/skills/skills/calendar-crud-workflow ~/.claude/skills/calendar-crud-workflow
+cp -R /path/to/skills/skills/sketch-asset-generator ~/.claude/skills/sketch-asset-generator
 ```
 
 ## Bounded Doc Loading
@@ -104,9 +107,17 @@ skills/
     │   └── scripts/     # arxiv_search, coverage_check, claims_validate, bias_audit
     ├── profile-creator/
     │   └── SKILL.md
-    └── calendar-crud-workflow/
+    ├── calendar-crud-workflow/
+    │   ├── SKILL.md
+    │   └── agents/openai.yaml
+    └── sketch-asset-generator/
         ├── SKILL.md
-        └── agents/openai.yaml
+        ├── agents/openai.yaml
+        ├── references/   # claude-design-architecture, direct-extraction-workflow, gpt-image-workflow, originality-policy, public-case-model, sketch-intake
+        ├── templates/    # asset-pack.yaml
+        ├── schemas/      # asset-pack.schema.json
+        ├── examples/     # fixtures + public-design-system structure notes
+        └── scripts/      # validate_asset_pack.py, render_contact_sheet.py
 ```
 
 The `skills/<name>/` flat layout mirrors `anthropics/skills` and is what `/plugin install` expects when reading `marketplace.json`.

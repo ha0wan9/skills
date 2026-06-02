@@ -1,0 +1,62 @@
+pack_id: example-sketch-pack
+status: draft
+description: Original modular asset pack generated from user-provided sketches.
+
+source_refs:
+  public_structure_refs:
+    - name: IBM Carbon
+      url: https://carbondesignsystem.com/
+      use: Structural taxonomy and governance reference only.
+    - name: GOV.UK Design System
+      url: https://design-system.service.gov.uk/
+      use: Styles/components/patterns organization reference only.
+  excluded_visual_refs:
+    - brands explicitly excluded by the user
+    - third-party brand visuals not owned by the user
+
+sketches:
+  - id: sample-dashboard-wireframe
+    path: examples/fixtures/sketches/sample-dashboard-wireframe.svg
+    purpose: Dashboard layout and component hierarchy.
+    module_targets:
+      - component
+      - pattern
+    notes: Low-fidelity layout sketch; use only generic composition and hierarchy.
+    rights: User-provided or user-owned sketch.
+
+generation:
+  # Default path: extract assets directly from user-owned resources (tokens, SVG, code).
+  # Fallback only: switch provider to openai with a GPT Image model when an asset
+  # cannot be extracted from any user resource (see references/gpt-image-workflow.md).
+  provider: direct-extraction
+  model: none
+  quality: source-vector
+  size: scalable-svg
+  output_format: svg
+  background: transparent
+  moderation: not-applicable
+  dry_run: true
+
+modules:
+  - id: dashboard-components
+    type: component
+    sketch_refs:
+      - sample-dashboard-wireframe
+    output_count: 3
+    outputs:
+      - name: metric-card
+        format: svg
+        size: scalable
+      - name: navigation-panel
+        format: svg
+        size: scalable
+    prompt_brief: Extract and vectorize original dashboard component assets from the sketch hierarchy as SVG; use GPT Image only if a component cannot be extracted. Do not copy public design-system visuals.
+    acceptance_criteria:
+      - References at least one user sketch.
+      - Produces original component visuals.
+      - Text is legible at target size.
+      - Does not contain excluded visual references.
+    license_notes: User sketch provides visual direction; public design systems are structural references only.
+
+questions:
+  - Replace sample sketch with user-provided sketches before final generation.

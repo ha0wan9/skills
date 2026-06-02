@@ -1,0 +1,6 @@
+interface:
+  display_name: "Sketch Asset Generator"
+  short_description: "Generate asset packs from sketches"
+  default_prompt: "Use $sketch-asset-generator to create a modular asset pack from my sketches."
+policy:
+  allow_implicit_invocation: true
