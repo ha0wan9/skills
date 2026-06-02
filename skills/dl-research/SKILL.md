@@ -7,9 +7,12 @@ description: >-
   methodology, or run a bounded autonomous ratchet loop. Use for
   project-agnostic model training, ablation, optimization, and research
   workflow orchestration.
+metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # DL Research
+
+> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Project-agnostic meta skill for Deep Learning research workflows. It defines
 the research lifecycle, adapter contract, H/E identity rules, ledger shape, and
