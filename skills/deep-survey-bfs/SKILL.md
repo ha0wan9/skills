@@ -127,13 +127,29 @@ State the detected phase, `survey-id`, study root, and reason before loading.
 - Mark unknown values explicitly (e.g., "未披露", "not disclosed", "N/A") in
   comparison tables. Never guess.
 - Round N is gap-driven, not curiosity-driven. Each Round N entry must name
-  the gap it addresses.
+  the gap it addresses. The **4-round cap applies only to audit-gated gap
+  rounds**; post-audit `version` additions (new evidence, user-directed adds,
+  bias/weak-cell hardening, sub-question additions) are unbounded and do not
+  reopen the audit — see `phases/05-version.md`.
+- Round-1 cap scales with sub-question count: `cap ≈ max(30, 3 × N_SQ)`, not a
+  flat 25-35 (which assumes ~6-9 SQs). See `phases/01-round1.md`.
+- Closed ≠ diverse. A cell with one ★★★ (or all from one lab/year) is `weak`,
+  not done; `scripts/coverage_check.py` flags these. Harden via a weak-cell
+  `version` pass or accept+document the concentration.
+- Review/critical-review/survey dimensions: score a review's evidence on
+  synthesis breadth (so the canonical review can reach ★★★), or close the cell
+  on an authority-3 ★★ review. See `references/paper-rating-rubric.md` and
+  `references/coverage-matrix.md`.
 - Taxonomies are revisable. After Round N adds ≥3 papers, re-evaluate whether
-  existing buckets still partition cleanly.
+  existing buckets still partition cleanly. Cross-cutting sub-questions are
+  allowed: cross-tag one paper row across SQs (union the tags), but count each
+  paper once in the bias audit — see `references/taxonomy-revision.md`.
 - Bias audit must run before synthesis. If institution / country / year /
   method-route distribution is over-concentrated (any one bucket > 60% of
   ★★★ papers), trigger an additional Round N targeted at the under-represented
-  bucket.
+  bucket. `scripts/bias_audit.py` computes institution/country/year/venue (and
+  method-route when the column exists); add a `Country` tag/column to enable
+  country auditing.
 - Version updates must preserve prior section anchors so cross-references
   survive.
 - Do not change secrets, credentials, or external accounts as part of survey
@@ -150,6 +166,16 @@ State the detected phase, `survey-id`, study root, and reason before loading.
   it answers a sub-question precisely; a 200-citation 2018 paper can be ★★
   if it predates the field's reframing. Score on the 4 dimensions
   independently before binning.
+- **"Not found" ≠ "doesn't exist", especially for active industrial labs.**
+  A clean search miss is weak evidence for a negative claim ("single paper / no
+  successor / no vN"). Meta FAIR, DeepMind, the Allen Institute et al. ship
+  successors faster than aggregators index them. Check the lab's publications
+  page/blog before asserting absence, or hedge `confidence: low` — see
+  `references/source-coverage.md`. (A real run missed a "v2" this way.)
+- **Build claims at the right provenance tier.** If the survey is built from
+  abstracts/metadata rather than full PDFs, set `source_tier` accordingly and
+  `confidence ≤ medium`, and carry a provenance note in `survey.md` — don't
+  imply verbatim full-text verification that didn't happen.
 - **Gap audit on counts is weaker than on dimensions.** "≥3 papers per
   sub-question" lets you accumulate three papers from the same lab/year.
   The dimension matrix (theory / experiment / survey / critical-review)

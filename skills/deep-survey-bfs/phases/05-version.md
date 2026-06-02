@@ -60,6 +60,42 @@ without rewriting prior content.
   research question itself shifts, frame a new survey and link from the
   old one as `superseded by <new-survey-id>`.
 
+## Sub-Question Addition (frame amendment)
+
+A new sub-question normally means a *new survey* (the frame invariant). But
+when the user explicitly asks to widen an existing survey by one sub-question
+and it stays within the original research question, handle it as a
+**changelogged frame amendment + scoped version update** rather than a silent
+edit or a full new survey. Procedure (validated on a 13-SQ run that added SQ13
+post-v1):
+
+1. **Amend `index.md`, visibly.** Append the new `SQ<k>` to the Sub-Questions
+   list and the Active Evidence Dimensions table, tagged `(vN added, <date>)`,
+   with a one-line note that it is an explicit amendment. Add a changelog row.
+   Never renumber existing SQs.
+2. **Run a *scoped* gap audit — new cells only.** Search (fan out if needed) to
+   fill just the new SQ's active cells; do not re-audit the whole matrix. Cross-
+   tag any *existing* papers that also answer the new SQ (union their SQ tags;
+   see the cross-tag non-double-count rule in `references/taxonomy-revision.md`).
+3. **Append-only IDs and claims.** New papers get the next `P` IDs; new claims
+   the next `C` IDs. Existing IDs are immutable.
+4. **Delta synthesis.** Add a new taxonomy route, deep-dive subsection(s), a
+   §12 Q&A entry for the new SQ, and a reading-list line — all marked
+   `(vN added)`. Keep every prior section anchor stable.
+5. **Re-check, don't re-frame.** Re-run `coverage_check.py` (new cells should
+   close) and `bias_audit.py`. This does not consume an audit-round from the
+   4-round cap (it is a version update).
+
+## Version vs the Round Cap
+
+The 4-round cap in `03-roundN.md` governs **audit-gated gap rounds** only.
+`version` additions — new evidence, user-directed additions, bias/weak-cell
+hardening, sub-question additions — are **unbounded** and do **not** reopen the
+gap audit (which already passed). Label them as version rounds in the changelog
+(e.g. "v4 / Round 5, version") so the distinction stays legible. A survey can go
+through many version updates after its audit passes; that is expected for a
+long-running topic, not a sign the audit was wrong.
+
 ## Hand Off
 
 Set status to `vN-shipped` with the version footer rendered. Output the

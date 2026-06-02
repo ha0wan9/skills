@@ -42,6 +42,86 @@ def is_starstarstar(value: str) -> bool:
     return value.count("★") >= 3
 
 
+# Map of common country signals -> canonical country. Keys are matched
+# case-insensitively against (a) a dedicated Country column, or (b) a
+# trailing parenthetical in the institution cell, e.g. "Tsinghua (CN)".
+_COUNTRY_CODES = {
+    "us": "USA", "usa": "USA", "united states": "USA",
+    "uk": "UK", "gb": "UK", "united kingdom": "UK",
+    "fr": "France", "france": "France",
+    "de": "Germany", "germany": "Germany",
+    "cn": "China", "china": "China",
+    "jp": "Japan", "japan": "Japan",
+    "ch": "Switzerland", "switzerland": "Switzerland",
+    "nl": "Netherlands", "netherlands": "Netherlands",
+    "ca": "Canada", "canada": "Canada",
+    "il": "Israel", "israel": "Israel",
+    "kr": "South Korea", "es": "Spain", "it": "Italy", "au": "Australia",
+}
+
+# Country tokens inferred from well-known institutions when no explicit
+# country signal is present. Intentionally small and conservative — when a
+# row carries no country signal at all the bucket reports "?" so the gap is
+# visible rather than guessed.
+_INST_COUNTRY_HINTS = {
+    "mit": "USA", "stanford": "USA", "harvard": "USA", "princeton": "USA",
+    "berkeley": "USA", "nyu": "USA", "cmu": "USA", "carnegie": "USA",
+    "caltech": "USA", "ucsf": "USA", "uc davis": "USA", "purdue": "USA",
+    "minnesota": "USA", "salk": "USA", "rochester": "USA", "emory": "USA",
+    "georgia tech": "USA", "baylor": "USA", "ibm": "USA", "intel": "USA",
+    "deepmind": "UK", "ucl": "UK", "oxford": "UK", "bristol": "UK",
+    "manchester": "UK", "gatsby": "UK",
+    "tsinghua": "China", "peking": "China", "casia": "China",
+    "epfl": "Switzerland", "tübingen": "Germany", "tubingen": "Germany",
+    "mpi": "Germany", "max planck": "Germany", "helmholtz": "Germany",
+    "donders": "Netherlands", "radboud": "Netherlands", "osnabrück": "Germany",
+    "mila": "Canada", "montréal": "Canada", "montreal": "Canada", "toronto": "Canada",
+    "oist": "Japan", "atr": "Japan", "riken": "Japan", "osaka": "Japan", "nict": "Japan",
+    "ens": "France", "inria": "France", "cnrs": "France", "neurospin": "France",
+    "collège de france": "France", "meta ai paris": "France",
+}
+
+_PAREN_RE = re.compile(r"\(([^)]*)\)\s*$")
+
+
+def infer_country(row: dict, get_inst) -> str:
+    """Best-effort country for a row.
+
+    Priority: explicit Country column -> trailing parenthetical in the
+    institution cell (e.g. "(CN)") -> known-institution hint -> "?".
+    Returns "?" when there is no signal, so missing-country shows up as an
+    explicit data gap rather than a silent default.
+    """
+    explicit = (row.get("country") or "").strip().lower()
+    if explicit:
+        return _COUNTRY_CODES.get(explicit, row["country"].strip())
+    inst = get_inst(row)
+    m = _PAREN_RE.search(inst)
+    if m:
+        token = m.group(1).strip().lower()
+        if token in _COUNTRY_CODES:
+            return _COUNTRY_CODES[token]
+    low = inst.lower()
+    for hint, country in _INST_COUNTRY_HINTS.items():
+        if hint in low:
+            return country
+    return "?"
+
+
+def get_method_route(row: dict) -> str | None:
+    """Return the method-route cell if such a column exists, else None.
+
+    Recognized column names: 'method route', 'method-route', 'route',
+    'method'. Absent column -> None so the bucket is reported as
+    'not available (add a Method-route column)' rather than fabricated.
+    """
+    for key in ("method route", "method-route", "route", "method"):
+        v = row.get(key)
+        if v and v not in {"-", "—"}:
+            return v
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("paper_index", type=Path)
@@ -120,11 +200,18 @@ def main(argv: list[str] | None = None) -> int:
 
     n = len(starred)
 
+    # Method-route is only audited when the index carries a column for it.
+    method_values = [get_method_route(r) for r in starred]
+    have_method = any(v is not None for v in method_values)
+
     buckets = {
         "institution": [get_inst(r) or "?" for r in starred],
+        "country": [infer_country(r, get_inst) for r in starred],
         "year": [r.get("year", "?") for r in starred],
         "venue": [r.get("venue", "?") for r in starred],
     }
+    if have_method:
+        buckets["method route"] = [v or "?" for v in method_values]
 
     triggered = 0
     for name, values in buckets.items():
@@ -132,6 +219,14 @@ def main(argv: list[str] | None = None) -> int:
         total = sum(c.values())
         top_value, top_count = c.most_common(1)[0]
         share = top_count / total
+        # A bucket dominated by "?" is a data gap, not a real bias signal:
+        # report it as such instead of triggering on missing data.
+        unknown_share = c.get("?", 0) / total if total else 0
+        if name in {"country", "method route"} and unknown_share > 0.5:
+            print(f"  {name:12s}  top: '?' = {c.get('?',0)}/{total} "
+                  f"({unknown_share:.0%}) [DATA-GAP: add a Country/Method-route "
+                  f"column or country tags like 'Lab (CN)' to enable this audit]")
+            continue
         flag = "TRIGGER" if share > args.threshold else "ok"
         print(f"  {name:12s}  top: {top_value!r} = {top_count}/{total} ({share:.0%}) [{flag}]")
         if share > args.threshold:
@@ -140,6 +235,10 @@ def main(argv: list[str] | None = None) -> int:
         if len(c) <= 10:
             for v, k in c.most_common():
                 print(f"      {v!r}: {k}")
+
+    if not have_method:
+        print("  method route  not audited (no 'Method route' column in "
+              "paper_index.md; add one to enable method-bias detection)")
 
     print(f"\nbiases triggered: {triggered}")
     return 1 if triggered else 0

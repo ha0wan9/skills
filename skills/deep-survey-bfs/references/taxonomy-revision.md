@@ -78,6 +78,35 @@ After every Round N that adds ≥3 papers, ask:
 - **Sub-buckets are allowed** for buckets that grow large, but at most
   one level of nesting before the survey becomes a directory listing.
 
+## Cross-Cutting Sub-Questions
+
+The "a paper belongs to one primary-axis bucket" rule is about the **taxonomy
+axis**, not about sub-questions. Some sub-questions are legitimately
+**cross-cutting** — they slice across several taxonomy routes rather than
+naming one. (Example from a NeuroAI run: a "visual intelligence & world models"
+SQ pulled in papers already filed under architectures, learning, cognition, and
+embodiment.) These are real and useful; don't force a cross-cutting SQ to
+duplicate an existing route.
+
+Handle them with **cross-tagging**, under two rules that keep the numbers
+honest:
+
+1. **Union the SQ tags on one row — never duplicate the paper.** A paper that
+   answers SQ3 and SQ13 stays one `P` row tagged `SQ3, SQ13`. Do not create a
+   second row. (This is the same dedup discipline as the fan-out merge in
+   `01-round1.md`.)
+2. **Count each paper once in the bias audit.** Cross-tagged papers must not be
+   double-counted across institution/country/year buckets — the audit runs over
+   the unique `P` rows, so a single row contributes one count regardless of how
+   many SQs it serves. When summarizing per-SQ coverage, it is fine for the same
+   paper to appear under multiple SQs; when summarizing *the paper set* (bias,
+   totals, reading list), count it once.
+
+A cross-cutting SQ that, after cross-tagging, has *no* papers of its own (only
+borrowed ones) is a signal it may be a lens rather than a sub-question —
+consider whether it belongs as a §8 cross-cutting-analysis theme instead of a
+gated sub-question.
+
 ## Output
 
 Record the revision in the timeline section of `survey.md`. A v2 taxonomy

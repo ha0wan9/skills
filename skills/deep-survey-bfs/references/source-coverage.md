@@ -110,3 +110,16 @@ For Round N (gap-driven):
 - **Citation-count-only ranking** systematically biases against recent work
   and against critical/limitations papers (which get cited less than
   enthusiastic ones)
+- **Treating a negative finding as settled fact**, especially for active
+  industrial labs. "This is a single paper / there is no successor / there is
+  no vN" is a *negative* claim, and a clean search miss is weak evidence for it.
+  Fast-moving industrial groups (Meta FAIR, Google DeepMind, the Allen
+  Institute, OpenAI, etc.) ship successors and "vN" follow-ups on a
+  quarterly cadence that arXiv/Semantic Scholar/DBLP index with lag. **Before
+  asserting "no successor/no series," check the lab's own publications page and
+  blog/release notes**, not just preprint aggregators — and mark the conclusion
+  `confidence: low` if you can't positively confirm absence. Real failure mode:
+  a search pass concluded "TRIBE is a single paper, no series"; the lab had
+  already shipped **TRIBE v2** (announced on the lab blog), which the aggregators
+  hadn't surfaced. A reader caught it. Negative claims about active labs need
+  the lab's primary channel, or a low-confidence hedge.

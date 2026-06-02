@@ -34,12 +34,40 @@ initial paper index.
    sub-questions covered, evidence dimensions covered, star rating,
    one-line note.
 
-7. Apply a hard cap: Round 1 ends at 25-35 papers. Going beyond delays
-   the gap audit; better papers can come in Round N once gaps are known.
+7. Apply a cap that **scales with sub-question count**. The 25-35 default is
+   calibrated for ~6-9 sub-questions (≈3-4 papers/SQ); a 12-13 SQ survey needs
+   proportionally more or every cell starts under-covered. Use
+   `cap ≈ max(30, 3 × N_SQ)` as the target, and if you exceed it, say so and
+   why (a one-line note in `paper_index.md`). The cap's purpose is to reach the
+   gap audit quickly with enough breadth to make the audit meaningful — not to
+   starve a wide survey. Better papers can still come in Round N once gaps are
+   known.
 
 8. Run `python3 skill/scripts/coverage_check.py paper_index.md
    index.md` to print a preview coverage matrix (this is informational
    for Round 1; the formal audit is Phase 2).
+
+## Execution Pattern: Fan Out by Sub-Question Cluster
+
+For surveys with many sub-questions, a single sequential search is slow and
+loses breadth. The pattern that works (validated on a 13-SQ run):
+
+1. **Partition the SQs into 3-5 clusters** by theme (e.g. one agent per
+   direction-of-influence, or per level-of-analysis group). Dispatch one
+   search subagent per cluster, in parallel, each owning its SQs and returning
+   candidate rows with proposed 4-dimension scores. Give every agent the same
+   rubric so scores are comparable.
+2. **Dedup and merge centrally — this step is mandatory.** Independent agents
+   will surface the same paper under different clusters (a paper that answers
+   SQ1 and SQ5 will come back from both). Merge duplicates into one row with
+   the **union** of sub-questions and dimensions before assigning a paper ID.
+   Skipping this double-counts papers and silently inflates the bias audit
+   (the same lab/paper counted twice).
+3. **Score once, centrally**, after dedup, so a paper has a single star rating
+   regardless of how many agents found it.
+
+Each agent should verify metadata (venue/year/author) against a primary source
+and resolve the preprint trap before returning — do not accept title-only hits.
 
 ## Source-Specific Notes
 

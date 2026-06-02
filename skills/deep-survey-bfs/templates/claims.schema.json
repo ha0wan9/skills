@@ -56,6 +56,11 @@
     "confidence": {
       "type": ["string", "null"],
       "enum": ["low", "medium", "high", null]
+    },
+    "source_tier": {
+      "type": ["string", "null"],
+      "enum": ["full-text", "abstract", "metadata", "secondary", null],
+      "description": "Provenance of the quote/finding, recorded honestly so abstraction level is auditable: 'full-text' = read from the paper PDF/HTML; 'abstract' = from the abstract only; 'metadata' = from title/venue/index records; 'secondary' = from a review, blog, or third-party summary. Surveys built from search results (not full PDFs) should set 'abstract'/'metadata' and pair with confidence<=medium. The synthesis prose must carry a one-line provenance note stating the dominant source_tier (see templates/survey-skeleton.md)."
     }
   }
 }
