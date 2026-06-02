@@ -34,16 +34,26 @@ Do not create a calendar for every small topic. Use description tags instead.
 
 ## Prefix Rules
 
-Use title prefixes for workflow state, not taxonomy:
+Prefixes come in two kinds with different rules.
+
+**State prefixes** express transient workflow status and are stripped once the status resolves. Use them freely, on any calendar:
 
 - `[Hold]`: placeholder, not confirmed
 - `[Tentative]`: time or commitment uncertain
 - `[Prep]`: preparation block
+
+**Type prefixes** mark a durable category for at-a-glance triage:
+
 - `[Admin]`: administrative task
 - `[Paper]`: paper reading or discussion
-- `[NMA]`: Neuromatch marker only when no dedicated Neuromatch calendar exists
+- `[NMA]`: Neuromatch marker
 
-If the event is already on a dedicated project calendar, avoid redundant prefixes unless the prefix expresses state.
+Type is taxonomy, so it normally belongs on a calendar or in a description tag — not the title. Use a type prefix **only** when both hold:
+
+1. the event is **not** already on a type-specific calendar that conveys the same category, and
+2. you need to scan or filter that type by eye in a compact agenda/month view where calendar color is not enough.
+
+Otherwise express the type as a description tag (`Tags: admin`, `Tags: paper`) and omit the prefix. When the event is on a dedicated project calendar, never add a redundant type prefix; a state prefix is still fine.
 
 ## Description Contract
 
@@ -120,7 +130,7 @@ Create events with:
 - location set to the primary join/register link when useful
 - description contract fields
 - reminders preserved or defaulted intentionally
-- `add_google_meet: false` unless the user asks to create a new Meet
+- do not create a new video-conference link unless the user asks; if the source already provides a Zoom or Meet link, attach that one instead
 
 If a page gives a start time but no end time, infer the smallest defensible duration from adjacent events or local precedent and mark it as inferred in the description.
 
