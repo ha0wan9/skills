@@ -72,7 +72,7 @@ conventions.
 
 ### `verify-before-stop.sh` — Stop
 
-Three responsibilities:
+Four responsibilities:
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
@@ -86,16 +86,22 @@ Three responsibilities:
    when the turn changed substantive files but no memory file was
    updated and no `.harness/writeback-ack` marker exists. This is the
    write leg of the Memory Contract (`references/repo-memory-crud.md`).
+4. **Mandatory-dispatch gate** via `dispatch_ledger.py gate` (same
+   resolved path). Flags the AP-COORD-1 pattern — the turn edited
+   **≥2 harness files** without an acknowledged dispatch. Self-skips
+   when <2 harness files changed or `.harness/dispatch-ack` exists
+   (one-shot). The enforcement leg of the Task Dispatch paradigm
+   (`references/multi-agent-protocols.md#mandatory-subagent-dispatch`).
 
-- `minimal`: hook disabled (the write-back gate also self-disables on
-  `HARNESS_PROFILE=minimal`)
+- `minimal`: hook disabled (the write-back and dispatch gates also
+  self-disable on `HARNESS_PROFILE=minimal`)
 - `standard`: runs all checks; warns on failure but exits 0 (advisory)
 - `strict`: exits non-zero on failure (blocks the agent's turn end)
 
 If none of the artifacts are present (no phase-state, no verifier, not a
-git repo / nothing changed), the hook is a no-op — the harness can ship
-it without forcing every repo to install phase-locks, define a verifier,
-or adopt the write-back gate.
+git repo / nothing changed / <2 harness files), the hook is a no-op — the
+harness can ship it without forcing every repo to install phase-locks,
+define a verifier, or adopt the write-back / dispatch gates.
 
 ## Profile Selection Guidance
 

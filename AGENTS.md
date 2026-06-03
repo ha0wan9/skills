@@ -52,6 +52,7 @@ Do not commit `USER.md`. The repo's top-level `.gitignore` and the project-meta 
 
 - `scripts/provenance.py` — frontmatter parse/validate/stamp (the `instantiated_from`/`source_reference`/`last_reviewed` trio). Skills must not re-roll frontmatter parsing; `skill_architecture_lint.py` WARNs when they do.
 - `scripts/repo_memory.py` — runtime memory read leg, write-back gate, write, validate. The `SessionStart`/`Stop` hooks delegate to it; the Memory Contract it backs is in `references/repo-memory-crud.md#memory-contract`.
+- `scripts/dispatch_ledger.py` — multi-agent dispatch audit ledger (record/validate/query) + the mandatory-dispatch `gate` the `Stop` hook runs. Enforcement/audit backing for the Task Dispatch paradigm in `references/multi-agent-protocols.md#mechanical-enforcement` (not a dispatch engine).
 
 ## Working On The Marketplace
 

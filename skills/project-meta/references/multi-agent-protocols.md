@@ -14,6 +14,7 @@
 - [Review Mechanism](#review-mechanism) — consistency, drift, routing, enforcement passes
 - [Reviewer-Between-Subtasks Protocol](#reviewer-between-subtasks-protocol) — the enforcement loop
 - [Synchronous Gates Under Orchestration](#synchronous-gates-under-orchestration) — hard STOP-and-return boundaries
+- [Mechanical Enforcement](#mechanical-enforcement) — the hooks+CLI backing for the dispatch gate and audit ledger
 - [Integration Checklist](#integration-checklist) — final reconciliation before commit
 - [Failure Signals](#failure-signals) — when the protocol itself needs improvement
 
@@ -206,6 +207,28 @@ A scripted backing runs to completion in the background; it cannot pause mid-run
 | **Init questionnaire** | first-time `init` needs preset/checklist selection | the questionnaire is a synchronous human gate that MUST precede or hard-stop any editing run; a background init that defaults the preset is forbidden | AP-LIFE-1 |
 
 `resumeFromRunId` (Claude Code) or a Codex re-entry is the mechanism for continuing *after* the user resolves a gate — it is never a way to defer past one.
+
+## Mechanical Enforcement
+
+The dispatch *engine* is the Workflow tool / Codex Agents-SDK / the prose loop (Orchestration Backings). But two halves of this protocol are deterministic and are mechanically backed by **hooks + a CLI** — an enforcement/audit layer, not a second engine. This is the Claude Code backing; Codex enforces the same via sandbox/approval config + Agents-SDK gating (per "Relationship To Runtime Enforcement"). The CLI (`scripts/dispatch_ledger.py`) is portable and resolved, not vendored (`shared-cli-delegation.md`).
+
+**Audit ledger** (the "Logging" requirement, line ~191). Each dispatch is recorded to `.harness/dispatch-log.jsonl`:
+
+```bash
+dispatch_ledger.py record --worker <id> --reviewer <id> --role worker \
+  --verdict PASS --brief-hash <h> --comment "<what>"
+dispatch_ledger.py validate    # schema + verdict-domain check
+dispatch_ledger.py query       # chain summary, BLOCKER count
+```
+
+**Mandatory-dispatch gate** (the file-count rule). The `Stop` hook runs `dispatch_ledger.py gate`: if the turn left **≥2 harness files** changed in the working tree (the Mandatory Subagent Dispatch file set) with no `.harness/dispatch-ack` marker, it flags the AP-COORD-1 pattern. Profile-gated (`minimal` off, `standard` warns, `strict` blocks). The ack is **one-shot** (consumed when honored) — so it cannot silently disable the gate — and is the mechanical form of the "Bypass requires explicit acknowledgement" rule. **This is a post-hoc detector/deterrent, not structural isolation**: it catches the violation at turn-end but cannot un-edit the files. Structural prevention (a conductor that *cannot* edit while orchestrating) still requires the engine (separate Worker agents) — the gate is the floor for runtimes/turns that skip the engine.
+
+**Designed but not yet shipped — the [Synchronous Gates](#synchronous-gates-under-orchestration) as `PreToolUse` hooks:**
+
+- *Read-only-verb write* → `PreToolUse(Edit|Write)` blocking edits under a read-only verb.
+- *Pre-commit* → `PreToolUse(Bash)` blocking `git commit` inside a runner.
+
+Both require turn/verb **state** a recipe must set (e.g. `.harness/current-verb`, `.harness/runner-active`). Until that plumbing exists, shipping these as hooks would make them silent-pass = AP-VAL-1 dead code. They are specced here as the next enforcement step, not shipped inert.
 
 ## Integration Checklist
 
