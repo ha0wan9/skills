@@ -33,7 +33,7 @@ None by default. Lazy-load when a failed check needs context:
    - **Phase-lock contract installed**: run `phase_lock_check.py --harness-dir .harness --require-pass` to confirm gate state is consistent. Failure indicates a stale state file or a missing gate.
    - **Hooks installed**: verify each hook script in `.claude/hooks/` passes `bash -n` syntax check. Verify `settings.json` parses.
    - **Multi-host mirrors present**: run `render_host_manifests.py --target-root . --dry-run` and diff the dry-run output against the on-disk mirrors. Drift = failure.
-   - **Target is a skill or marketplace**: run the deterministic critic suite — `skill_architecture_lint.py`, `trigger_collision_check.py`, `context_cost_estimate.py`, `determinism_gap_scan.py`, `cross_skill_redundancy.py` — against the skill dir or marketplace root. Each exits `0/1/2`; treat exit 1 as FAIL. See `references/skill-critics.md` for what each enforces.
+   - **Target is a skill or marketplace**: run the deterministic critic suite — `skill_architecture_lint.py`, `trigger_collision_check.py`, `context_cost_estimate.py`, `determinism_gap_scan.py`, `cross_skill_redundancy.py` — against the skill dir or marketplace root. Each exits `0/1/2`; treat exit 1 as FAIL. These five are a **budget-independent floor** and run directly on any runtime (`python3 scripts/<critic>.py .`, no Workflow required); only reviewer-agent depth may scale to a token budget. See `references/skill-critics.md` for what each enforces.
 
 3. **Run repo-defined verifiers** when the repo provides one:
    - `.harness/verify.sh` (or equivalent project-defined entrypoint)
