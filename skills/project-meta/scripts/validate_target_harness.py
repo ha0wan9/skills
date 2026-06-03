@@ -93,6 +93,9 @@ def discover_target_root(arg: str | None) -> Path:
     return cwd
 
 
+# Intentionally NOT delegated to provenance.parse_scalars: this flattens ALL
+# keys including indented/nested ones, whereas parse_scalars is top-level only.
+# Different semantics — keep local to avoid a behavior change.
 def parse_frontmatter(text: str) -> dict[str, str] | None:
     if not text.startswith("---"):
         return None

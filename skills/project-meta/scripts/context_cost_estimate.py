@@ -27,31 +27,8 @@ import math
 import sys
 from pathlib import Path
 
-
-def split_frontmatter(text: str) -> tuple[str, str]:
-    if not text.startswith("---"):
-        return "", text
-    end = text.find("\n---", 3)
-    return ("", text) if end == -1 else (text[3:end], text[end + 4 :])
-
-
-def frontmatter_field(fm: str, key: str) -> str:
-    lines = fm.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip().startswith(f"{key}:"):
-            rest = line.strip()[len(key) + 1 :].strip()
-            if rest and rest not in (">", "|", ">-", "|-", ">+", "|+"):
-                return rest.strip("'\"")
-            base = len(line) - len(line.lstrip())
-            out = []
-            for cont in lines[i + 1 :]:
-                if not cont.strip():
-                    continue
-                if len(cont) - len(cont.lstrip()) <= base:
-                    break
-                out.append(cont.strip())
-            return " ".join(out)
-    return ""
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from provenance import frontmatter_field, split_frontmatter  # noqa: E402
 
 
 def tokens(text: str, cpt: int) -> int:

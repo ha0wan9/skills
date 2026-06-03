@@ -186,7 +186,12 @@ def cmd_writeback(args: argparse.Namespace) -> int:
 
 def cmd_write(args: argparse.Namespace) -> int:
     root = Path(args.target_root).expanduser().resolve()
-    owner = root / args.owner
+    owner = (root / args.owner).resolve()
+    try:
+        owner.relative_to(root)
+    except ValueError:
+        print(f"--owner must stay inside target-root: {args.owner}", file=sys.stderr)
+        return 2
     today = datetime.date.today().isoformat()
     entry = f"- ({today}) {args.lesson}"
     if args.why:

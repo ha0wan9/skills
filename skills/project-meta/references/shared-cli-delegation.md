@@ -39,6 +39,7 @@ which already resolves `phase_lock_check.py` the same way.
 
 ```bash
 # Resolve project-meta's installed location. Override via PROJECT_META_DIR.
+# Canonical executable copy of this resolver: templates/hooks/scripts/verify-before-stop.sh
 pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
 pm_mem="$pm_dir/scripts/repo_memory.py"
 

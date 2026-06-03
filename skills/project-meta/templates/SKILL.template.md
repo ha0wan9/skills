@@ -130,6 +130,7 @@ This skill reuses project-meta's shared tooling at runtime. Resolve it via
 the inline floor below.
 
 ```bash
+# canonical resolver: project-meta's templates/hooks/scripts/verify-before-stop.sh
 pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
 if [[ -f "$pm_dir/scripts/repo_memory.py" ]]; then
   python3 "$pm_dir/scripts/repo_memory.py" --target-root . read

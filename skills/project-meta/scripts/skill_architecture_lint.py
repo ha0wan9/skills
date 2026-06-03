@@ -36,6 +36,9 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from provenance import frontmatter_field, split_frontmatter  # noqa: E402
+
 LINE_BUDGET = 250
 TRIGGER_HINTS = ("use when", "use for", "use this skill", "trigger when", "triggers on")
 INVARIANT_HEADINGS = ("core rules", "cross-cutting invariants", "invariants")
@@ -49,39 +52,6 @@ class Finding:
 
     def render(self) -> str:
         return f"  {self.status} {self.name}: {self.message}" if self.message else f"  {self.status} {self.name}"
-
-
-def split_frontmatter(text: str) -> tuple[str, str]:
-    """Return (frontmatter, body). Frontmatter is '' when absent."""
-    if not text.startswith("---"):
-        return "", text
-    end = text.find("\n---", 3)
-    if end == -1:
-        return "", text
-    return text[3:end], text[end + 4 :]
-
-
-def frontmatter_field(fm: str, key: str) -> str:
-    """Minimal YAML-free field grab; handles inline and folded (>- / |) scalars."""
-    lines = fm.splitlines()
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if stripped.startswith(f"{key}:"):
-            rest = stripped[len(key) + 1 :].strip()
-            if rest and rest not in (">", "|", ">-", "|-", ">+", "|+"):
-                return rest.strip("'\"")
-            # folded/literal block: gather subsequent more-indented lines
-            base_indent = len(line) - len(line.lstrip())
-            collected: list[str] = []
-            for cont in lines[i + 1 :]:
-                if not cont.strip():
-                    continue
-                indent = len(cont) - len(cont.lstrip())
-                if indent <= base_indent:
-                    break
-                collected.append(cont.strip())
-            return " ".join(collected)
-    return ""
 
 
 def _is_heading(line: str) -> bool:
@@ -169,7 +139,15 @@ def lint_skill(skill_dir: Path) -> list[Finding]:
     # A skill that touches the shared memory/provenance harness must carry the
     # delegation pointer (resolver + thin floor), not freelance the protocol.
     if skill_dir.name != "project-meta":
-        low = text.lower()
+        # Scan the whole skill (router + references + scripts), not just SKILL.md —
+        # the harness touch or the resolver pointer may live in any of them.
+        corpus = text
+        for sub in ("references", "scripts"):
+            d = skill_dir / sub
+            if d.is_dir():
+                for p in sorted(list(d.glob("*.md")) + list(d.glob("*.py"))):
+                    corpus += "\n" + p.read_text(encoding="utf-8", errors="replace")
+        low = corpus.lower()
         # Memory-specific signals only — bare "write-back"/"writeback" would
         # false-positive on e.g. a write-back *cache* in an unrelated skill.
         touches_harness = any(

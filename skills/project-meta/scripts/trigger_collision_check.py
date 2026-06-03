@@ -34,6 +34,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from provenance import frontmatter_field, split_frontmatter  # noqa: E402
+
 STOPWORDS = {
     "the", "a", "an", "and", "or", "to", "of", "for", "in", "on", "with", "is",
     "are", "be", "this", "that", "it", "as", "at", "by", "from", "when", "what",
@@ -44,32 +47,6 @@ STOPWORDS = {
 # so they are deliberately excluded (they are near-identical boilerplate and
 # would manufacture false collisions).
 TRIGGER_HEADINGS = ("trigger decision", "triggers", "when to use")
-
-
-def split_frontmatter(text: str) -> tuple[str, str]:
-    if not text.startswith("---"):
-        return "", text
-    end = text.find("\n---", 3)
-    return ("", text) if end == -1 else (text[3:end], text[end + 4 :])
-
-
-def frontmatter_field(fm: str, key: str) -> str:
-    lines = fm.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip().startswith(f"{key}:"):
-            rest = line.strip()[len(key) + 1 :].strip()
-            if rest and rest not in (">", "|", ">-", "|-", ">+", "|+"):
-                return rest.strip("'\"")
-            base = len(line) - len(line.lstrip())
-            out = []
-            for cont in lines[i + 1 :]:
-                if not cont.strip():
-                    continue
-                if len(cont) - len(cont.lstrip()) <= base:
-                    break
-                out.append(cont.strip())
-            return " ".join(out)
-    return ""
 
 
 def section_body(body: str, needles: tuple[str, ...]) -> str:

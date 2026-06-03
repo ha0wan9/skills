@@ -82,6 +82,32 @@ def missing_keys(fm: str, required: tuple[str, ...]) -> list[str]:
     return [k for k in required if not scalars.get(k)]
 
 
+def frontmatter_field(fm: str, key: str) -> str:
+    """Grab a single field, handling inline and folded/literal (>- / |) scalars.
+
+    Canonical home for the helper several skill scripts had each copied. Unlike
+    parse_scalars (top-level scalars as a dict), this resolves one key and
+    gathers folded block values."""
+    lines = fm.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith(f"{key}:"):
+            rest = stripped[len(key) + 1 :].strip()
+            if rest and rest not in (">", "|", ">-", "|-", ">+", "|+"):
+                return rest.strip("'\"")
+            base_indent = len(line) - len(line.lstrip())
+            collected: list[str] = []
+            for cont in lines[i + 1 :]:
+                if not cont.strip():
+                    continue
+                indent = len(cont) - len(cont.lstrip())
+                if indent <= base_indent:
+                    break
+                collected.append(cont.strip())
+            return " ".join(collected)
+    return ""
+
+
 def stamp(text: str, updates: dict[str, str]) -> str:
     """Insert/replace top-level scalar keys in the frontmatter, idempotently.
 
@@ -157,6 +183,9 @@ def cmd_stamp(args: argparse.Namespace) -> int:
             print(f"bad --set (need key=value): {pair}", file=sys.stderr)
             return 2
         key, val = pair.split("=", 1)
+        if "\n" in val or "\r" in val:
+            print(f"bad --set: value for {key.strip()} contains a newline (would corrupt frontmatter)", file=sys.stderr)
+            return 2
         updates[key.strip()] = val.strip()
     if args.stamp_date:
         updates["last_reviewed"] = datetime.date.today().isoformat()
