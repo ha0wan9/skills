@@ -60,6 +60,36 @@ paper gets ★★ not ★★★ because its relevance to "EEG foundation models"
 loose. It should still go in the index as background, not as core
 evidence.
 
+## Dimension-Aware Evidence (reviews, surveys, position papers)
+
+The "Evidence Strength" dimension above is written for **method/experiment
+papers** — it rewards datasets, ablations, and open-source. Applied naively
+to a **review, survey, or position paper**, it scores 0 (no new experiments),
+which caps even a landmark *Nature Reviews* article at ★★ (relevance 3 +
+authority 3 + recency 2 + evidence 0 = 9.5). That is a scoring artifact, not a
+real quality signal — and it creates a contradiction with the coverage matrix,
+which *wants* ★★★ coverage on the `survey` and `critical-review` dimensions,
+i.e. exactly the dimensions review papers exist to fill.
+
+Resolve it by scoring evidence **against what the paper is for**:
+
+- **Experiment/method paper** → evidence = data + ablations + open-source (the
+  original rubric).
+- **Review / survey paper** → evidence = breadth and rigor of the *synthesis*:
+  - 3 = comprehensive, authoritative, field-defining synthesis (the reference
+    review everyone cites for this sub-question)
+  - 2 = solid review covering the sub-question well
+  - 1 = narrow or opinion-leaning review
+- **Position / theory / manifesto paper** → evidence = how completely the
+  framework is specified and how much subsequent work it has structured
+  (a fully-specified, influential framework can reach 2).
+
+A top review can therefore reach ★★★ when it genuinely is *the* synthesis for
+its cell. Do not inflate every review — reserve evidence 3 for the one the
+field treats as canonical. See the matching closure rule in
+`references/coverage-matrix.md` (survey/critical-review cells may also close on
+an authority-3 ★★ review when no ★★★ review exists).
+
 ## Notes
 
 - Re-score after every Round N. New papers can shift recency (a 2024 paper

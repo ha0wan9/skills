@@ -45,9 +45,24 @@ gap-driven, not curiosity-driven.
   framed scope, escalate to the user: either accept the gap as a limitation
   (record in `index.md`), or amend the scope (record changelog in `index.md`
   and re-run audit on the amended scope).
-- **Cap rounds at 4 total.** If after 4 rounds gaps remain, the topic may
-  not yet have enough literature to support a survey of the framed scope.
-  Record this and ship a smaller-scope survey or wait.
+- **Cap rounds at 4 total — but only *audit-gated gap rounds* count.** The cap
+  exists so a survey that can't close its gaps doesn't loop forever. It does
+  **not** limit post-audit additions: once the audit passes, folding in new
+  evidence (a just-published paper), a user-directed addition, or a
+  bias/weak-cell correction is a `version` update (see `05-version.md`), is
+  **unbounded**, and does **not** reopen the gap audit. If after 4 gap rounds
+  gaps still remain, the topic may not yet support the framed scope — record it
+  and ship a smaller-scope survey or wait.
+- **Weak-cell hardening is its own pass, distinct from gap-filling.** A gap
+  round fills *empty* active cells; a weak-cell pass strengthens cells that are
+  closed but concentrated (single lab / single year — `coverage_check.py` now
+  flags these). Run it as a targeted `version` pass naming each weak cell, or
+  accept+document the concentration in `coverage_matrix.md`. Don't conflate the
+  two: a survey can be gap-free yet have weak cells.
+- **Round N can also fan out, but always dedup against the existing index.**
+  When a Round N spawns multiple search agents, merge their hits into existing
+  paper IDs first (union the SQ/dimension tags) — never append a second row for
+  a paper already indexed under a different sub-question.
 - **One paper per gap is suspicious.** If a Round N adds exactly the
   minimum needed to close cells, audit those papers extra carefully — the
   search may have stopped at the first hit rather than the best hit.

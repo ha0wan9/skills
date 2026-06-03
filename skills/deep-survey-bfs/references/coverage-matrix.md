@@ -44,6 +44,20 @@ Each active cell has one of:
   cells if the user explicitly accepts the limitation.
 - **gap**: 0 ★★★ papers. Round N must address before audit passes.
 
+> **Review-dimension exception (survey / critical-review cells).** The
+> `survey` and `critical-review` dimensions are filled by review/position
+> papers, which the star rubric tends to cap at ★★ (evidence=0) unless they
+> are leading-edge. Two ways to keep these cells honest rather than
+> permanently "gap": (1) score the review's evidence on synthesis breadth so
+> the canonical review can legitimately reach ★★★ — see the *Dimension-Aware
+> Evidence* section of `references/paper-rating-rubric.md`; or (2) close the
+> cell on an **authority-3 ★★ review** when no ★★★ review exists, recording it
+> as `closed (review-dimension)`. A pure-experiment paper still requires a
+> real ★★★ to close its `experiment`/`theory` cell — this exception is only
+> for the inherently-review dimensions. `scripts/coverage_check.py` counts
+> only ★★★ in cells, so when you close on an authority-3 ★★ review, note it in
+> the matrix prose; the tool will otherwise still show the cell as a gap.
+
 ## Round N Targeting
 
 For every `gap` and `weak` cell, the matrix row records:

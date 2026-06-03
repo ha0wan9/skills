@@ -9,7 +9,16 @@
 > - **ArXiv**: ID only (no version suffix); empty if not on arXiv.
 > - **Title**: shortened to fit; full title in the deep-dive section.
 > - **Inst**: shortened lab/institution; "MIT", "Shanghai Jiao Tong", etc.
->   Use `inst-pending` when extraction is deferred.
+>   Use `inst-pending` when extraction is deferred. To enable the **country
+>   bias audit** without adding a column, append a country tag in parentheses,
+>   e.g. `Tsinghua (CN)`, `Meta AI Paris (FR)`; `scripts/bias_audit.py` reads
+>   it (and falls back to a small known-institution map). Codes: US/UK/FR/DE/
+>   CN/JP/CH/NL/CA/IL/KR/IT/AU/ES.
+> - **(optional) Country / Method route columns**: add a `Country` column for
+>   explicit country auditing, and/or a `Method route` column (e.g.
+>   `goal-driven`, `spiking`, `predictive-coding`, `dynamical`) to enable the
+>   method-route bias audit. Both are read by `bias_audit.py` when present;
+>   absent, the audit reports them as data gaps rather than guessing.
 > - **Year**: arXiv first-submitted year if not yet at venue; venue year
 >   once accepted. Both are acceptable; the cell records what's known.
 > - **Venue**: "preprint" until accepted; otherwise venue and year. Update
