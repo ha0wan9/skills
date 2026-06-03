@@ -54,7 +54,9 @@ def _git(root: Path, *args: str) -> tuple[int, str]:
             text=True,
             check=False,
         )
-        return p.returncode, p.stdout.strip()
+        # NB: do NOT .strip() — it would lstrip the first porcelain line's
+        # leading status space (" M file"), corrupting line[3:] in _changed_files.
+        return p.returncode, p.stdout
     except FileNotFoundError:
         return 127, ""
 
@@ -115,7 +117,9 @@ def cmd_read(args: argparse.Namespace) -> int:
 
 
 def _changed_files(root: Path) -> list[str]:
-    code, out = _git(root, "status", "--porcelain")
+    # --untracked-files=all so new untracked dirs list files individually
+    # (git otherwise collapses "agents/x.md" to "agents/").
+    code, out = _git(root, "status", "--porcelain", "--untracked-files=all")
     if code != 0 or not out:
         return []
     files = []
