@@ -1,0 +1,27 @@
+{
+  "_comment": "openclaw-devops policy + host topology. Defaults match CyberGate; override per host. Engine merges these over its built-in DEFAULTS.",
+  "npm_package": "openclaw",
+  "channel": "latest",
+  "hold_major": true,
+  "version_major_index": 0,
+  "allow_repair": true,
+  "allow_update": true,
+  "openclaw_bin": "openclaw",
+  "user_prefix": "~/.local",
+  "copies": {
+    "system": {"package_json": "/usr/lib/node_modules/openclaw/package.json", "needs_sudo": true},
+    "user": {"package_json": "~/.local/lib/node_modules/openclaw/package.json", "needs_sudo": false}
+  },
+  "cli_probe": "~/.local/bin/openclaw",
+  "services": [
+    "openclaw-gateway.service",
+    "openclaw-gateway-chloe.service",
+    "openclaw-node.service"
+  ],
+  "node_service_unit": "~/.config/systemd/user/openclaw-node.service",
+  "systemctl_scope": "--user",
+  "config_path": "~/.openclaw/openclaw.json",
+  "maintenance_hours": null,
+  "min_free_disk_mb": 500,
+  "health_timeout": 40
+}

@@ -84,6 +84,7 @@ When the user's request would match `project-meta` *and* a peer skill on this ma
 | Bootstrap repo memory, audit harness, install hooks, render mirrors, sync `CLAUDE.md` / `.github/copilot-instructions.md`, change `USER.md` preferences | **`project-meta`** | acts |
 | Literature review, survey of a topic, "research X for me" *with no experimental component*, expand or audit an existing survey | **`deep-survey-bfs`** | dispatches; if no harness exists in the survey's repo, run `/project-meta init` first, then hand off |
 | DL research study (frame → experiments → eval → synthesize), launch and monitor runs, ablation design, autonomous ratchet loop | **`dl-research`** | dispatches; ditto |
+| Debug / root-cause / systematically fix a hard, flaky, or recurring bug (gated repro → red test → hypotheses → top-k sandbox fixes → validate → ship) | **`meta-debug`** | provides the harness it reads/writes: `meta-debug` collects context in project-meta memory layout, dispatches its top-k sandbox fixes via project-meta's multi-agent protocol, and promotes lessons into canonical memory via project-meta's CRUD rules. Run `/project-meta init` first if no harness exists. |
 | Mixed: "research X and set up the repo for me" | **`project-meta` first**, then peer | run init/audit, then explicitly delegate the research portion |
 | Survey or research output needs to be packaged as a target-repo artifact (with provenance frontmatter, mirror sync, delivery summary) | **`project-meta`** | wraps the peer's output for delivery |
 
