@@ -125,14 +125,18 @@ Detail for each step lives in the reference owning that step:
 # fall back to a thin floor. Contract: project-meta's own
 # references/shared-cli-delegation.md (NOT this skill's references/).
 
-This skill reuses project-meta's shared tooling at runtime. Resolve it via
-`$PROJECT_META_DIR` (fallback `~/.claude/skills/project-meta`); if absent, use
-the inline floor below.
+This skill reuses project-meta's shared tooling at runtime. Probe the install
+locations (override, personal skill, plugin layouts); if none, use the floor.
 
 ```bash
 # canonical resolver: project-meta's templates/hooks/scripts/verify-before-stop.sh
-pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
-if [[ -f "$pm_dir/scripts/repo_memory.py" ]]; then
+pm_dir=""
+for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta; do
+  [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
+done
+if [ -n "$pm_dir" ]; then
   python3 "$pm_dir/scripts/repo_memory.py" --target-root . read
 else
   echo "[memory] read CLAUDE.md or AGENTS.md before substantive work." >&2  # thin floor
