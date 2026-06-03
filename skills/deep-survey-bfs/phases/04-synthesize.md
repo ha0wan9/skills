@@ -93,7 +93,18 @@ artifacts.
    Self-check failure means the survey is not ready to ship — fix
    structure before handing off.
 
-10. **(Optional) Render citation graph(s) into the survey.** Load
+10. **Claims-adversary review gate (mandatory before shipping).** Load
+    `references/multi-agent-dispatch.md` and dispatch the `claims-adversary`
+    reviewer (the Reviewer role) on `survey.md` + `claims.jsonl` +
+    `paper_index.md`. It runs fresh and separate from this synthesis context and
+    judges only the supplied artifacts. A `block` verdict is a hard
+    STOP-and-return: fix the flagged claims (add a backing row, correct the
+    quote, mark N/A, drop the hedge, split the aggregation) and re-run — do
+    **not** ship a survey over an open `block`. Rotate reviewers across re-runs.
+    This gate precedes the optional renders below; there is no point rendering a
+    survey whose claims contract has not passed.
+
+11. **(Optional) Render citation graph(s) into the survey.** Load
     `references/citation-graph.md`. Populate `citations.tsv` (edge
     list with `from / to / relation / evidence`) and optionally
     `clusters.tsv` (paper → architecture/route cluster). Then render
@@ -110,7 +121,7 @@ artifacts.
     finding. Skip this step when the survey is conceptual / non-
     comparative.
 
-11. **(Optional) Export to interactive HTML.** Load
+12. **(Optional) Export to interactive HTML.** Load
     `references/html-export.md`. Render the survey directory into a
     single self-contained HTML file with sticky TOC, paper/claim
     tooltips, search, sortable tables, Mermaid graphs, and Plotly
@@ -142,6 +153,8 @@ artifacts.
 
 ## Hand Off
 
-Set status to `synthesized`. Output the path to `survey.md`. Recommend
-running `version` if new evidence is expected to arrive (long-running
-topics). Run `audit` instead if the user reports a missing perspective.
+Set status to `synthesized` **only after the claims-adversary gate (step 10)
+returns `pass` or `pass-with-warnings`** — never with an open `block`. Output
+the path to `survey.md`. Recommend running `version` if new evidence is expected
+to arrive (long-running topics). Run `audit` instead if the user reports a
+missing perspective.

@@ -20,6 +20,11 @@ synthesis graph requirements. Project-specific infrastructure lives in a
 repo-local adapter; do not hardcode ClearML, Hydra, queue names, eval scripts,
 or repository paths in this skill.
 
+**Depends on `project-meta`** (the upstream/root skill) for the canonical Task
+Dispatch paradigm. This skill's `references/multi-agent-harness.md` is a domain
+specialization with a self-contained floor, so it still runs if project-meta is
+not installed; when both are present, project-meta is canonical.
+
 Thin router: resolve the mode or phase, resolve `study-id`, then load only the
 needed procedure file.
 
@@ -100,7 +105,10 @@ procedure file.
 4. Load `references/decision-rules.md` for design, evaluate, synthesize, and
    ratchet decisions.
 5. Load `references/multi-agent-harness.md` when a phase asks for managed
-   clean-context review, or when the user requests independent reviewers.
+   clean-context review, or when the user requests independent reviewers. This
+   harness specializes project-meta's Task Dispatch paradigm (Roles, Context
+   Package, Reviewer-Between-Subtasks, Synchronous Gates, Ordering Barriers,
+   runtime backings) for DL research; a reviewer `block` is a hard STOP.
 6. Load `references/agent-charter.md` only when creating a reviewer prompt or
    adjudicating reviewer disagreement.
 7. Load templates only when scaffolding or repairing an artifact.

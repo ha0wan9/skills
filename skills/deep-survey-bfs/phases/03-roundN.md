@@ -60,9 +60,11 @@ gap-driven, not curiosity-driven.
   accept+document the concentration in `coverage_matrix.md`. Don't conflate the
   two: a survey can be gap-free yet have weak cells.
 - **Round N can also fan out, but always dedup against the existing index.**
-  When a Round N spawns multiple search agents, merge their hits into existing
-  paper IDs first (union the SQ/dimension tags) — never append a second row for
-  a paper already indexed under a different sub-question.
+  When a Round N spawns multiple search agents, follow the same ordering barrier
+  as Round 1 (`references/multi-agent-dispatch.md`): agents return before any
+  index write, then merge their hits into existing paper IDs (union the
+  SQ/dimension tags) — never append a second row for a paper already indexed
+  under a different sub-question.
 - **One paper per gap is suspicious.** If a Round N adds exactly the
   minimum needed to close cells, audit those papers extra carefully — the
   search may have stopped at the first hit rather than the best hit.

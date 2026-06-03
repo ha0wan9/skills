@@ -26,6 +26,12 @@ Load `references/multi-agent-harness.md` for:
 Do not invoke reviewers inside every iteration; that breaks the ratchet loop's
 speed and determinism.
 
+A final `result-skeptic` **`block` is a hard STOP** (the paradigm's Synchronous
+Gate): the loop terminates and returns, the best result is **not promoted**, and
+the blocker is surfaced to the user. The ratchet is the most background-like
+dl-research backing, so this is exactly the "stop on the first block, never run
+past it" rule — resume only by re-entry after the user resolves the block.
+
 ## Loop
 
 1. Load `references/decision-rules.md`.

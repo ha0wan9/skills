@@ -50,24 +50,28 @@ initial paper index.
 ## Execution Pattern: Fan Out by Sub-Question Cluster
 
 For surveys with many sub-questions, a single sequential search is slow and
-loses breadth. The pattern that works (validated on a 13-SQ run):
+loses breadth. Load `references/multi-agent-dispatch.md` — the survey
+specialization of project-meta's Task Dispatch paradigm — for the full
+delegation template, runtime backings, and the mandatory ordering barrier. The
+survey-specific shape (validated on a 13-SQ run):
 
 1. **Partition the SQs into 3-5 clusters** by theme (e.g. one agent per
    direction-of-influence, or per level-of-analysis group). Dispatch one
-   search subagent per cluster, in parallel, each owning its SQs and returning
-   candidate rows with proposed 4-dimension scores. Give every agent the same
-   rubric so scores are comparable.
-2. **Dedup and merge centrally — this step is mandatory.** Independent agents
-   will surface the same paper under different clusters (a paper that answers
-   SQ1 and SQ5 will come back from both). Merge duplicates into one row with
-   the **union** of sub-questions and dimensions before assigning a paper ID.
-   Skipping this double-counts papers and silently inflates the bias audit
-   (the same lab/paper counted twice).
+   read-only search subagent (Explorer/Worker) per cluster, in parallel, each
+   owning its SQs and returning candidate rows with proposed 4-dimension scores
+   against the **same** rubric so scores are comparable.
+2. **Barrier, then dedup/merge centrally — mandatory.** All agents return
+   *before* any `paper_index.md` write (the ordering barrier). Independent
+   agents will surface the same paper under different clusters (a paper that
+   answers SQ1 and SQ5 comes back from both); merge duplicates into one
+   lead-owned row with the **union** of sub-questions and dimensions before
+   assigning a paper ID. Skipping the barrier double-counts papers and silently
+   inflates the bias audit.
 3. **Score once, centrally**, after dedup, so a paper has a single star rating
    regardless of how many agents found it.
 
-Each agent should verify metadata (venue/year/author) against a primary source
-and resolve the preprint trap before returning — do not accept title-only hits.
+Each agent verifies metadata (venue/year/author) against a primary source and
+resolves the preprint trap before returning — no title-only hits.
 
 ## Source-Specific Notes
 

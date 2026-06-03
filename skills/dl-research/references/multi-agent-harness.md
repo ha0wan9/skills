@@ -4,6 +4,62 @@ Use managed clean-context reviewers at phase boundaries where independent
 judgment prevents expensive or invalid research. The lead agent remains the
 orchestrator and source-of-truth owner.
 
+## Dependency & Canon
+
+This harness is a domain **specialization** of the canonical Task Dispatch
+paradigm owned by **project-meta** (the upstream/root skill):
+`project-meta/references/multi-agent-protocols.md`. This skill **declares
+project-meta as a dependency**. The section below is a self-contained *floor*
+so the skill works if installed alone; project-meta is canonical — on any
+conflict, defer to it. (This is the single place the canon path appears; cite
+the paradigm by name elsewhere.)
+
+**Floor (works without project-meta installed):**
+
+- **Roles**: Lead (orchestrator, owns source of truth) · Planner · Explorer
+  (read-only) · Worker (edits a bounded surface) · Reviewer (independent check).
+- **Context Package** = the fields of the Reviewer Packet
+  (`templates/reviewer-packet.md`): goal, artifacts supplied, ownership,
+  constraints, output required, review criteria.
+- **Reviewer-Between-Subtasks**: brief a fresh worker → fresh, separate reviewer
+  returns a verdict → lead integrates; lead does not edit inside a dispatched
+  chain; rotate reviewers.
+- **Ordering barrier**: parallelize only across disjoint write-sets; a dependent
+  write (here, the `runs.jsonl` integration) is a lead-owned barriered step.
+- **Synchronous gates**: a `block` verdict is a hard STOP-and-return — see
+  [Synchronous Gates](#synchronous-gates).
+
+### Role mapping (paradigm → dl-research)
+
+| Paradigm role | dl-research role |
+|---|---|
+| Lead | the lead agent (owns `index.md`, `runs.jsonl`, launch state, verdicts) |
+| Planner | the lead during `frame` / `design` |
+| Explorer (read-only) | `literature-scout`, `code-truth-scout` |
+| Worker (bounded edits) | the `prepare`-phase implementer (configs/scripts inside the adapter editable surface) |
+| Reviewer | `design-critic`, `methodology-auditor`, `result-skeptic`, `implementation-intent-reviewer`, and the managed `methodology-critic` agent |
+
+`templates/reviewer-packet.md` *is* the paradigm's Context Package specialized
+for reviewers; the [Clean-Context Rule](#clean-context-rule) packet header is
+the same shape.
+
+### Runtime backings
+
+One contract, per-runtime mechanical backing — behaviorally equivalent, never a
+replacement for the prose loop.
+
+| Tier | Claude Code | Codex | Floor |
+|---|---|---|---|
+| Model-driven dispatch | Agent tool / subagents | native subagents — reviewers/scouts on a read-only `explorer` base, `prepare` worker on `worker` | the prose Clean-Context loop |
+| Scripted orchestration | Workflow (`parallel`/barrier/`resumeFromRunId`) | Agents SDK + `codex mcp` (handoffs/gating) | the prose loop |
+
+- **Model**: dispatched reviewers/scouts/workers default to **Sonnet**; escalate
+  a single agent to Opus only on a concrete signal (it already failed or
+  returned low-quality output at Sonnet tier), not precautionarily.
+- Read-only roles (Explorer/Reviewer) map to Codex's `explorer`; only the
+  `prepare` Worker writes. `resumeFromRunId` journaling and git-worktree
+  isolation are Claude-Code-only.
+
 ## Contents
 
 - [Invocation Priority](#invocation-priority) — when to call which reviewer
@@ -16,6 +72,8 @@ orchestrator and source-of-truth owner.
     confirm prepared changes match intent
   - [literature-scout](#literature-scout) — external prior work
   - [code-truth-scout](#code-truth-scout) — repository and prior-run evidence
+- [Synchronous Gates](#synchronous-gates) — block = hard STOP-and-return
+- [Ordering Barriers](#ordering-barriers) — disjoint write-sets, barriered integration
 - [Adjudication](#adjudication) — handling reviewer findings
 
 ## Invocation Priority
@@ -169,10 +227,43 @@ Output:
 - missing evidence;
 - artifact references.
 
+## Synchronous Gates
+
+A reviewer `block` verdict is the paradigm's **BLOCKER**: a hard
+STOP-and-return, not a logged annotation. The lead halts the chain and surfaces
+the blocker to the user; no further dispatch (no `launch`, no promotion) until
+the user decides (re-brief / re-scope / abort).
+
+Under any scripted or background backing — a Workflow running `evaluate` /
+`audit`, or the `ratchet` loop — the runner MUST stop forward progress on the
+**first** `block` and return. Batch-collecting blocks to surface at end-of-run
+is not acceptable: it reopens the "flaw found late" window the gate exists to
+close. `resumeFromRunId` (Claude Code) or a Codex re-entry resumes *after* the
+user resolves the block — it never runs past one.
+
+Other hard STOP-and-return boundaries in this skill:
+
+- **Protocol-change / promotion** is the user's commit-equivalent boundary; a
+  runner assembles the evidence and stops — it does not self-promote a result.
+- **Read-only phases** (`survey`/`audit` reviewers) must not write study
+  artifacts; their backing contains no edit-capable stage by construction.
+
+## Ordering Barriers
+
+- Parallel **reviewers** are safe — they are read-only with disjoint outputs.
+- Parallel **`prepare` workers** are safe only across **disjoint editable
+  surfaces**, and must never touch protected files (eval harness, metric parser,
+  data split). Overlapping surfaces need a single owner.
+- `runs.jsonl` is the shared write-set: it is a **lead-owned barriered
+  integration write**, never written by parallel workers in an unbarriered
+  stage. This is dl-research's instance of the paradigm's canonical→barrier→mirror
+  rule (worktree isolation makes an unbarriered ledger write *worse*, not safer:
+  isolated workers append to stale ledgers with no merge conflict to signal it).
+
 ## Adjudication
 
-- Blocking reviewer findings must be addressed, explicitly rejected with
-  artifact evidence, or escalated to the user.
+- A `block` is a [Synchronous Gate](#synchronous-gates): address it, explicitly
+  reject it with artifact evidence, or escalate to the user — do not run past it.
 - Reviewer consensus never overrides raw metrics, protected protocol, or
   predeclared decision gates.
 - Record reviewer verdicts in the phase artifact, not in the ledger unless they
