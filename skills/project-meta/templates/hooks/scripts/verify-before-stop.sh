@@ -31,11 +31,25 @@ advisory_exit() {
   exit 0
 }
 
+# Resolve project-meta's install dir containing the sentinel script $1. Probes:
+# explicit override, personal-skill location, and the two plugin-install layouts
+# (marketplace checkout + version cache). Existence-checked on the sentinel, so
+# an older installed copy that lacks it is skipped. Echoes the dir, or returns 1.
+resolve_project_meta() {
+  local sentinel=$1 c
+  for c in \
+    "${PROJECT_META_DIR:-}" \
+    "$HOME/.claude/skills/project-meta" \
+    "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+    "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta ; do
+    if [[ -n "$c" && -f "$c/$sentinel" ]]; then printf '%s\n' "$c"; return 0; fi
+  done
+  return 1
+}
+
 # 1) Phase-lock check, if installed.
 if [[ -f .harness/phase-state.json ]]; then
-  # Resolve the project-meta install path from $PROJECT_META_DIR or fall back
-  # to the conventional Claude Code skill install location.
-  pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
+  pm_dir="$(resolve_project_meta scripts/phase_lock_check.py)" || pm_dir=""
   pm_check="$pm_dir/scripts/phase_lock_check.py"
   if [[ -x "$pm_check" ]] || [[ -f "$pm_check" ]]; then
     if ! python3 "$pm_check" --harness-dir .harness >/tmp/_pl.out 2>&1; then
@@ -61,7 +75,7 @@ fi
 #    changed substantive files but no memory file was updated. Self-skips when
 #    not a git repo, when nothing changed, or when .harness/writeback-ack
 #    exists. Delegates to project-meta's repo_memory.py (resolve-don't-vendor).
-pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
+pm_dir="$(resolve_project_meta scripts/repo_memory.py)" || pm_dir=""
 pm_mem="$pm_dir/scripts/repo_memory.py"
 if [[ -f "$pm_mem" ]]; then
   if ! python3 "$pm_mem" --target-root . writeback 2>/tmp/_wb.out; then

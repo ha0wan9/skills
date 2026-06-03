@@ -33,26 +33,42 @@ Do not fork these into other skills. Fix the canonical copy here.
 
 ## Runtime Resolver (the scale-proof mechanism)
 
-A dependent skill resolves the installed `project-meta` directory in priority
-order, then delegates. This mirrors `templates/hooks/scripts/verify-before-stop.sh`,
-which already resolves `phase_lock_check.py` the same way.
+A dependent skill resolves the installed `project-meta` directory by probing the
+known locations in priority order, then delegates. **`~/.claude/skills/project-meta`
+alone is not enough** — that is the *personal-skill* path; a marketplace **plugin**
+install lands under `~/.claude/plugins/`, so the resolver must probe those too or
+it silently falls to the thin floor on the most common install. Verified install
+layouts (Claude Code 2.1.x):
+
+- personal skill: `~/.claude/skills/project-meta/`
+- plugin (marketplace checkout): `~/.claude/plugins/marketplaces/<marketplace>/skills/project-meta/`
+- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/project-meta/<version>/skills/project-meta/`
 
 ```bash
-# Resolve project-meta's installed location. Override via PROJECT_META_DIR.
-# Canonical executable copy of this resolver: templates/hooks/scripts/verify-before-stop.sh
-pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
-pm_mem="$pm_dir/scripts/repo_memory.py"
-
-if [[ -f "$pm_mem" ]]; then
-  python3 "$pm_mem" --target-root . read
+# Canonical executable copy: templates/hooks/scripts/verify-before-stop.sh
+# (resolve_project_meta). The sentinel-file check skips older installed copies
+# that lack the script, so the first match is always usable.
+pm_dir=""
+for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta; do
+  [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
+done
+if [ -n "$pm_dir" ]; then
+  python3 "$pm_dir/scripts/repo_memory.py" --target-root . read
 else
-  # Thin floor: project-meta not installed. State the minimum inline so the
-  # skill still works standalone — read the canonical entrypoint, decide a
-  # write-back at close. See the Memory Contract in project-meta's
+  # Thin floor: project-meta not found. State the minimum inline so the skill
+  # still works standalone. See the Memory Contract in project-meta's
   # references/repo-memory-crud.md (#memory-contract).
   echo "[memory] read CLAUDE.md or AGENTS.md before substantive work." >&2
 fi
 ```
+
+> **Most robust:** have `/project-meta init --hooks` bake the resolved
+> `PROJECT_META_DIR` into the target repo's `.claude/settings.json` `env` at
+> init time (it knows its own location via `$CLAUDE_PLUGIN_ROOT` then). The glob
+> probe above is the zero-config fallback; an explicit `PROJECT_META_DIR` is
+> immune to future changes in Claude Code's plugin directory layout.
 
 Rules:
 
