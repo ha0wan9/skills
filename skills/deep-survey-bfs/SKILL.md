@@ -23,6 +23,11 @@ Thin router for breadth-first literature surveys. Resolve the phase, resolve
 under `.research/surveys/<survey-id>/` by default; a project adapter may
 override the root.
 
+**Depends on `project-meta`** (the upstream/root skill) for the canonical Task
+Dispatch paradigm. This skill's `references/multi-agent-dispatch.md` is a domain
+specialization with a self-contained floor, so it still runs if project-meta is
+not installed; when both are present, project-meta is canonical.
+
 `survey-id` rules: kebab-case, 2-5 tokens, no dates, no version suffixes,
 explicit about the topic. Good: `eeg-foundation-models`,
 `stereo-matching-edge`, `mamba-vs-transformer-vision`. Bad: `survey1`,
@@ -115,7 +120,12 @@ State the detected phase, `survey-id`, study root, and reason before loading.
     transformations, the `chart_specs.json` schema, and the
     `--fully-offline` archival mode. **Requires `pip install markdown`
     on the runner**; check before invocation.
-14. Load templates only when scaffolding the matching artifact.
+14. Load `references/multi-agent-dispatch.md` during `round1` / `roundn`
+    whenever you fan search out across sub-question clusters (it owns the
+    delegation template, runtime backings, and the mandatory dedup ordering
+    barrier), and during `synthesize` for the `claims-adversary` review gate.
+    This is the survey specialization of project-meta's Task Dispatch paradigm.
+15. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 
@@ -155,6 +165,13 @@ State the detected phase, `survey-id`, study root, and reason before loading.
   country auditing.
 - Version updates must preserve prior section anchors so cross-references
   survive.
+- Fan-out search obeys an ordering barrier: parallel search subagents are
+  read-only and return candidate rows; only the lead writes `paper_index.md`,
+  after central dedup/merge. Never let parallel agents append index rows
+  directly — that double-counts papers (see `references/multi-agent-dispatch.md`).
+- Synthesis must pass the `claims-adversary` review gate before shipping. A
+  `block` verdict is a hard STOP — fix the flagged claims and re-run; never set
+  status `synthesized` over an open `block`.
 - Do not change secrets, credentials, or external accounts as part of survey
   work.
 

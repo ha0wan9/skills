@@ -23,8 +23,11 @@ Use when a design row must become reproducible run material.
    (`H1.E1`), slug (`H1E1-<experiment-name>`), config diff, command template,
    expected artifacts, and protocol references.
 6. For non-trivial code/config changes, load `references/multi-agent-harness.md`
-   and run an `implementation-intent-reviewer` with the design row, adapter,
-   diff, and protected-file list. Fix blocking mismatch before launch.
+   and run the Reviewer-Between-Subtasks gate on the Worker's edit: a fresh,
+   separate `implementation-intent-reviewer` (not the agent that wrote the
+   change) receives the design row, adapter editable surface, diff, and
+   protected-file list. A `block` is a hard STOP — fix the mismatch before
+   `launch`; do not proceed on an unresolved block.
 7. Run the narrowest dry-run, config validation, or syntax check supported by
    the adapter.
 8. Append a `prepared` ledger row or update the design table with the prepared
