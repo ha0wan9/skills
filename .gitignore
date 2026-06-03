@@ -2,3 +2,9 @@
 *.pyc
 __pycache__/
 .DS_Store
+
+# meta-debug / project-meta runtime state (project-scoped, never committed).
+# Narrow on purpose: do NOT ignore all of .harness/ — project-meta phase-lock
+# keeps committed gate scripts at .harness/gates/*.sh.
+.harness/meta-debug/
+.harness/phase-state.json

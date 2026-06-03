@@ -4,9 +4,9 @@
 Makes the meta-debug pipeline (references/debug-pipeline.md) a *recorded* activity
 instead of a vibe: it tracks phase gates, hypotheses (with confirm/refute),
 top-k candidate fixes (with critic scores), checkpoints/rollback, a bounded loop
-counter, and — on a successful close — writes a lesson into this skill's
-state/lessons.jsonl (the fast journal; promote durable lessons into project-meta
-canonical memory per its CRUD rules).
+counter, and — on a successful close — writes a lesson into the project-scoped
+.harness/meta-debug/lessons.jsonl (the fast journal; promote durable lessons into
+project-meta canonical memory per its CRUD rules).
 
 The script does NOT dispatch agents or run sandboxes — that's the runtime's job
 (Claude Code Workflow/Agent worktrees, Codex subagents, or `openclaw sandbox`),
@@ -14,21 +14,55 @@ coordinated via project-meta's multi-agent protocol. It enforces the *discipline
 you cannot pass a gate while an earlier gate is failed (without --force + reason),
 and close --fixed requires a confirmed root cause.
 
-Stdlib only. Sessions live under state/debug-sessions/<id>.json.
+Stdlib only. Session state is PROJECT-scoped (never the skill's install dir):
+<repo-root>/.harness/meta-debug/debug-sessions/<id>.json — override with
+--state-dir or $META_DEBUG_STATE_DIR.
 """
 from __future__ import annotations
 
 import argparse
 import json
-import re
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SKILL_ROOT = HERE.parent
-STATE_DIR = SKILL_ROOT / "state"
-SESS_DIR = STATE_DIR / "debug-sessions"
-LESSONS_FILE = STATE_DIR / "lessons.jsonl"
+
+# Session state is PROJECT-scoped, never written into the skill's own install
+# dir: a marketplace install lives in a read-only / update-wiped plugin cache,
+# and one install serving many repos would bleed sessions + lessons across
+# projects (AP-SKL-6). Resolution order: --state-dir > $META_DEBUG_STATE_DIR >
+# <repo-root>/.harness/meta-debug (repo root = nearest ancestor with .git) >
+# <cwd>/.harness/meta-debug. These globals are bound by set_state_dir() in main().
+STATE_DIR: Path
+SESS_DIR: Path
+LESSONS_FILE: Path
+
+
+def resolve_state_dir(cli_arg: str | None) -> Path:
+    if cli_arg:
+        return Path(cli_arg).expanduser().resolve()
+    env = os.environ.get("META_DEBUG_STATE_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+    start = Path.cwd().resolve()
+    for cand in (start, *start.parents):
+        if (cand / ".git").exists():
+            return cand / ".harness" / "meta-debug"
+    return start / ".harness" / "meta-debug"
+
+
+def set_state_dir(base: Path) -> None:
+    global STATE_DIR, SESS_DIR, LESSONS_FILE
+    STATE_DIR = base
+    SESS_DIR = base / "debug-sessions"
+    LESSONS_FILE = base / "lessons.jsonl"
+
+
+# Bind at import to a sensible default so the module is import-safe (no NameError
+# if a function is called as a library). main() re-binds from --state-dir / env.
+set_state_dir(resolve_state_dir(None))
 
 PHASES = ["triage", "context", "reproduce", "tests", "hypotheses",
           "solutions", "candidates", "validate", "prod", "close"]
@@ -91,8 +125,21 @@ def failed_prior_gates(s: dict, phase: str) -> list[str]:
 
 # --------------------------------------------------------------------------- #
 def cmd_start(a):
+    # Race-safe id allocation: second-granularity ids can collide, so claim the
+    # session file with an exclusive create (O_EXCL) and bump a suffix on
+    # collision — closes the TOCTOU window a bare exists() check would leave.
+    base = sid()
+    SESS_DIR.mkdir(parents=True, exist_ok=True)
+    n = 1
+    while True:
+        new_id = base if n == 1 else f"{base}-{n}"
+        try:
+            spath(new_id).open("x", encoding="utf-8").close()
+            break
+        except FileExistsError:
+            n += 1
     s = {
-        "id": sid(), "title": a.title, "severity": a.severity,
+        "id": new_id, "title": a.title, "severity": a.severity,
         "track": a.track, "status": "open", "created": now(), "updated": now(),
         "current_phase": "triage", "loop_count": 0,
         "phases": {}, "hypotheses": [], "candidates": [], "checkpoints": [],
@@ -219,6 +266,7 @@ def cmd_loop(a):
 
 def cmd_close(a):
     s = load(a.id)
+    s["current_phase"] = "close"
     if a.outcome == "fixed":
         confirmed = [h for h in s["hypotheses"] if h["status"] == "confirmed"]
         if not (a.root_cause or confirmed) and not a.force:
@@ -285,29 +333,34 @@ def cmd_list(a):
 
 
 def main(argv=None) -> int:
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--state-dir", help="project-scoped state dir "
+                        "(default: <repo-root>/.harness/meta-debug, "
+                        "or $META_DEBUG_STATE_DIR)")
+
     ap = argparse.ArgumentParser(description="Phase-gated debug-pipeline session tracker "
                                              "(see references/debug-pipeline.md).")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("start", help="start a new debug session")
+    p = sub.add_parser("start", parents=[common], help="start a new debug session")
     p.add_argument("--title", required=True)
     p.add_argument("--severity", default="sev3", choices=["sev1", "sev2", "sev3", "sev4"])
     p.add_argument("--track", default="deterministic", choices=["deterministic", "heisenbug"])
     p.set_defaults(fn=cmd_start)
 
-    p = sub.add_parser("phase", help="record a phase gate result")
+    p = sub.add_parser("phase", parents=[common], help="record a phase gate result")
     p.add_argument("id"); p.add_argument("name")
     p.add_argument("--status", required=True, choices=["pass", "fail", "skip"])
     p.add_argument("--note"); p.add_argument("--artifact"); p.add_argument("--force", action="store_true")
     p.set_defaults(fn=cmd_phase)
 
-    p = sub.add_parser("hypothesis", help="add/confirm/refute/list hypotheses")
+    p = sub.add_parser("hypothesis", parents=[common], help="add/confirm/refute/list hypotheses")
     p.add_argument("id"); p.add_argument("--text")
     p.add_argument("--prior", default="med", choices=["high", "med", "low"])
     p.add_argument("--probe"); p.add_argument("--confirm"); p.add_argument("--refute"); p.add_argument("--evidence")
     p.set_defaults(fn=cmd_hypothesis)
 
-    p = sub.add_parser("candidate", help="record a top-k candidate fix + critic scores")
+    p = sub.add_parser("candidate", parents=[common], help="record a top-k candidate fix + critic scores")
     p.add_argument("id"); p.add_argument("--label", required=True)
     p.add_argument("--sandbox"); p.add_argument("--passed-red", dest="passed_red",
                                                 choices=["yes", "no", "unknown"], default="unknown")
@@ -315,29 +368,30 @@ def main(argv=None) -> int:
     p.add_argument("--status", default="survived", choices=["survived", "dropped", "winner"])
     p.set_defaults(fn=cmd_candidate)
 
-    p = sub.add_parser("checkpoint", help="record a rollback point")
+    p = sub.add_parser("checkpoint", parents=[common], help="record a rollback point")
     p.add_argument("id"); p.add_argument("--label", required=True); p.add_argument("--ref")
     p.set_defaults(fn=cmd_checkpoint)
 
-    p = sub.add_parser("rollback", help="roll back to a checkpoint")
+    p = sub.add_parser("rollback", parents=[common], help="roll back to a checkpoint")
     p.add_argument("id"); p.add_argument("--to")
     p.set_defaults(fn=cmd_rollback)
 
-    p = sub.add_parser("loop", help="loop back to an earlier phase with new evidence")
+    p = sub.add_parser("loop", parents=[common], help="loop back to an earlier phase with new evidence")
     p.add_argument("id"); p.add_argument("--to", required=True); p.add_argument("--reason", required=True)
     p.set_defaults(fn=cmd_loop)
 
-    p = sub.add_parser("close", help="close the session (fixed -> writes a lesson)")
+    p = sub.add_parser("close", parents=[common], help="close the session (fixed -> writes a lesson)")
     p.add_argument("id")
     p.add_argument("--outcome", required=True, choices=["fixed", "escalated", "abandoned"])
     p.add_argument("--root-cause", dest="root_cause"); p.add_argument("--fix")
     p.add_argument("--bug"); p.add_argument("--tags"); p.add_argument("--reason"); p.add_argument("--force", action="store_true")
     p.set_defaults(fn=cmd_close)
 
-    p = sub.add_parser("show", help="show a session"); p.add_argument("id"); p.set_defaults(fn=cmd_show)
-    p = sub.add_parser("list", help="list sessions"); p.set_defaults(fn=cmd_list)
+    p = sub.add_parser("show", parents=[common], help="show a session"); p.add_argument("id"); p.set_defaults(fn=cmd_show)
+    p = sub.add_parser("list", parents=[common], help="list sessions"); p.set_defaults(fn=cmd_list)
 
     a = ap.parse_args(argv)
+    set_state_dir(resolve_state_dir(a.state_dir))
     a.fn(a)
     return 0
 

@@ -1,0 +1,211 @@
+{
+  "id": "dbg-20260603T165614Z",
+  "title": "cache null-deref: works locally, 500s in prod",
+  "severity": "sev2",
+  "track": "deterministic",
+  "status": "fixed",
+  "created": "2026-06-03T16:56:14Z",
+  "updated": "2026-06-03T16:56:14Z",
+  "current_phase": "close",
+  "loop_count": 0,
+  "phases": {
+    "triage": {
+      "status": "pass",
+      "note": "",
+      "artifact": "sev2; deterministic track; elevated 5xx but no hard outage",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "context": {
+      "status": "pass",
+      "note": "",
+      "artifact": "case-file.md",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "reproduce": {
+      "status": "pass",
+      "note": "",
+      "artifact": "pytest tests/test_cache.py::test_concurrent_evict (fails 7/10, seed=1337)",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "tests": {
+      "status": "pass",
+      "note": "",
+      "artifact": "tests/test_cache.py::test_concurrent_evict — red, wired into CI 'unit' job",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "hypotheses": {
+      "status": "pass",
+      "note": "",
+      "artifact": "H1 confirmed by probe; H2 refuted",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "solutions": {
+      "status": "pass",
+      "note": "",
+      "artifact": "2 approaches scored: fix-lock, fix-copy-on-read",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "candidates": {
+      "status": "pass",
+      "note": "",
+      "artifact": "both passed red in isolated sandboxes; fix-lock winner",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "validate": {
+      "status": "pass",
+      "note": "",
+      "artifact": "red->green; full suite green; adversarial critic: not test-gaming, no perf regression",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "prod": {
+      "status": "pass",
+      "note": "",
+      "artifact": "canary 10% 30min; rollback trigger 5xx>0.1%; window passed clean",
+      "ts": "2026-06-03T16:56:14Z",
+      "forced": false
+    },
+    "close": {
+      "status": "pass",
+      "note": "lesson recorded",
+      "ts": "2026-06-03T16:56:14Z"
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "text": "TTL eviction races with a concurrent read; freed entry is returned",
+      "prior": "high",
+      "probe": "assert lock held across evict+read; run repro 50x",
+      "status": "confirmed",
+      "evidence": "assert fires under load; 0/50 failures with lock held",
+      "ts": "2026-06-03T16:56:14Z"
+    },
+    {
+      "id": "H2",
+      "text": "JSON serializer drops null fields",
+      "prior": "med",
+      "probe": "round-trip serializer with null in isolation",
+      "status": "refuted",
+      "evidence": "serializer round-trips null fine in isolation — exonerated",
+      "ts": "2026-06-03T16:56:14Z"
+    }
+  ],
+  "candidates": [
+    {
+      "label": "fix-lock",
+      "sandbox": "wt-A",
+      "passed_red": "yes",
+      "scores": {
+        "correctness": 9.0,
+        "minimality": 8.0,
+        "risk": 4.0,
+        "latency": 7.0
+      },
+      "status": "winner",
+      "ts": "2026-06-03T16:56:14Z"
+    },
+    {
+      "label": "fix-copy-on-read",
+      "sandbox": "wt-B",
+      "passed_red": "yes",
+      "scores": {
+        "correctness": 8.0,
+        "minimality": 6.0,
+        "risk": 6.0,
+        "latency": 5.0
+      },
+      "status": "dropped",
+      "ts": "2026-06-03T16:56:14Z"
+    }
+  ],
+  "checkpoints": [
+    {
+      "label": "pre-prod",
+      "phase": "candidates",
+      "ref": "abc1234",
+      "ts": "2026-06-03T16:56:14Z"
+    }
+  ],
+  "events": [
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "session started (severity=sev2, track=deterministic)"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase triage -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase context -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase reproduce -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase tests -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "hypothesis H1 added (prior=high)"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "hypothesis H2 added (prior=med)"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "hypothesis H2 -> refuted: serializer round-trips null fine in isolation — exonerated"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "hypothesis H1 -> confirmed: assert fires under load; 0/50 failures with lock held"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase hypotheses -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase solutions -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "candidate fix-lock (winner) scores={'correctness': 9.0, 'minimality': 8.0, 'risk': 4.0, 'latency': 7.0}"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "candidate fix-copy-on-read (dropped) scores={'correctness': 8.0, 'minimality': 6.0, 'risk': 6.0, 'latency': 5.0}"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase candidates -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "checkpoint 'pre-prod' @ candidates (ref=abc1234)"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase validate -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "phase prod -> pass"
+    },
+    {
+      "ts": "2026-06-03T16:56:14Z",
+      "msg": "closed FIXED; lesson recorded (#1)"
+    }
+  ]
+}
