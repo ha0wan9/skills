@@ -72,4 +72,18 @@ if [[ -f "$pm_mem" ]]; then
   rm -f /tmp/_wb.out
 fi
 
+# 4) Mandatory-dispatch gate. Flags the AP-COORD-1 pattern: the turn edited >=2
+#    harness files without an acknowledged dispatch. Self-skips when not a git
+#    repo, when <2 harness files changed, or when .harness/dispatch-ack exists.
+#    Delegates to project-meta's dispatch_ledger.py (resolve-don't-vendor).
+pm_disp="$pm_dir/scripts/dispatch_ledger.py"
+if [[ -f "$pm_disp" ]]; then
+  if ! python3 "$pm_disp" --target-root . gate 2>/tmp/_dg.out; then
+    cat /tmp/_dg.out >&2
+    rm -f /tmp/_dg.out
+    advisory_exit "mandatory-dispatch gate: see above."
+  fi
+  rm -f /tmp/_dg.out
+fi
+
 exit 0
