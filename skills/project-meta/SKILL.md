@@ -125,6 +125,7 @@ Triage by task class, then delegate to the matching recipe or reference. SKILL.m
 2. Classify the task:
    - `/project-meta <verb>` command → load `recipes/<verb>.md`
    - `bootstrap` / `memory-crud` / `harness-design` / `iteration` / `mirror-sync` / `coordination` / `delivery` (no explicit verb) → matching reference per *When To Load References*
+   - Derive the **read-pattern** (orthogonal to verb mode and dispatch tier): default `minimal` (just-in-time narrow reads); escalate to `context-mapping` only on design signals or `semantic_scope >= cross_subsystem`, and state the choice in the delivery. See [`references/execution-policy.md`](references/execution-policy.md) "Read-Pattern Derivation".
 3. Resolve skill arbitration if a peer skill could also match — see *Skill Arbitration* above.
 4. Load the **single** recipe or reference whose scope matches the task class.
 5. If the current structure is messy, fix it as part of the task — see [`references/anti-patterns.md`](references/anti-patterns.md) AP-MEM-1..3.

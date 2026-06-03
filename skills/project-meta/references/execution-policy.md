@@ -8,6 +8,7 @@
 - [SHOULD ASK Categories](#should-ask-categories) — actions that need explicit approval
 - [MAY PROCEED WITH NOTE](#may-proceed-with-note) — record in delivery and continue
 - [Soft Budgets](#soft-budgets) — configurable signals, not baked thresholds
+- [Read-Pattern Derivation](#read-pattern-derivation) — how much context to acquire before acting, derived not guessed
 - [Codex-Class Worker Constraints](#codex-class-worker-constraints) — bounded execution defaults
 - [Relationship To Runtime Enforcement](#relationship-to-runtime-enforcement) — what this protocol is and isn't
 
@@ -84,6 +85,31 @@ change_budget:
 ```
 
 File count alone is not a risk signal. A 20-file mechanical rename can be safer than a 2-file auth change. Use semantic scope (which subsystems, which interfaces) as the primary signal; use file count as a heuristic flag, not a hard threshold.
+
+## Read-Pattern Derivation
+
+Soft budgets answer *when to stop*. The **read-pattern** answers a different question — *how much context to acquire before acting* — and it is orthogonal to both the verb's mode (editing/read-only) and the dispatch tier (single-context / subagent dispatch / scripted engine). It is **derived, not a separate classifier the agent computes from scratch**: reuse `semantic_scope` as the spine so the harness does not carry a third independent risk axis (a redundant classifier is its own over-machinery — AP-COORD-5).
+
+```yaml
+read_pattern:
+  default: minimal                # just-in-time, narrowest file set per subtask
+  escalate_to: context-mapping
+  escalate_when:
+    - semantic_scope >= cross_subsystem
+    - design intent signalled        # "redesign", "rethink", "architecture",
+                                      # "restructure", "should we", authoring a new skill
+    - verb == audit AND investigative # not a mechanical re-run
+```
+
+- **minimal** (default): each subtask reads the smallest file set it needs, just in time — the Context Package "Read first" discipline. No upfront shared digest.
+- **context-mapping**: a read-only Explorer fan-out builds a compressed global map *before* decomposition, consumed by the Lead/Planner. Mechanics and the four constraints that keep it from becoming a drift source live in [`multi-agent-protocols.md`](multi-agent-protocols.md) "Context Mapping Phase".
+
+Rules:
+
+- **Default minimal; escalate on the signals above, never the reverse.** Escalation is cheap — the Lead pulls more context just-in-time when minimal proves insufficient; unwinding a propagated stale digest is not. This mirrors Soft Budgets ("File count alone is not a risk signal") and the dispatch tiers ("the engine is the higher bar").
+- **State the derived read-pattern in the delivery**, exactly like the Mandatory Subagent Dispatch bypass acknowledgement. A silently mis-derived read-pattern is the failure mode (AP-COORD-5); a stated one is auditable and the user can correct it.
+- **When signals conflict, ask before entering context-mapping** rather than guess — the mapping phase has real cost, and a cheap question beats an over-mapped run. Aligns with the init questionnaire as a synchronous human gate.
+- **Derived, runtime-agnostic.** This derivation is prose every runtime executes; a Workflow / Agents-SDK backing may accelerate the mapping fan-out but never owns the decision (mechanizing it on one runtime only is an AP-VAL-1 gap).
 
 ## Codex-Class Worker Constraints
 

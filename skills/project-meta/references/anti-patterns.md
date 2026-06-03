@@ -173,6 +173,25 @@ change, prefer single-context authoring + a dispatched review pass over
 parallel authoring (parallel authors drift on shared cross-references);
 state the bypass per Mandatory Subagent Dispatch.
 
+### AP-COORD-5 — Read-pattern mis-derived
+The context-acquisition pattern is set wrong for the task. Either a CRUD /
+single-subsystem task triggers an eager context-mapping Explorer fan-out
+(wasted reads — the read-volume sibling of AP-COORD-4), or a complex design
+/ cross-subsystem task proceeds on minimal just-in-time reads and the Lead
+decomposes without a coherent global model (stale or partial design
+propagates down the worker chain).
+
+**Symptom**: a one-file path rename spins up a multi-Explorer survey before
+acting; or a redesign ships with workers each reading a narrow slice and no
+one holding the whole picture, so a cross-cutting constraint is missed.
+
+**Fix**: derive the read-pattern, don't guess it (`execution-policy.md`
+"Read-Pattern Derivation"): default `minimal`, escalate to
+`context-mapping` only on design signals or `semantic_scope >=
+cross_subsystem`. State the derived pattern in the delivery so a misfire is
+visible. The mapping phase's own four constraints live in
+`multi-agent-protocols.md` "Context Mapping Phase".
+
 ## Validation & enforcement
 
 ### AP-VAL-1 — Advisory rules with no validator

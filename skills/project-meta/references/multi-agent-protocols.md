@@ -7,6 +7,7 @@
 - [Orchestration Backings](#orchestration-backings) — one prose contract, per-runtime mechanical backings
 - [Mandatory Subagent Dispatch](#mandatory-subagent-dispatch) — when project-meta editing recipes MUST dispatch
 - [Roles](#roles) — Lead, Planner, Explorer, Worker, Reviewer
+- [Context Mapping Phase](#context-mapping-phase) — optional pre-decomposition Explorer fan-out for the context-mapping read-pattern
 - [Context Package](#context-package) — fields every delegation must include
 - [Delegation Template](#delegation-template) — copyable shape
 - [Ownership Rules](#ownership-rules) — write-set boundaries, ordering barriers
@@ -103,6 +104,19 @@ The recipe owns *when* to dispatch; this reference owns *how* (Roles, Context Pa
 - Explorer: answers narrow read-only questions and does not edit files.
 - Worker: edits an explicitly assigned file set or produces a bounded artifact.
 - Reviewer: checks consistency, drift, duplicate guidance, missing validation, and whether the output matches the protocol.
+
+## Context Mapping Phase
+
+**Optional, and only for the `context-mapping` read-pattern** (derived in [`execution-policy.md`](execution-policy.md) "Read-Pattern Derivation"; the default `minimal` skips this phase entirely). When a task needs a coherent global model *before* decomposition — complex design, cross-subsystem work, an investigative `audit` — run a read-only Explorer fan-out to build that model before planning, not during execution.
+
+Four constraints make this a net win instead of a drift source:
+
+1. **Explorers return pointers, not opaque conclusions.** Each Explorer digest carries `file:line` anchors + key excerpts + its judgement, so the Lead can re-expand any claim on demand. Treat it as lossy compression *with a decompression key*, never "I read it for you". A digest of bare conclusions is unauditable and propagates silent loss the Lead cannot detect.
+2. **The map feeds the Lead/Planner, not the Workers.** The digest informs decomposition and design. Workers still read minimal and just-in-time per their Context Package "Read first" — they do NOT inherit the shared map. Inheriting it reintroduces exactly the cross-file drift the minimal discipline exists to prevent.
+3. **Mapping never replaces per-worker minimal reads.** The phase accelerates *the Lead's* understanding; it adds nothing to the worker tier. If the map tempts you to let a worker skip its own narrow read, that is the failure, not the shortcut.
+4. **Write-back judgement stays with the Lead.** Distilling durable vs transient needs the whole session's accumulated judgement (Roles: Lead owns "final memory writeback"). A fresh agent cannot do this without being re-fed the very context it is meant to compress — self-defeating. Only the *mechanical* half of write-back (mirror render, formatting, validation) is delegable, and only after the canonical→barrier→mirror barrier (Ownership Rules).
+
+Running this phase for a `minimal`-class task, or collapsing a `context-mapping`-class task into bare minimal worker reads, is AP-COORD-5 — the read-volume sibling of AP-COORD-4 (over-orchestration), in either direction.
 
 ## Context Package
 

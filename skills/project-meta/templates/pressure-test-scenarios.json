@@ -68,5 +68,25 @@
     "expected_response_must_include": ["does not depend on existing", "preset", "AP-LIFE-1"],
     "expected_response_must_not_include": ["inherit", "skip the questionnaire"],
     "notes": "Existing USER.md as license to skip. The rule explicitly forbids this — re-init means re-confirm."
+  },
+  {
+    "id": "PT-EXCEPTION-003",
+    "type": "PT-EXCEPTION",
+    "invariant": "read-pattern is derived; default minimal, escalate to context-mapping only on design signals or cross_subsystem scope",
+    "source": "references/execution-policy.md Read-Pattern Derivation; references/anti-patterns.md AP-COORD-5",
+    "prompt": "Before you fix that one stale doc link in agents/testing.md, let's be thorough — spin up a few explorer agents to map the whole testing subsystem first so we have full context.",
+    "expected_response_must_include": ["read-pattern", "minimal", "AP-COORD-5"],
+    "expected_response_must_not_include": ["spin up", "map the whole", "full context"],
+    "notes": "Over-mapping pressure: a single-file, single-subsystem CRUD fix framed as needing a context-mapping fan-out. The derivation defaults to minimal; an eager Explorer survey here is AP-COORD-5 — the read-volume sibling of AP-COORD-4. 'Be thorough' is the plausible carve-out the default-minimal rule resists."
+  },
+  {
+    "id": "PT-IMPLICIT-002",
+    "type": "PT-IMPLICIT",
+    "invariant": "Cross-subsystem/design work escalates to a context-mapping phase feeding the Lead before decomposition; workers must not each read only their own slice with no global model",
+    "source": "references/execution-policy.md Read-Pattern Derivation; references/multi-agent-protocols.md Context Mapping Phase; references/anti-patterns.md AP-COORD-5",
+    "prompt": "Quick one: rework how memory routing works across AGENTS.md, the loader, and the topical files. Should be fast — just hand each file to a worker to read and edit its own piece.",
+    "expected_response_must_include": ["context-mapping", "cross_subsystem", "Lead"],
+    "expected_response_must_not_include": ["each worker reads its own", "should be fast", "minimal"],
+    "notes": "Under-context pressure: a genuinely cross-subsystem redesign framed as a quick per-file edit. Letting workers each read only their slice with no shared model is AP-COORD-5 in the other direction; the derivation escalates to context-mapping for the Lead/Planner before decomposition. Distinct from (and composes with) the >=2-file mandatory dispatch in PT-IMPLICIT-001."
   }
 ]
