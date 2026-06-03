@@ -26,15 +26,16 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from provenance import split_frontmatter as _split_fm  # noqa: E402
+
 SCRIPT_RE = re.compile(r"\b([A-Za-z0-9_./-]*?[A-Za-z0-9_]+\.py)\b")
 RULE_HINT = ("must", "gotcha", "after every", "before", "validate", "run ")
 
 
-def split_frontmatter(text: str) -> str:
-    if not text.startswith("---"):
-        return text
-    end = text.find("\n---", 3)
-    return text if end == -1 else text[end + 4 :]
+def body_after_frontmatter(text: str) -> str:
+    """Return the markdown body with any leading frontmatter stripped."""
+    return _split_fm(text)[1]
 
 
 def rules_referencing_scripts(body: str) -> list[tuple[str, str]]:
@@ -86,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
 
     gaps = 0
     for skill in skills:
-        body = split_frontmatter((skill / "SKILL.md").read_text(encoding="utf-8", errors="replace"))
+        body = body_after_frontmatter((skill / "SKILL.md").read_text(encoding="utf-8", errors="replace"))
         rows = rules_referencing_scripts(body)
         # de-dup on (script, excerpt)
         seen: set[tuple[str, str]] = set()

@@ -72,7 +72,7 @@ conventions.
 
 ### `verify-before-stop.sh` — Stop
 
-Two responsibilities:
+Three responsibilities:
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
@@ -81,14 +81,21 @@ Two responsibilities:
    defines what verification means for the project (test runner,
    linter, type-checker, integration suite — whatever is fast enough
    for a per-turn check).
+3. **Memory write-back gate** via `repo_memory.py writeback` (same
+   resolved `project-meta` path). Flags a pending write-back decision
+   when the turn changed substantive files but no memory file was
+   updated and no `.harness/writeback-ack` marker exists. This is the
+   write leg of the Memory Contract (`references/repo-memory-crud.md`).
 
-- `minimal`: hook disabled
-- `standard`: runs both checks; warns on failure but exits 0 (advisory)
+- `minimal`: hook disabled (the write-back gate also self-disables on
+  `HARNESS_PROFILE=minimal`)
+- `standard`: runs all checks; warns on failure but exits 0 (advisory)
 - `strict`: exits non-zero on failure (blocks the agent's turn end)
 
-If neither artifact is present, the hook is a no-op — the harness can
-ship the hook without forcing every repo to install phase-locks or
-define a verifier.
+If none of the artifacts are present (no phase-state, no verifier, not a
+git repo / nothing changed), the hook is a no-op — the harness can ship
+it without forcing every repo to install phase-locks, define a verifier,
+or adopt the write-back gate.
 
 ## Profile Selection Guidance
 

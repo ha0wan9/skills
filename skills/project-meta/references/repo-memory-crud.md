@@ -4,6 +4,24 @@
 
 Use this reference when creating, reading, updating, deleting, or consolidating repo memory.
 
+## Memory Contract
+
+The two-leg protocol every skill follows. It is enforced by hooks at the host
+layer (read leg = `SessionStart`, write leg = `Stop`) and backed by
+`scripts/repo_memory.py`; skills that cannot reach a hook restate this inline as
+a thin floor (see [`shared-cli-delegation.md`](shared-cli-delegation.md)).
+
+- **Read leg (session start / before substantive work).** Resolve the canonical
+  entrypoint (`CLAUDE.md` when Claude Code is primary, else `AGENTS.md`), read
+  it, and load only the topical `agents/*.md` the task needs. Mechanized by
+  `repo_memory.py --target-root . read`.
+- **Write-back leg (turn close).** If the turn changed substantive files,
+  decide **write now / suggest only / skip** for any durable lesson before
+  ending. Mechanized by `repo_memory.py --target-root . writeback`: it flags a
+  pending decision when work landed but no memory file changed and no
+  `.harness/writeback-ack` marker exists. Profile-gated (`minimal` disables;
+  `strict` blocks the turn). The writeback quality bar is the rest of this file.
+
 ## Create
 
 - First, detect whether the repo already has established canonical memory files and preserve that convention when it is coherent.

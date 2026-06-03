@@ -57,4 +57,19 @@ if [[ -x .harness/verify.sh ]]; then
   rm -f /tmp/_v.out
 fi
 
+# 3) Memory write-back gate. Flags a pending write-back decision when the turn
+#    changed substantive files but no memory file was updated. Self-skips when
+#    not a git repo, when nothing changed, or when .harness/writeback-ack
+#    exists. Delegates to project-meta's repo_memory.py (resolve-don't-vendor).
+pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
+pm_mem="$pm_dir/scripts/repo_memory.py"
+if [[ -f "$pm_mem" ]]; then
+  if ! python3 "$pm_mem" --target-root . writeback 2>/tmp/_wb.out; then
+    cat /tmp/_wb.out >&2
+    rm -f /tmp/_wb.out
+    advisory_exit "memory write-back decision pending; see above."
+  fi
+  rm -f /tmp/_wb.out
+fi
+
 exit 0

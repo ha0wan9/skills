@@ -12,6 +12,7 @@ The contract here is opinionated. It exists because skills that don't follow it 
 - [Trigger Design](#trigger-design)
 - [Writing for the Model](#writing-for-the-model)
 - [Invariants and Soft Rules](#invariants-and-soft-rules)
+- [Shared Harness Delegation](#shared-harness-delegation)
 - [Examples Folder](#examples-folder)
 - [Skill Audit Checklist](#skill-audit-checklist)
 
@@ -111,6 +112,22 @@ Mixing the three is a common failure: a heuristic worded as MUST creates false-p
 
 Mark invariants with **MUST**. Mark defaults with "Default:". Heuristics need no marker but should not start with MUST.
 
+## Shared Harness Delegation
+
+`project-meta` is the canonical home for cross-skill harness logic (the memory read/write-back protocol, frontmatter/provenance handling). A new skill that needs any of it **reuses** it — it does not re-implement it and does not vendor a copy. The full contract is in [`shared-cli-delegation.md`](shared-cli-delegation.md); the authoring obligations are:
+
+**Decide first: does this skill touch the shared harness?** It does if it reads or writes repo memory (`CLAUDE.md`/`AGENTS.md`/`agents/*.md`/`USER.md`), gates work on a write-back decision, or instantiates provenance-stamped artifacts (`instantiated_from`/`source_reference`/`last_reviewed`). If it does none of these, skip this section entirely — do not add dead pointers (AP-SKL-1: content that loads but never fires).
+
+When it does:
+
+- **MUST cite the Memory Contract, not restate it.** Point at [`repo-memory-crud.md#memory-contract`](repo-memory-crud.md#memory-contract) for the read/write-back legs. One source of truth per fact (the *Writing for the Model* rule); a restated protocol drifts.
+- **MUST delegate to the canonical CLI by resolved path, never re-roll or vendor.** Resolve `project-meta` via `$PROJECT_META_DIR` → `~/.claude/skills/project-meta`, then call `scripts/repo_memory.py` / `scripts/provenance.py`. Re-rolling frontmatter parsing is the specific trap the lint WARNs on; vendoring a copy creates drift the lint must then police.
+- **MUST carry a thin floor.** The marketplace has no auto-install and submodules don't materialize at install, so `project-meta` may be absent. The delegation block's `else` branch states the minimum protocol inline so the skill still works standalone.
+- **Default placement:** the `## Shared Harness Delegation` section in [`templates/SKILL.template.md`](../templates/SKILL.template.md) already carries the resolver + thin-floor snippet. Instantiate it (and delete it when the skill does not touch the harness).
+- **Declare the dependency** in the skill's Skill Arbitration / delegation row pointing at `project-meta`, and route harness work there rather than freelancing it.
+
+Vendoring (git-subtree / CI copy + a parity check) is required only when the skill must run the runtime code with `project-meta` absent and the thin floor is insufficient — defer it until that need is real.
+
 ## Examples Folder
 
 A skill with non-trivial output benefits from an `examples/` folder containing one or more reference runs.
@@ -145,5 +162,6 @@ Score each item ABSENT, PARTIAL, or ENFORCED:
 - [ ] Scripts have argparse `--help`, std-lib only where possible, and exit with a remediation message on missing dependencies.
 - [ ] At least one `examples/` entry exists for any skill that produces non-trivial artifacts.
 - [ ] All scripts run cleanly against every example.
+- [ ] If the skill touches repo memory or provenance, it cites the Memory Contract and delegates to `project-meta` via the resolver + thin floor (no restated protocol, no re-rolled frontmatter, no vendored copy). See *Shared Harness Delegation*.
 
 When the audit returns ABSENT or PARTIAL on any line, fix it before shipping. Promote ABSENT items into the skill's next version backlog.
