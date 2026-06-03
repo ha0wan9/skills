@@ -89,8 +89,12 @@ re-derives memory structure or the multi-agent contract.
   rollback trigger hit — wire that in before applying.
 - **Flaky bugs go on the observability track**, not the fixing track — capture a
   failure-rate baseline first; a "fix" you can't see fail again proves nothing.
-- **`debug_session.py` writes lessons to this skill's `state/lessons.jsonl`.**
-  That's the fast journal; durable lessons still get promoted to canonical memory.
+- **`debug_session.py` writes session state to a project-scoped
+  `<repo-root>/.harness/meta-debug/`** — never the skill's own install dir
+  (AP-SKL-6; a marketplace install is read-only / update-wiped and one install is
+  shared across repos). Override with `--state-dir` or `$META_DEBUG_STATE_DIR`.
+  `lessons.jsonl` there is the fast journal; durable lessons still get promoted to
+  project-meta canonical memory.
 
 ## Quick Workflow
 
@@ -116,6 +120,16 @@ python3 $DBG show <id>   # or: list
   the project-meta harness + multi-agent + memory-promotion hand-offs, the critic
   axes, per-runtime sandbox backings, and anti-patterns:
   - load [`references/debug-pipeline.md`](references/debug-pipeline.md).
+
+## Examples
+
+- [`examples/null-deref-cache/`](examples/null-deref-cache/) — a full sev2 session
+  (cache race; works-locally / 500s-in-prod): all five gates green, H2 refuted by a
+  probe, two scored candidates, canary + rollback trigger, recorded lesson. Doubles
+  as the `debug_session.py` smoke test.
+- [`tests/pressure-test-scenarios.json`](tests/pressure-test-scenarios.json) —
+  adversarial scenarios for each MUST rule (run via project-meta's
+  `pressure_test_skill.py`).
 
 ## Output Footer
 

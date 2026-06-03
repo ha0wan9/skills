@@ -161,11 +161,28 @@ health gate + revert.)
 
 ## Anti-patterns
 
-- Fixing before a reliable repro + red test exists (you can't prove the fix).
-- Writing a throwaway repro instead of wiring the red test into the existing
-  CI/test suite (won't guard the next regression).
-- Blaming the first plausible culprit without a refuting probe (confirmation bias).
-- A single candidate, single critic pass (no comparison, no adversarial check).
-- "Deployed, therefore fixed" (no observation window / rollback trigger).
-- Letting a debug agent ingest the whole repo (context-bloat timeout).
-- Looping forever instead of escalating with a case file.
+meta-debug's named failure modes — cite by ID in reviews and close-lessons.
+Several map onto project-meta's catalog (cross-referenced below) and are
+pressure-tested in [`../tests/pressure-test-scenarios.json`](../tests/pressure-test-scenarios.json).
+
+- **AP-DBG-1 — Fix before a reliable repro + red test exists.** You can't prove
+  the fix or guard the regression. (gates: reproduce, tests)
+- **AP-DBG-2 — Throwaway repro instead of wiring the red test into existing
+  CI/test.** A script not in CI rots and won't catch the next regression.
+- **AP-DBG-3 — Blaming the first plausible culprit without a refuting probe.**
+  Confirmation bias; record refuted hypotheses so the dead end isn't re-walked.
+- **AP-DBG-4 — Single candidate, single critic pass.** No comparison and no
+  adversarial check — overfit / test-gaming slips through.
+- **AP-DBG-5 — "Deployed, therefore fixed."** No observation window / rollback
+  trigger; deploying is not the success signal, the window passing is.
+- **AP-DBG-6 — Debug agent ingests the whole repo.** Context-bloat timeout (real:
+  a collector hit a ~191k-token request and timed out). Hand each agent the
+  bounded case file, not the codebase. Maps to project-meta **AP-COORD-5**
+  (read-pattern over-reading) — the case file is a context-mapping digest with
+  `path + why` pointers, not the raw repo.
+- **AP-DBG-7 — Looping forever instead of escalating.** `loop_count` is capped
+  (default 3) → escalate with the case file.
+
+Cross-skill: the **lead never edits inside a worker's sandbox** (phase 6,
+Gotchas) is project-meta **AP-COORD-1**; deferring dispatch/review to
+project-meta rather than re-deriving it avoids **AP-COORD-4** over-orchestration.

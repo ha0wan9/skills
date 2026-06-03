@@ -116,6 +116,22 @@ projects.
 *intent* and *invariants*; let the model resolve mechanics. Prescribe only
 where the failure cost is high.
 
+### AP-SKL-6 — Skill writes runtime state into its own install dir
+A skill's script persists session/run state next to itself
+(`STATE_DIR = SKILL_ROOT / "state"`) instead of in a project-scoped location.
+
+**Symptom**: state vanishes or fails to write after a marketplace update (the
+install lives in a read-only / wiped plugin cache); worse, one install serving
+several repos silently *bleeds* state and lessons across unrelated projects, so a
+"lesson" learned in repo A surfaces while debugging repo B; the state also lands
+in the skill repo's own version control because no `.gitignore` rule covers it.
+
+**Fix**: resolve a **project-scoped** state dir — nearest ancestor with `.git`
+→ `<repo-root>/.harness/<skill>/` — with an explicit `--state-dir` flag and an
+env override, and never fall back to the install dir. Add the `.harness/` ignore
+rule to the target repo. Runtime artifacts are per-project; the install dir is
+shared and ephemeral.
+
 ## Coordination & multi-agent
 
 ### AP-COORD-1 — Conductor edits and orchestrates simultaneously
