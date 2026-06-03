@@ -43,7 +43,7 @@ The agent must halt and request explicit approval before:
 - **Generated bulk rewrites**: codemod runs, format-everything passes, auto-fix-all on the entire repo.
 - **Scope expansion**: any change outside the file set the user requested or the agent itself proposed and the user approved.
 - **Unclear target files**: when the agent cannot name the specific files it intends to edit. Guessing is not allowed; ask which files are in scope before any edit.
-- **File modification under a read-only command**: the requested workflow is `status`, `validate`, `deliver`, `audit`, `review`, or any other read-only mode, and the proposed change would write to disk. Read-only is binding unless the user explicitly upgrades it to repair.
+- **File modification under a read-only command**: the requested workflow is `status`, `validate`, `deliver`, `audit`, `review`, or any other read-only mode, and the proposed change would write to disk. Read-only is binding unless the user explicitly upgrades it to repair. **This binding holds inside any orchestration runner** (subagent dispatch, Claude Code Workflow, Codex Agents-SDK): a read-only verb's runner MUST contain no edit-capable stages by construction. A runner that *can* emit a write under a read-only verb is a MUST-STOP violation by construction, not merely at runtime.
 
 ## SHOULD ASK Categories
 
@@ -118,8 +118,8 @@ These constraints belong in the target repo's [`agents/execution-rules.md`](../t
 
 Markdown rules are advisory. Real enforcement comes from runtime configuration:
 
-- **Claude Code**: `settings.json` permissions, `hooks` for pre-tool-use approval, MCP server allowlists, plan-mode gates.
-- **Codex CLI**: approval modes, sandbox settings, network and file-scope flags.
+- **Claude Code**: `settings.json` permissions, `hooks` for pre-tool-use approval, MCP server allowlists, plan-mode gates, and the **Workflow** tool for deterministic scripted orchestration (pipeline/parallel/barrier/resume/budget).
+- **Codex CLI**: `config.toml` approval modes, sandbox settings, network and file-scope flags, native **subagents** (`.codex/agents/*.toml`, native roles `worker`/`explorer`/`default` — exact TOML schema is Codex-version-dependent), Codex hooks, and the **Agents SDK + `codex mcp`** for deterministic scripted orchestration.
 - **Repo-side**: pre-commit hooks, branch protection, CI gates that block on test or lint failures.
 
-Project Meta's role: generate the *policy* (this reference, the template, the instantiated `agents/execution-rules.md`), validate that target repos have it, and document the recommended runtime settings. The CLI and repo gates do the actual blocking. A target repo with an instantiated `agents/execution-rules.md` but no matching CLI configuration has only half the enforcement; both layers must agree.
+Project Meta's role: generate the *policy* (this reference, the template, the instantiated `agents/execution-rules.md`), validate that target repos have it, and document the recommended runtime settings. The CLI and repo gates do the actual blocking. A target repo with an instantiated `agents/execution-rules.md` but no matching CLI configuration has only half the enforcement; **both layers must agree — on every declared compat runtime.** A rule mechanized on Claude Code (e.g. a Workflow) but absent on Codex is only half-enforced across the runtime matrix; provide the Codex-side backing or keep the prose path as the cross-runtime floor (see `multi-agent-protocols.md` "Orchestration Backings").

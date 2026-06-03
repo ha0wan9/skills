@@ -141,6 +141,30 @@ probes promoted as results. Floor: `validate_ledger.py`. Dispatch during
 A critic that reports ENFORCED on a rule with no backing script or agent is
 itself an AP-VAL-1 violation — mark it WARN with the actual evidence instead.
 
+### Floor vs. orchestration
+
+- The five deterministic critics are a **budget-independent floor** and remain
+  **directly CLI-invokable on any runtime** (`python3 scripts/<critic>.py .`) —
+  including Codex, which has no Claude Code Workflow tool. A `parallel()` /
+  `agentType` fan-out (or a Codex Agents-SDK equivalent) is an *optional*
+  orchestration over the **same** scripts, never a replacement for them. If
+  audit depth is scaled to a token budget, only the reviewer-agent dimensions
+  (critics 6–7, extra review passes) may scale — dropping a deterministic floor
+  critic under budget pressure is AP-VAL-2 (validator not in the gate).
+
+### Verdict vocabulary
+
+Two vocabularies coexist and MUST be mapped explicitly before any structured
+schema entrenches a split:
+
+- reviewer-agent critics return `pass | pass-with-warnings | block | insufficient-context`;
+- the dispatch protocol (`multi-agent-protocols.md` Reviewer-Between-Subtasks) returns `PASS | SUGGEST | BLOCKER`.
+
+Mapping: `block` ≙ `BLOCKER` (hard synchronous halt), `pass-with-warnings` ≙
+`SUGGEST` (log + proceed), `pass` ≙ `PASS`, `insufficient-context` ≙ halt-and-ask
+(treat as a BLOCKER for gating). Do not flatten `SUGGEST`/`pass-with-warnings`
+into a binary pass/fail, and preserve `BLOCKER`'s stop semantics in any schema.
+
 ## Adding a Critic
 
 1. Decide form via the AP-VAL-1 test: mechanically decidable → script;

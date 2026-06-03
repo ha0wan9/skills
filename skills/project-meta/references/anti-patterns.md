@@ -137,7 +137,11 @@ intermediate work.
 crosses many subagent commits.
 
 **Fix**: dispatch a fresh reviewer subagent between sub-tasks. Reviewer
-sees only the diff and the brief, not the full conductor context.
+sees only the diff and the brief, not the full conductor context. A
+background or batched runner that defers the review verdict to end-of-run
+does **not** satisfy this fix: the gate must be able to STOP forward
+dispatch, not merely annotate after the fact. See
+`multi-agent-protocols.md` "Synchronous Gates Under Orchestration".
 
 ### AP-COORD-3 — Plan documents drift from execution
 The written plan is composed once, then execution diverges. The plan stays
@@ -150,6 +154,25 @@ implementation; reviewers pull the plan to verify and find it outdated.
 execution proceeds or mark sections as superseded with a pointer to the
 diverging code.
 
+### AP-COORD-4 — Over-orchestration
+A heavyweight scripted orchestration engine (Claude Code Workflow, Codex
+Agents-SDK, worktree-isolated parallel runs) is launched where a cheap
+subagent loop — or a single-context edit — would do. The mirror image of
+AP-COORD-1's under-firing: this is over-firing.
+
+**Symptom**: a 2-file logically-atomic change spins up a worktree, a
+journal/runId, and a multi-stage pipeline; setup cost and coordination
+overhead exceed the work; the user is surprised by an expensive run they
+didn't ask for.
+
+**Fix**: keep two distinct bars (`multi-agent-protocols.md` Mandatory
+Subagent Dispatch). The ≥2-file rule selects *subagent dispatch*; the
+scripted *engine* needs a higher bar — explicit opt-in or semantic scope,
+never raw file count. When a set of edits is one coherent interdependent
+change, prefer single-context authoring + a dispatched review pass over
+parallel authoring (parallel authors drift on shared cross-references);
+state the bypass per Mandatory Subagent Dispatch.
+
 ## Validation & enforcement
 
 ### AP-VAL-1 — Advisory rules with no validator
@@ -161,7 +184,14 @@ manually; the rule is restated rather than enforced.
 
 **Fix**: when a rule is repeatedly missed, promote it: add a script,
 linter, hook, or template. `harness-engineering.md` calls this out
-explicitly — prefer mechanical rules.
+explicitly — prefer mechanical rules. **Promote across the full compat
+matrix**, not one runtime: a MUST-rule mechanized only on Claude Code
+(e.g. a Workflow) with no Codex-side backing (Agents-SDK script or
+`.codex/agents/*.toml` config) **and** no prose fallback is itself an
+AP-VAL-1 gap — it silently regresses the other runtime's leg. Either
+back it on every declared compat runtime or keep the prose path as the
+cross-runtime floor (`multi-agent-protocols.md` "Orchestration Backings";
+overlaps AP-SKL-4 when the un-backed runtime can't run the procedure).
 
 ### AP-VAL-2 — Validation script not in the delivery contract
 A validator exists but isn't part of the pre-commit / pre-merge gate.

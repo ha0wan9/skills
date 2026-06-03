@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.0.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -72,7 +72,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
 - Treat repeated agent mistakes as missing harness: improve documentation, routing, validation, or tooling instead of only patching the immediate output.
 - Make the harness agent-legible: a concise map, versioned sources of truth, selective loading, behavior guardrails, and rules that can be verified or promoted into tooling.
 - Preserve the existing agent-facing documentation framework and pair it with user-facing documentation prepared for user review.
-- Trigger the multi-agent protocol when the user explicitly asks for it or when complexity warrants it. For complex work, separate planning from execution: a lead agent owns decomposition, context packaging, review criteria, and integration while workers handle bounded subtasks.
+- Trigger the multi-agent protocol when the user explicitly asks for it or when complexity warrants it. For complex work, separate planning from execution: a lead agent owns decomposition, context packaging, review criteria, and integration while workers handle bounded subtasks. The protocol is one runtime-agnostic contract with per-runtime mechanical backings (Claude Code Workflow / Agent tool; Codex native subagents / Agents-SDK; prose loop as the floor). A file-count tier selector (≥2 of the harness file set — but single-file and trivial ≤10-line/docs-only edits stay single-context) selects cheap *subagent dispatch*; escalating to a scripted *engine* is a separate opt-in/higher-scope bar — never raw file count (AP-COORD-4). Editing recipes (`init`) own dispatch; read-only verbs (`deliver`/`audit`/`validate`/`status`) never edit. See `references/multi-agent-protocols.md` for the exact tiers.
 - Before committing harness changes, present a concise delivery for user review that separates user-facing documentation from agent-facing documentation.
 
 ## Skill Arbitration

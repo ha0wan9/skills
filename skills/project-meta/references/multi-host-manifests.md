@@ -54,9 +54,13 @@ host.
 
 ## Invocation
 
-`/project-meta init --hosts <list>` runs the generator at install time.
-`/project-meta deliver` runs it again to refresh mirrors after canonical
-changes. Manual invocation:
+`/project-meta init --hosts <list>` (and any future editing verb) runs the
+generator to (re)write mirrors at install time and after canonical changes —
+behind the canonical→barrier→mirror ordering (`multi-agent-protocols.md`
+"Ordering barriers"). `/project-meta deliver` is **read-only**: it runs the
+generator with `--dry-run` only, to report mirror drift in the delivery; it
+never writes mirrors (see `recipes/deliver.md` Mode + Mirror sync check).
+Manual invocation:
 
 ```bash
 python3 ~/.claude/skills/project-meta/scripts/render_host_manifests.py \
@@ -64,8 +68,9 @@ python3 ~/.claude/skills/project-meta/scripts/render_host_manifests.py \
     --hosts claude,copilot,cursor
 ```
 
-Defaults to all supported hosts when `--hosts` is omitted. Use
-`--dry-run` to preview without writing.
+Defaults to the memory-mirror hosts when `--hosts` is omitted;
+`codex-subagents` is opt-in (name it explicitly). Use `--dry-run` to
+preview without writing.
 
 ## When to Re-Run
 

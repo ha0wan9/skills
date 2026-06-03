@@ -52,9 +52,12 @@ Score each dimension as **ABSENT / PARTIAL / ENFORCED**.
 
 ### Coordination
 
-- [ ] Multi-file harness edits dispatch via subagents (AP-COORD-1)
+- [ ] Multi-file harness edits in an editing recipe (`init`) dispatch via subagents (AP-COORD-1)
 - [ ] Reviewer subagent runs between implementation subtasks (AP-COORD-2)
 - [ ] Plans are kept current as execution proceeds (AP-COORD-3)
+- [ ] No over-orchestration: scripted engine (Workflow / Agents-SDK) is gated on opt-in or semantic scope, not raw file count (AP-COORD-4)
+- [ ] **Prose dispatch protocol is intact and runtime-agnostic**; any Claude-Code-only Workflow fast path has a named backing on each declared compat runtime (Codex Agents-SDK / `.codex/agents/*.toml`) **or** a prose fallback. Score **ABSENT** if a Workflow is the *only* documented path (AP-VAL-1 / AP-SKL-4 cross-runtime regression)
+- [ ] Read-only verbs (`status`/`validate`/`deliver`/`audit`) contain no edit-capable stages; editing is owned by `init` / a dedicated editing verb
 
 ### Validation & enforcement
 

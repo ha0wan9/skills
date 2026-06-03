@@ -10,7 +10,7 @@ Produce the pre-commit delivery for user review.
 
 ## Mode
 
-**read-only** — assembles the delivery summary. Does not commit, does not edit files. The user reviews, then commits separately.
+**read-only** — the deliver conductor assembles the delivery summary and **never edits or commits**. Any file edits in the change set were produced earlier by an *editing* recipe (`init`, or a future editing verb), which owns the subagent dispatch + reviewer loop; `deliver` only verifies the result and assembles it for review. This keeps `deliver` free of edit-capable stages by construction (see `references/execution-policy.md` MUST-STOP "File modification under a read-only command"), so the read-only binding survives any orchestration runner. The user reviews the delivery, then commits separately.
 
 ## Required references
 
@@ -19,7 +19,7 @@ Produce the pre-commit delivery for user review.
 
 Lazy-load:
 
-- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — when the change touches >1 file and subagent dispatch is in scope
+- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — to verify the editing recipe's dispatch + review actually happened for a >1-file change (`deliver` verifies, never dispatches)
 - [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when mirrors are part of the change
 
 ## Workflow
@@ -30,9 +30,9 @@ Lazy-load:
 
 2. **Run `validate` first**: a delivery cannot ship with FAILs. If validate exits non-zero, return to `audit` or `init` and fix before delivering.
 
-3. **Subagent dispatch decision** (see [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md)):
-   - When the change touches ≥2 of {AGENTS.md, agents/*.md, mirrors, templates}, **MUST** dispatch per-file edits to fresh subagents with a reviewer subagent between commits. The deliver recipe orchestrates the dispatch; the conductor agent never edits.
-   - Single-file or trivial changes can stay in the conductor's context.
+3. **Confirm the editing recipe already dispatched** (see [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) Reviewer-Between-Subtasks Protocol — its Logging step is where the per-file review verdicts `deliver` checks are recorded):
+   - The ≥2-file dispatch (per-file Worker + Reviewer) is the *editing* recipe's responsibility, not `deliver`'s. By the time `deliver` runs, those edits and their review verdicts already exist.
+   - `deliver` verifies that the dispatch happened (e.g. review verdicts are present in the change context) and surfaces any missing review as a delivery WARN. It does **not** dispatch editing workers itself, and it never edits.
 
 4. **Render the standard delivery sections**:
 
@@ -62,6 +62,7 @@ Lazy-load:
 5. **Mirror sync check**:
    - If canonical changed structurally, run `render_host_manifests.py --dry-run` and include the diff in the delivery so the user knows mirrors will need regeneration after commit.
    - Hand-edited mirrors that diverge from canonical: surface as WARN.
+   - **Ordering**: mirrors are generated *from integrated canonical state*. In the editing recipe, mirror render must sit behind a hard barrier after canonical edits are integrated and reviewed — never in the same unbarriered parallel/pipeline stage as the canonical edits (see `references/multi-agent-protocols.md` "Ordering barriers"). `deliver` only reports the resulting drift; it does not render.
 
 6. **Hand off to user**:
    - Present the assembled delivery.
@@ -74,20 +75,11 @@ The standard delivery sections (above), in order, with concrete file paths and r
 
 ## Anti-patterns
 
-- AP-COORD-1: Conductor edits and orchestrates simultaneously. Multi-file harness changes MUST dispatch per-file subagents.
-- AP-COORD-2: No reviewer between sub-tasks. Reviewer subagent runs after every implementation subagent commits.
-- Committing inside deliver. Never. The user owns the commit boundary.
-- Skipping the validation section. A delivery without validation evidence is incomplete; force `validate` first.
-- Bundling user-facing and agent-facing changes without separation. They have different reviewers and different update cadences; keep them in distinct delivery sections.
+- **`deliver` editing files.** `deliver` is read-only assembly. If edits are needed, the editing recipe (`init`) runs them with its dispatch + reviewer loop first; `deliver` only assembles the result. Edits performed under `deliver` are a MUST-STOP (execution-policy "File modification under a read-only command").
+- **Auto-committing, or batch-running past a BLOCKER inside a background runner.** The commit boundary and any BLOCKER are synchronous user gates; a background run (Workflow / Agents-SDK) MUST return to them, never pass through (see `references/multi-agent-protocols.md` "Synchronous Gates Under Orchestration"). `deliver` never invokes `git commit`.
+- **Skipping the validation section.** A delivery without validation evidence is incomplete; force `validate` first.
+- **Bundling user-facing and agent-facing changes without separation.** They have different reviewers and different update cadences; keep them in distinct delivery sections.
 
-## Subagent dispatch protocol (when triggered)
+## Where the dispatch protocol lives
 
-For each file in the change set:
-
-1. Conductor packages a brief: target file path, the rule or anti-pattern motivating the change, the success criterion, the surrounding context (≤1 page).
-2. Dispatch implementation subagent with the brief. Subagent edits only the target file; conductor does not see the edit until the subagent reports back.
-3. Dispatch reviewer subagent with the diff + the original brief. Reviewer reports PASS / BLOCKER / SUGGEST. BLOCKER halts the chain; conductor surfaces it to the user.
-4. Reviewer PASS → conductor proceeds to next file.
-5. After all files PASS: assemble the delivery summary (this recipe's main path).
-
-The dispatch protocol detail lives in [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md). The recipe enforces *when* it triggers; the reference documents *how*.
+`deliver` does **not** own the subagent dispatch protocol — the *editing* recipe (`init`, or a future editing verb) does. The single source of truth for the per-file Worker + Reviewer loop, the BLOCKER synchronous-halt semantics, and the per-runtime backings (Claude Code Workflow, Codex Agents-SDK) is [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) (Mandatory Subagent Dispatch + Reviewer-Between-Subtasks + Synchronous Gates). `deliver` consumes the *result* of that loop (edited files + review verdicts) and assembles the delivery; it never edits, dispatches editing workers, or commits.

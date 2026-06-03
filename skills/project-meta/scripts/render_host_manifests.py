@@ -22,11 +22,22 @@ Supported hosts (and the manifest each emits):
     cursor       .cursor/rules/agents.md         (mirror of canonical)
     opencode     .opencode/instructions.md       (mirror of canonical)
     gemini       gemini-extension.json + .gemini/instructions.md
+    codex-subagents  .codex/agents/{explorer,worker,reviewer}.toml
+                 (Codex-side mechanical backing of the multi-agent
+                 dispatch protocol — role configs, NOT a memory mirror)
+
+The default --hosts set is the memory-mirror hosts above (everything
+except codex-subagents).
+`codex-subagents` is opt-in: pass `--hosts codex-subagents` explicitly. It
+emits role-config TOML seeds (template-based, not derived from canonical
+memory) that operationalize multi-agent-protocols.md on Codex. The exact
+TOML keys may need adjustment to your Codex CLI version's agent schema;
+the emitted files carry a banner saying so.
 
 Notes:
 
 - The canonical file is never overwritten by this script. Only the
-  host-specific mirrors are emitted.
+  host-specific mirrors and (for codex-subagents) role configs are emitted.
 - Each generated mirror carries a top-banner comment naming the
   canonical source and the generation timestamp; agents and humans
   reading the mirror know it's auto-generated.
@@ -81,6 +92,55 @@ HOSTS: dict[str, dict] = {
         "kind": "gemini-pair",
         "comment": "",
     },
+    "codex-subagents": {
+        "path": ".codex/agents/",
+        "kind": "codex-subagents",
+        "comment": "",
+    },
+}
+
+# Memory-mirror hosts emitted by default. `codex-subagents` is opt-in.
+DEFAULT_HOSTS = [h for h in HOSTS if h != "codex-subagents"]
+
+# Role-config seeds for the Codex-side backing of the dispatch protocol
+# (multi-agent-protocols.md). Template-based, not derived from canonical
+# memory. Per-task write-sets are assigned by the orchestrator's brief;
+# these encode only role-level read/write capability.
+CODEX_SUBAGENT_ROLES: dict[str, str] = {
+    "explorer": (
+        '[agents.explorer]\n'
+        'role = "explorer"  # read-only; never edits files\n'
+        'description = "Read-only exploration and narrow Q&A. Returns findings only."\n'
+        'instructions = """\n'
+        'You are an Explorer (read-only). Answer the narrow question in your brief.\n'
+        'Do NOT edit files. Return findings only. See AGENTS.md and the project\n'
+        'dispatch protocol (multi-agent-protocols.md) for roles and ownership.\n'
+        '"""\n'
+    ),
+    "worker": (
+        '[agents.worker]\n'
+        'role = "worker"  # read-write; edits ONLY the files named in the brief\n'
+        'description = "Bounded editor. Edits only its assigned write-set, returns a patch summary."\n'
+        'instructions = """\n'
+        'You are a Worker. Edit ONLY the files your brief assigns (its write-set).\n'
+        'Do not expand scope, refactor adjacent code, or add dependencies. Produce\n'
+        'a patch summary and stop. The reviewer (separate agent) checks your diff.\n'
+        '"""\n'
+    ),
+    "reviewer": (
+        '# Derived/custom agent named "reviewer"; base role is "default"\n'
+        '# because Codex has no native reviewer role. Table-name (reviewer)\n'
+        '# and role-field (default) are different axes — this is intentional.\n'
+        '[agents.reviewer]\n'
+        'role = "default"  # read-only reviewer; does not edit (advisory — back with sandbox config)\n'
+        'description = "Reviews a worker diff against its brief. Returns PASS / SUGGEST / BLOCKER."\n'
+        'instructions = """\n'
+        'You are a Reviewer with fresh context: you see only the brief, the diff, and\n'
+        'the success criterion — not the conductor context. Return one verdict:\n'
+        'PASS | SUGGEST | BLOCKER. BLOCKER is a synchronous halt: stop the chain and\n'
+        'surface to the user; do not let further edits land. Do not edit files yourself.\n'
+        '"""\n'
+    ),
 }
 
 
@@ -151,6 +211,33 @@ def emit_gemini(target_root: Path, canonical: Path, ts: str,
     return True, f"wrote {json_path} + {md_path}"
 
 
+def emit_codex_subagents(target_root: Path, canonical: Path, ts: str,
+                         dry_run: bool) -> tuple[bool, str]:
+    # Emit role-config seeds under .codex/agents/. These are template-based
+    # (not memory-derived); they back the dispatch protocol on Codex.
+    agents_dir = target_root / ".codex/agents"
+    banner_line = (
+        f"# generated from {canonical.name} on {ts} by project-meta "
+        f"render_host_manifests.py\n"
+        f"# Role-config SEED for the multi-agent dispatch protocol "
+        f"(multi-agent-protocols.md).\n"
+        f"# Adjust keys to match your Codex CLI version's agent schema; "
+        f"per-task write-sets come from the brief, not this file.\n\n"
+    )
+    written = []
+    for role, body in CODEX_SUBAGENT_ROLES.items():
+        out_path = agents_dir / f"{role}.toml"
+        content = banner_line + body
+        if dry_run:
+            written.append(f"{out_path} ({len(content)} chars)")
+            continue
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(content, encoding="utf-8")
+        written.append(str(out_path))
+    verb = "would write" if dry_run else "wrote"
+    return True, f"codex-subagents: {verb} {', '.join(written)}"
+
+
 EMITTERS = {
     "claude": emit_markdown_mirror,
     "copilot": emit_markdown_mirror,
@@ -158,6 +245,7 @@ EMITTERS = {
     "cursor": emit_markdown_mirror,
     "opencode": emit_markdown_mirror,
     "gemini": emit_gemini,
+    "codex-subagents": emit_codex_subagents,
 }
 
 
@@ -170,8 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target-root", type=Path, default=Path.cwd())
     parser.add_argument(
         "--hosts",
-        default=",".join(HOSTS.keys()),
-        help="Comma-separated host names. Default: all.",
+        default=",".join(DEFAULT_HOSTS),
+        help=(
+            "Comma-separated host names. Default: the memory-mirror hosts "
+            "(all except codex-subagents). 'codex-subagents' is opt-in — "
+            "name it explicitly."
+        ),
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
@@ -204,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
         spec = HOSTS[host]
         emitter = EMITTERS[host]
         try:
-            if host == "gemini":
+            if host in ("gemini", "codex-subagents"):
                 ok, msg = emitter(target_root, canonical, ts, args.dry_run)
             else:
                 out_path = target_root / spec["path"]
