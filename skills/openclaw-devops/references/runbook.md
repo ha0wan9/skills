@@ -123,6 +123,25 @@ single sudoers rule to just the npm install (not blanket NOPASSWD):
 Without it the engine updates the user copy, marks the system copy `skipped`, and
 warns about skew — a human then runs `sudo npm i -g openclaw@<v>`.
 
+## Bugs panel / backlog
+
+A cross-bug registry in `state/bugs.json` (id `BUG-N`, `next_id` counter). Writes
+take a blocking `state/bugs.lock` so concurrent agents don't clobber each other.
+
+Record shape: `id · title · severity (sev1-4) · status · source · detail · tags ·
+session (dbg-…) · lesson · assignee · created · updated · history[]`. Statuses:
+`open → triaged → in-progress → fixed` (or `wontfix` / `duplicate`).
+
+- **Any agent or cron logs a bug it hit** with one call — no orchestration needed:
+  `openclaw_devops.py bugs --add --title "…" --severity sev2 --source "<agent/cron>" --detail "…" --tags "…"`
+- **Triage / track**: `bugs --list [--status open]`, `bugs --show BUG-N`,
+  `bugs --panel` (counts by status + open-by-severity + recently-fixed; cron-friendly).
+- **Close the loop** when a meta-debug session fixes it:
+  `bugs --update BUG-N --status fixed --session <dbg-id> --lesson "…" --note "…"`.
+- `cycle` surfaces the open-bug count in its summary, so the maintenance cron
+  reports backlog pressure alongside health. To post the full panel on a schedule,
+  add a thin cron that runs `bugs --panel` and announces the output.
+
 ## Cross-runtime portability
 
 The skill folder is self-contained and runtime-agnostic; the engine maintains the

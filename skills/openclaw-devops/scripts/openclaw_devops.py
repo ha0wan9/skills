@@ -42,8 +42,12 @@ LOCK_FILE = STATE_DIR / "devops.lock"
 STATE_FILE = STATE_DIR / "state.json"
 HISTORY_FILE = STATE_DIR / "history.jsonl"
 LESSONS_FILE = STATE_DIR / "lessons.jsonl"
+BUGS_FILE = STATE_DIR / "bugs.json"
+BUGS_LOCK = STATE_DIR / "bugs.lock"
 
 OK, WARN, FAIL = "ok", "warn", "fail"
+BUG_STATUSES = ["open", "triaged", "in-progress", "fixed", "wontfix", "duplicate"]
+BUG_OPEN = {"open", "triaged", "in-progress"}
 
 
 # --------------------------------------------------------------------------- #
@@ -483,6 +487,7 @@ def cycle(cfg: Config, dry: bool, allow_major: bool, do_repair: bool, do_update:
             result["update"] = update(cfg, rep, dry, allow_major)
         result["finishedAt"] = now()
         result["overall"] = rep["overall"]
+        result["bugs_open"] = open_bug_count()
         append_history({"ts": result["finishedAt"], "overall": result["overall"],
                         "sanity": result["sanity"], "dry_run": dry,
                         "update": result.get("update", {}).get("updated") or result.get("update", {}).get("reason")})
@@ -527,6 +532,142 @@ def render_lessons(obj: dict) -> str:
         lines.append(f"   bug: {e.get('bug')}")
         lines.append(f"   cause: {e.get('root_cause')}")
         lines.append(f"   fix: {e.get('fix')}")
+    return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------- #
+# bugs panel / backlog — a cross-bug registry any agent or cron can append to,
+# tracked to resolution and linkable to a meta-debug session + a lesson.
+# --------------------------------------------------------------------------- #
+def _bugs_load() -> dict:
+    if BUGS_FILE.exists():
+        try:
+            return json.loads(BUGS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"next_id": 1, "bugs": []}
+
+
+def _bugs_save(data: dict) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    BUGS_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+class _FileLock:
+    """Blocking exclusive flock for the brief bugs read-modify-write window."""
+    def __enter__(self):
+        import fcntl
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        self.fd = open(BUGS_LOCK, "w")
+        fcntl.flock(self.fd, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *a):
+        try:
+            import fcntl
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            self.fd.close()
+        except Exception:
+            pass
+
+
+def bugs_add(title: str, severity: str, source: str, detail: str, tags: str | None) -> dict:
+    with _FileLock():
+        d = _bugs_load()
+        bid = f"BUG-{d['next_id']}"
+        d["next_id"] += 1
+        bug = {"id": bid, "title": title, "severity": severity or "sev3", "status": "open",
+               "source": source or "unknown", "detail": detail or "", "assignee": "",
+               "tags": [t.strip() for t in (tags or "").split(",") if t.strip()],
+               "session": "", "lesson": "", "created": now(), "updated": now(),
+               "history": [{"ts": now(), "change": f"opened by {source or 'unknown'}"}]}
+        d["bugs"].append(bug)
+        _bugs_save(d)
+    return {"added": bid, "bug": bug}
+
+
+def bugs_update(bid: str, **fields) -> dict:
+    with _FileLock():
+        d = _bugs_load()
+        bug = next((b for b in d["bugs"] if b["id"] == bid), None)
+        if not bug:
+            return {"error": f"no such bug {bid}"}
+        changes = []
+        for k in ("status", "severity", "session", "lesson", "assignee"):
+            v = fields.get(k)
+            if v:
+                if k == "status" and v not in BUG_STATUSES:
+                    return {"error": f"status must be one of {BUG_STATUSES}"}
+                bug[k] = v
+                changes.append(f"{k}={v}")
+        if fields.get("note"):
+            changes.append(f"note: {fields['note']}")
+        if fields.get("tags"):
+            bug["tags"] = sorted(set(bug["tags"]) | {t.strip() for t in fields["tags"].split(",") if t.strip()})
+            changes.append("tags+")
+        bug["updated"] = now()
+        bug["history"].append({"ts": now(), "change": "; ".join(changes) or "touched"})
+        _bugs_save(d)
+    return {"updated": bid, "changes": changes, "bug": bug}
+
+
+def bugs_view(status: str | None = None) -> dict:
+    d = _bugs_load()
+    bugs = d["bugs"]
+    if status:
+        bugs = [b for b in bugs if b["status"] == status]
+    return {"count": len(bugs), "bugs": bugs, "total": len(d["bugs"])}
+
+
+def bugs_panel() -> dict:
+    d = _bugs_load()
+    bugs = d["bugs"]
+    open_bugs = [b for b in bugs if b["status"] in BUG_OPEN]
+    by_status = {s: sum(1 for b in bugs if b["status"] == s) for s in BUG_STATUSES}
+    by_sev = {}
+    for b in open_bugs:
+        by_sev[b["severity"]] = by_sev.get(b["severity"], 0) + 1
+    recent_fixed = sorted([b for b in bugs if b["status"] == "fixed"],
+                          key=lambda b: b["updated"], reverse=True)[:5]
+    return {"total": len(bugs), "open": len(open_bugs), "by_status": by_status,
+            "open_by_severity": by_sev,
+            "open_bugs": sorted(open_bugs, key=lambda b: (b["severity"], b["created"])),
+            "recent_fixed": recent_fixed}
+
+
+def open_bug_count() -> int:
+    return sum(1 for b in _bugs_load()["bugs"] if b["status"] in BUG_OPEN)
+
+
+def render_bugs(obj: dict) -> str:
+    if "added" in obj:
+        b = obj["bug"]
+        return f"🐞 logged **{b['id']}** [{b['severity']}] {b['title']} (status open, source {b['source']})"
+    if "updated" in obj:
+        return f"🐞 {obj['updated']}: {', '.join(obj['changes']) or 'touched'}"
+    if "error" in obj:
+        return f"❌ {obj['error']}"
+    if "bugs" in obj and "by_status" not in obj:  # list view
+        lines = [f"**🐞 Bugs ({obj['count']}/{obj['total']})**"]
+        for b in obj["bugs"]:
+            link = (f" → {b['session']}" if b.get("session") else "")
+            lines.append(f"- `{b['id']}` [{b['severity']}] {b['status']:11} {b['title']}{link}")
+        return "\n".join(lines)
+    # panel
+    p = obj
+    lines = [f"**🐞 OpenClaw DevOps — Bugs Panel** ({p['open']} open / {p['total']} total)"]
+    sev = " · ".join(f"{k}:{v}" for k, v in sorted(p["open_by_severity"].items())) or "none"
+    lines.append(f"open by severity: {sev}")
+    lines.append("by status: " + " · ".join(f"{k}:{v}" for k, v in p["by_status"].items() if v))
+    if p["open_bugs"]:
+        lines.append("\n**Open**")
+        for b in p["open_bugs"][:12]:
+            link = (f" → {b['session']}" if b.get("session") else "")
+            lines.append(f"- `{b['id']}` [{b['severity']}] {b['status']}: {b['title']} (src {b['source']}){link}")
+    if p["recent_fixed"]:
+        lines.append("\n**Recently fixed**")
+        for b in p["recent_fixed"]:
+            lines.append(f"- ✅ `{b['id']}` {b['title']}" + (f" ({b['lesson']})" if b.get("lesson") else ""))
     return "\n".join(lines)
 
 
@@ -582,6 +723,8 @@ def render_summary(obj: dict) -> str:
     s = obj.get("sanity", {}) if isinstance(obj.get("sanity"), dict) else {}
     lines[0] += f" — cycle {ICON.get(obj.get('overall'),'')} {str(obj.get('overall','')).upper()}"
     lines.append(f"- sanity: {s.get('overall')} | issues: {', '.join(s.get('issues') or []) or 'none'}")
+    if obj.get("bugs_open") is not None:
+        lines.append(f"- backlog: {obj['bugs_open']} open bug(s) — `openclaw_devops.py bugs --panel`")
     if "repair" in obj:
         lines.append(f"- repair: {len(obj['repair'])} action(s); post-repair {obj.get('post_repair',{}).get('overall')}")
         lines += [f"   · {a['status']}: {a['action']}" for a in obj["repair"][:6]]
@@ -598,8 +741,21 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="OpenClaw DevOps maintenance engine (sanity/repair/update/verify/rollback/cycle).",
         epilog="Missing host tools (openclaw/systemctl/npm) surface as failed checks, not crashes.")
-    ap.add_argument("command", choices=["sanity", "repair", "update", "verify", "rollback", "cycle", "lessons"])
+    ap.add_argument("command", choices=["sanity", "repair", "update", "verify", "rollback", "cycle", "lessons", "bugs"])
     ap.add_argument("--config", default=str(DEFAULT_CONFIG), help="path to config.json")
+    # bugs panel / backlog (any agent or cron can log a bug; track to resolution)
+    ap.add_argument("--add", action="store_true", help="bugs: log a new bug (needs --title)")
+    ap.add_argument("--panel", action="store_true", help="bugs: render the backlog panel")
+    ap.add_argument("--update", metavar="BUG-ID", help="bugs: update a bug by id")
+    ap.add_argument("--show", metavar="BUG-ID", help="bugs: show one bug")
+    ap.add_argument("--status", help="bugs: status (open|triaged|in-progress|fixed|wontfix|duplicate); filters --list")
+    ap.add_argument("--severity", help="bugs: sev1..sev4")
+    ap.add_argument("--source", help="bugs: who/what reported it (agent, cron, user)")
+    ap.add_argument("--detail", help="bugs: description")
+    ap.add_argument("--session", help="bugs: link a meta-debug session id (dbg-...)")
+    ap.add_argument("--lesson", help="bugs: link/Note a recorded lesson")
+    ap.add_argument("--assignee", help="bugs: owner")
+    ap.add_argument("--note", help="bugs: free-text history note")
     # lessons journal (record debugged bugs + the optimization pattern that fixed them)
     ap.add_argument("--title", help="lessons add: short title")
     ap.add_argument("--bug", help="lessons add: observed symptom")
@@ -645,6 +801,23 @@ def main(argv: list[str] | None = None) -> int:
         else:
             out = lessons_list()
         print(json.dumps(out, indent=2, ensure_ascii=False) if args.json else render_lessons(out))
+        return 0
+    if args.command == "bugs":
+        if args.update:
+            out = bugs_update(args.update, status=args.status, severity=args.severity,
+                              session=args.session, lesson=args.lesson, assignee=args.assignee,
+                              note=args.note, tags=args.tags)
+        elif args.show:
+            v = bugs_view()
+            b = next((x for x in v["bugs"] if x["id"] == args.show), None)
+            out = b if args.json else {"bugs": [b] if b else [], "count": int(bool(b)), "total": v["total"]}
+        elif args.add or (args.title and not args.list and not args.panel):
+            out = bugs_add(args.title, args.severity, args.source, args.detail, args.tags)
+        elif args.list:
+            out = bugs_view(args.status)
+        else:
+            out = bugs_panel()
+        print(json.dumps(out, indent=2, ensure_ascii=False) if args.json else render_bugs(out))
         return 0
     return 0
 

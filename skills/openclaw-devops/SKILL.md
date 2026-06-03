@@ -3,14 +3,14 @@ name: openclaw-devops
 description: >-
   OpenClaw maintenance DevOps skill: a sanity/health probe, bounded self-repair,
   transactional auto-update across all npm copies with post-update integrity
-  verification + automatic rollback, and a lightweight ops lessons journal —
-  driven on a schedule by an OpenClaw cron or on demand. Runtime-agnostic
-  (Claude Code, Codex, OpenClaw). It delegates systematic debugging to the
-  meta-debug skill (the debug base layer) and contributes the OpenClaw-specific
-  reproduce/verify/rollback mechanics meta-debug's phases call. Use whenever the
-  user wants to health-check, repair, upgrade, roll back, or schedule maintenance
-  for an OpenClaw gateway/node install, or mentions OpenClaw being broken / out of
-  date / crash-looping / failing config validation — even if they don't name it.
+  verification + automatic rollback, an ops lessons journal, and a bugs
+  panel/backlog any agent or cron can log to and track to resolution — driven by
+  an OpenClaw cron or on demand. Runtime-agnostic (Claude Code, Codex, OpenClaw).
+  Delegates systematic debugging to the meta-debug skill and supplies the OpenClaw
+  reproduce/verify/rollback mechanics its phases call. Use when health-checking,
+  repairing, upgrading, rolling back, or scheduling maintenance for an OpenClaw
+  gateway/node install, when logging or tracking bugs in the backlog, or when
+  OpenClaw is broken / out of date / crash-looping / failing config validation.
 ---
 
 # OpenClaw DevOps
@@ -36,6 +36,8 @@ that pipeline calls: `rollback` (phase-0 mitigate / phase-8 revert) and `verify`
 - **Rollback**: an upgrade went bad, "revert OpenClaw", restore last-good.
 - **Schedule**: set up / change an OpenClaw cron that runs maintenance.
 - **Ops lessons**: record/recall an OpenClaw maintenance lesson.
+- **Bugs backlog**: log a bug hit during any agent/cron run, triage it, track its
+  fix status, link it to a meta-debug session, or view the panel.
 
 ## Bootstrap Order
 
@@ -71,6 +73,11 @@ that pipeline calls: `rollback` (phase-0 mitigate / phase-8 revert) and `verify`
   pipeline calls; it does not own the debug workflow.
 - **Default:** auto-update follows the `latest` stable dist-tag and holds major
   jumps (`hold_major`) until a human passes `--allow-major`.
+- **Any agent or cron that hits a bug it can't fix inline SHOULD log it to the
+  backlog** (`bugs --add --source <self>`), and a debug session that fixes a
+  backlog bug SHOULD close the loop (`bugs --update <id> --status fixed --session
+  <dbg-id> --lesson …`). Reason: a shared backlog only helps if bugs land in it
+  and resolutions are recorded against them.
 - **Default:** report by relaying the engine's rendered summary; `--json` when a
   tool will consume it. Record a one-line ops lesson after a non-trivial fix
   (`lessons add`); a full debug session records its own lesson via meta-debug.
@@ -107,6 +114,12 @@ python3 $ENG rollback               # restore recorded previous version + config
 python3 $ENG cycle --json           # full orchestrated run (cron entry)
 python3 $ENG lessons --list         # ops maintenance journal
 python3 $ENG lessons --title "…" --bug "…" --cause "…" --fix "…" --tags "…"
+
+# bugs panel / backlog — any agent or cron can log a bug it hit:
+python3 $ENG bugs --add --title "…" --severity sev2 --source "<agent/cron>" --detail "…" --tags "…"
+python3 $ENG bugs --panel                       # backlog summary (cron-friendly)
+python3 $ENG bugs --list --status open          # filter; --show BUG-3 for one
+python3 $ENG bugs --update BUG-3 --status fixed --session dbg-… --lesson "…" --note "…"
 # systematic debugging → use the meta-debug skill (debug_session.py + debug-pipeline.md)
 ```
 

@@ -136,6 +136,10 @@ health gate + revert.)
   **project-meta canonical memory** per project-meta's CRUD + End-Check rules:
   update only the canonical `agents/*.md` file it belongs to, sync mirrors only if
   structure/high-priority guidance changed, keep provenance.
+- If the bug came from a tracked backlog (e.g. openclaw-devops' bugs panel),
+  **close its entry**: `openclaw_devops.py bugs --update <BUG-N> --status fixed
+  --session <this dbg-id> --lesson "…"`. A session that fixes a tracked bug must
+  record the resolution against it.
 - If the bug *class* recurs, **promote it to a guardrail** (lint / check / CI
   rule) — don't just document.
 - **Not fixed within the loop budget:** **escalate to a human** with the case
