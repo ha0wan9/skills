@@ -143,6 +143,18 @@ def lint_skill(skill_dir: Path) -> list[Finding]:
                     "exposes argparse" if has_cli else "no argparse --help (AP-SKL-4)",
                 )
             )
+            # project-meta is the canonical home for frontmatter parsing; any
+            # other skill re-rolling it should delegate to provenance.py.
+            if skill_dir.name != "project-meta":
+                rerolls_fm = ("split_frontmatter" in src or r'"\n---"' in src) and "provenance" not in src
+                if rerolls_fm:
+                    findings.append(
+                        Finding(
+                            f"frontmatter reuse: {script.name}",
+                            "WARN",
+                            "re-rolls frontmatter parsing; delegate to project-meta/scripts/provenance.py",
+                        )
+                    )
 
     if (skill_dir / "templates").is_dir():
         has_examples = (skill_dir / "examples").is_dir() and any((skill_dir / "examples").iterdir())
@@ -153,6 +165,25 @@ def lint_skill(skill_dir: Path) -> list[Finding]:
                 "examples/ populated" if has_examples else "ships templates/ but no examples/ (AP-SKL-4)",
             )
         )
+
+    # A skill that touches the shared memory/provenance harness must carry the
+    # delegation pointer (resolver + thin floor), not freelance the protocol.
+    if skill_dir.name != "project-meta":
+        low = text.lower()
+        # Memory-specific signals only — bare "write-back"/"writeback" would
+        # false-positive on e.g. a write-back *cache* in an unrelated skill.
+        touches_harness = any(
+            s in low for s in ("repo_memory", "memory contract", "memory write-back", "repo-memory-crud")
+        )
+        has_pointer = "project_meta_dir" in low or "shared-cli-delegation" in low
+        if touches_harness and not has_pointer:
+            findings.append(
+                Finding(
+                    "memory delegation pointer",
+                    "WARN",
+                    "references the memory protocol but no resolver + thin-floor pointer (see shared-cli-delegation.md)",
+                )
+            )
 
     return findings
 

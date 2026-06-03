@@ -46,6 +46,13 @@ python3 skills/project-meta/scripts/render_user_preferences.py --target-root <re
 
 Do not commit `USER.md`. The repo's top-level `.gitignore` and the project-meta skill's `.gitignore.template` both protect it.
 
+## Shared Harness CLIs
+
+`project-meta` is the canonical home for cross-skill harness logic. Other skills reuse it by path (dev-time) or by resolving the install at runtime — they do not vendor copies. Canonical contract: `skills/project-meta/references/shared-cli-delegation.md`.
+
+- `scripts/provenance.py` — frontmatter parse/validate/stamp (the `instantiated_from`/`source_reference`/`last_reviewed` trio). Skills must not re-roll frontmatter parsing; `skill_architecture_lint.py` WARNs when they do.
+- `scripts/repo_memory.py` — runtime memory read leg, write-back gate, write, validate. The `SessionStart`/`Stop` hooks delegate to it; the Memory Contract it backs is in `references/repo-memory-crud.md#memory-contract`.
+
 ## Working On The Marketplace
 
 When editing this repo as agent work:

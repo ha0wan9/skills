@@ -117,6 +117,27 @@ Detail for each step lives in the reference owning that step:
 - <Need-to-do-X>: load [`references/<topic-1>.md`](references/<topic-1>.md)
 - <Need-to-do-Y>: load [`references/<topic-2>.md`](references/<topic-2>.md)
 
+## Shared Harness Delegation
+
+# REMOVE this section unless the skill touches repo memory or instantiates
+# provenance-stamped artifacts. When it does, delegate to project-meta's
+# canonical CLIs instead of re-rolling the logic — resolve the install path,
+# fall back to a thin floor. Contract: project-meta's own
+# references/shared-cli-delegation.md (NOT this skill's references/).
+
+This skill reuses project-meta's shared tooling at runtime. Resolve it via
+`$PROJECT_META_DIR` (fallback `~/.claude/skills/project-meta`); if absent, use
+the inline floor below.
+
+```bash
+pm_dir="${PROJECT_META_DIR:-$HOME/.claude/skills/project-meta}"
+if [[ -f "$pm_dir/scripts/repo_memory.py" ]]; then
+  python3 "$pm_dir/scripts/repo_memory.py" --target-root . read
+else
+  echo "[memory] read CLAUDE.md or AGENTS.md before substantive work." >&2  # thin floor
+fi
+```
+
 ## Examples
 
 # REMOVE if the skill has no examples/ folder yet. Add one when the skill
@@ -147,5 +168,6 @@ Before shipping the new skill:
 - [ ] At least one `examples/` entry produced if the skill ships non-trivial artifacts.
 - [ ] All scripts pass smoke tests against the example.
 - [ ] References cite anti-pattern IDs (AP-XXX-N) when relevant.
+- [ ] If the skill touches memory/provenance, it delegates to project-meta via the resolver + carries a thin floor (no vendored copy). See project-meta's `references/shared-cli-delegation.md`.
 
 Run the full audit checklist in [`references/writing-skills.md`](../references/writing-skills.md#skill-audit-checklist) before merging.
