@@ -154,8 +154,15 @@ def cmd_writeback(args: argparse.Namespace) -> int:
     root = Path(args.target_root).expanduser().resolve()
     if not _is_git(root):
         return 0  # cannot gate without git history
-    if (root / ACK_MARKER).is_file():
-        return 0  # operator acknowledged this turn's writeback decision
+    ack = root / ACK_MARKER
+    if ack.is_file():
+        # One-shot: honor the skip for exactly this turn, then consume the
+        # marker so it cannot silently disable the gate on every future turn.
+        try:
+            ack.unlink()
+        except OSError:
+            pass
+        return 0
     changed = _changed_files(root)
     if not changed:
         return 0  # nothing was done, nothing to capture
@@ -170,7 +177,7 @@ def cmd_writeback(args: argparse.Namespace) -> int:
         print("[memory] decide write / suggest / skip using this block:", file=sys.stderr)
         print(WRITEBACK_BLOCK, file=sys.stderr)
         print(
-            f"[memory] to clear: edit the memory owner, or `touch {ACK_MARKER}` to record an explicit skip.",
+            f"[memory] to clear: edit the memory owner, or `touch {ACK_MARKER}` for a one-shot skip (consumed this turn).",
             file=sys.stderr,
         )
         return 1
