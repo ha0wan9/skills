@@ -94,37 +94,21 @@ State the detected phase, `survey-id`, study root, and reason before loading.
 8. Load `references/taxonomy-revision.md` during `synthesize` and after every
    `roundn` that adds ≥3 papers.
 9. Load `references/bias-audit.md` during `audit`.
-10. Load `references/reproducibility-assessment.md` before populating the
-    `Repro` column on any ★★★ paper, and during `synthesize` to map each
-    paper to its Tier R1-R4. The 5-question rubric (release / recipe /
-    issues / quality / 3p reproduction) grades evidence strength
-    independently of accuracy claims; `survey.md` should annotate each
-    deep-dive subsection with the tier.
-11. Load `references/datasets-section.md` during `synthesize` whenever
-    the survey involves performance comparison. The canonical-vs-emergent
-    classification and the adoption heatmap are mandatory for any survey
-    that compares model accuracy. The skeleton places this section at §4
-    — *immediately after taxonomy and before the method-route
-    comparison* — so the reader's evaluation lens is primed before any
-    model-by-model claim.
-12. Load `references/citation-graph.md` during `synthesize` when adding
-    a Mermaid figure for paper-to-paper relationships. Optional but
-    recommended for any survey with ≥10 ★★★ papers; mandatory when the
-    user asks for a "lineage diagram" or "who-cites-whom" view. The
-    reference defines the 7-relation taxonomy and the four views
-    (lineage / cites / critique / temporal). Skip for purely conceptual
-    surveys with no inter-paper edges.
-13. Load `references/html-export.md` during `synthesize` when the user
-    expects a deliverable beyond `survey.md` itself (single-file
-    interactive HTML). The reference documents inputs, the markdown
-    transformations, the `chart_specs.json` schema, and the
-    `--fully-offline` archival mode. **Requires `pip install markdown`
-    on the runner**; check before invocation.
-14. Load `references/multi-agent-dispatch.md` during `round1` / `roundn`
-    whenever you fan search out across sub-question clusters (it owns the
-    delegation template, runtime backings, and the mandatory dedup ordering
-    barrier), and during `synthesize` for the `claims-adversary` review gate.
-    This is the survey specialization of project-meta's Task Dispatch paradigm.
+10. Load `references/reproducibility-assessment.md` before populating any
+    ★★★ paper's `Repro` column, and during `synthesize` to assign each paper a
+    tier R1-R4 (the 5-question rubric and the annotation rule live there).
+11. Load `references/datasets-section.md` during `synthesize` for any
+    accuracy-comparison survey — canonical-vs-emergent classification + the
+    adoption heatmap, placed at §4 before the method-route comparison.
+12. Load `references/citation-graph.md` during `synthesize` for paper-to-paper
+    Mermaid figures: recommended at ≥10 ★★★ papers, mandatory on a
+    "lineage"/"who-cites-whom" request, skip for purely conceptual surveys.
+13. Load `references/html-export.md` during `synthesize` when shipping the
+    single-file interactive HTML deliverable (**requires `pip install markdown`**).
+14. Load `references/multi-agent-dispatch.md` during `round1`/`roundn` for
+    fan-out search (delegation template, runtime backings, dedup ordering
+    barrier) and during `synthesize` for the `claims-adversary` gate — the
+    survey specialization of project-meta's Task Dispatch paradigm.
 15. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
