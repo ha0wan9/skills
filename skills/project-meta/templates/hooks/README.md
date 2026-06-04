@@ -1,8 +1,8 @@
 ---
 template_name: hooks
-description: "Seed for a Claude Code hooks pack: SessionStart bootstrap, PostToolUse formatting, Stop verification. Profile-aware via HARNESS_PROFILE."
+description: "Seed for Claude Code and Codex hooks: SessionStart bootstrap, PostToolUse formatting, Stop verification. Profile-aware via HARNESS_PROFILE."
 source_reference: references/harness-engineering.md
-intended_project_path: .claude/hooks/ + .claude/settings.json
+intended_project_path: .claude/hooks/ + .claude/settings.json, or ~/.codex/hooks.json
 owner: agent-facing
 secure_derivation: required
 review_policy: user-review-when-hooks-change-behavior
@@ -10,10 +10,10 @@ review_policy: user-review-when-hooks-change-behavior
 
 # Hooks Template Pack
 
-Three-hook starter pack that installs into a target repo's `.claude/`
-directory. Hooks are bash for portability — no Python venv, no npm
-dependency. Each hook is profile-aware: `HARNESS_PROFILE` env var (set in
-`settings.json`) toggles between `minimal` / `standard` / `strict`.
+Three-hook starter pack for Claude Code project hooks and Codex global
+hooks. Hooks are bash for portability — no Python venv, no npm dependency.
+Each hook is profile-aware: `HARNESS_PROFILE` toggles between `minimal` /
+`standard` / `strict`.
 
 ## Layout
 
@@ -24,11 +24,20 @@ dependency. Each hook is profile-aware: `HARNESS_PROFILE` env var (set in
     load-agents-md.sh        # SessionStart
     format-on-edit.sh        # PostToolUse on Edit/Write/MultiEdit
     verify-before-stop.sh    # Stop
+
+~/.codex/
+  hooks.json                  # merged by install_codex_hooks.py
+  hooks/project-meta/
+    load-agents-md.sh
+    format-on-edit.sh
+    verify-before-stop.sh
 ```
 
 ## Installation
 
-`/project-meta init --hooks` performs:
+`/project-meta init --hooks` installs hooks for the primary host.
+
+For Claude Code, it performs:
 
 1. Copy `templates/hooks/scripts/*.sh` to `<target>/.claude/hooks/`,
    preserving execute bits.
@@ -40,6 +49,21 @@ dependency. Each hook is profile-aware: `HARNESS_PROFILE` env var (set in
    this in `settings.json` per project.
 4. Update `agents/<topical>.md` with a note that hooks are active and
    what each enforces.
+
+For Codex, install globally with:
+
+```bash
+python3 ~/.codex/skills/project-meta/scripts/install_codex_hooks.py
+```
+
+The installer copies the scripts into `~/.codex/hooks/project-meta/`,
+merges `SessionStart`, `PostToolUse`, and `Stop` entries into
+`~/.codex/hooks.json`, injects `PROJECT_META_DIR` so hooks resolve the
+Codex-installed skill, and preserves existing hooks. It does not pre-seed
+`config.toml` `[hooks.state]` trust hashes; Codex may ask the user to trust
+the new commands on first run. Use `--dry-run` to preview, `--profile` to
+choose `minimal` / `standard` / `strict`, and `--codex-home` for non-default
+Codex homes.
 
 ## What Each Hook Does
 
@@ -76,7 +100,8 @@ Four responsibilities:
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
-   resolves via `$PROJECT_META_DIR` or `~/.claude/skills/project-meta/`).
+   resolves via `$PROJECT_META_DIR`, `~/.codex/skills/project-meta/`, or
+   `~/.claude/skills/project-meta/`).
 2. **Project verifier** when `.harness/verify.sh` exists. The user
    defines what verification means for the project (test runner,
    linter, type-checker, integration suite — whatever is fast enough
@@ -113,6 +138,10 @@ define a verifier, or adopt the write-back / dispatch gates.
 
 Switch profiles by editing `settings.json` `env.HARNESS_PROFILE`. No
 script changes required.
+
+For Codex installs, switch profiles by re-running
+`install_codex_hooks.py --profile <minimal|standard|strict>` or by editing
+the injected `HARNESS_PROFILE=...` prefix in `~/.codex/hooks.json`.
 
 ## Anti-patterns
 
