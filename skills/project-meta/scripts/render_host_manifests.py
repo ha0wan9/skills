@@ -115,6 +115,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'You are an Explorer (read-only). Answer the narrow question in your brief.\n'
         'Do NOT edit files. Return findings only. See AGENTS.md and the project\n'
         'dispatch protocol (multi-agent-protocols.md) for roles and ownership.\n'
+        'If the answer needs edits, report the required write-set instead of editing.\n'
         '"""\n'
     ),
     "worker": (
@@ -125,6 +126,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'You are a Worker. Edit ONLY the files your brief assigns (its write-set).\n'
         'Do not expand scope, refactor adjacent code, or add dependencies. Produce\n'
         'a patch summary and stop. The reviewer (separate agent) checks your diff.\n'
+        'If the brief is ambiguous about write scope, stop and ask the Lead to re-brief.\n'
         '"""\n'
     ),
     "reviewer": (
@@ -139,6 +141,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'the success criterion — not the conductor context. Return one verdict:\n'
         'PASS | SUGGEST | BLOCKER. BLOCKER is a synchronous halt: stop the chain and\n'
         'surface to the user; do not let further edits land. Do not edit files yourself.\n'
+        'Check write-set boundaries, mirror-before-canonical ordering, and validation claims.\n'
         '"""\n'
     ),
 }
@@ -223,6 +226,8 @@ def emit_codex_subagents(target_root: Path, canonical: Path, ts: str,
         f"(multi-agent-protocols.md).\n"
         f"# Adjust keys to match your Codex CLI version's agent schema; "
         f"per-task write-sets come from the brief, not this file.\n\n"
+        f"# These instructions are policy seeds. Enforce read-only reviewer/explorer "
+        f"behavior and worker write scope with Codex sandbox/approval config.\n\n"
     )
     written = []
     for role, body in CODEX_SUBAGENT_ROLES.items():
