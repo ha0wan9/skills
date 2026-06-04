@@ -24,6 +24,7 @@ Load only the references relevant to the audit target:
 - [`references/writing-skills.md`](../references/writing-skills.md) — when auditing a skill (not a project)
 - [`references/skill-critics.md`](../references/skill-critics.md) — when auditing a skill/marketplace; the critic suite that feeds the authoring + enforcement dimensions
 - [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when host manifests are in scope
+- [`templates/building-plan.md`](../templates/building-plan.md) — when the audit target is a build plan (the Goal-readiness dimension below)
 
 ## Audit dimensions
 
@@ -65,6 +66,31 @@ Score each dimension as **ABSENT / PARTIAL / ENFORCED**.
 - [ ] Repeated mistakes have been promoted from prose to scripts/linters/hooks/templates (AP-VAL-1)
 - [ ] Validators are wired into the delivery contract (AP-VAL-2)
 - [ ] Pressure-test methodology has been applied to MUST rules (AP-VAL-3) — see `scripts/pressure_test_skill.py`
+
+### Goal-readiness (when the audit target is a build plan)
+
+Forward-looking readiness gate for a `/project-meta plan` artifact — *"can this Goal run
+to completion without drifting or self-declaring victory on empty output?"* Verify against
+the **real repo**, not the plan's claims. Run this dimension when the target is a build
+plan; required when its frontmatter is `readiness: strict`.
+
+- [ ] **Every §6 row is falsifiable** — has a test target + data + threshold; any row
+      missing one is a NO-GO blocker (AP-PLAN-1)
+- [ ] Named test data / fixtures **actually exist in the repo** (or are specced with a
+      generation command), not assumed
+- [ ] Tiers are honest — no 🟢 item that actually needs a new dep / ops / live backend /
+      unresolved decision (mis-tier = a stall or a silent red-gate mid-run)
+- [ ] `strict` plans carry the §1 non-goals fence, §4 committed/specced fixtures, and
+      §7 🔴 checkpoints
+- [ ] The gate command in §2 passes *now* against the current repo
+- [ ] Provenance frontmatter + manifest entry present (`readiness`, `goal`, the standard fields)
+
+Emit, in addition to the severity grouping, the **four requirement-gap categories** and a
+**GO / NO-GO** verdict: (1) requirements-doc details still ambiguous, (2) test data
+missing/absent + where it must come from, (3) protocols undefined, (4) contracts unstated
+(closed-list schemas, route touch-points, emit/acceptance shape). NO-GO until every §6 row
+is verifiable and every blocker has an owner. Do **not** emit a numeric readiness score —
+GO/NO-GO + blockers only (a score invites gaming, cf. "Auditing for show" below).
 
 ### Lifecycle
 

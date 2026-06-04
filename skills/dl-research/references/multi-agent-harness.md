@@ -53,9 +53,10 @@ replacement for the prose loop.
 | Model-driven dispatch | Agent tool / subagents | native subagents — reviewers/scouts on a read-only `explorer` base, `prepare` worker on `worker` | the prose Clean-Context loop |
 | Scripted orchestration | Workflow (`parallel`/barrier/`resumeFromRunId`) | Agents SDK + `codex mcp` (handoffs/gating) | the prose loop |
 
-- **Model**: dispatched reviewers/scouts/workers default to **Sonnet**; escalate
-  a single agent to Opus only on a concrete signal (it already failed or
-  returned low-quality output at Sonnet tier), not precautionarily.
+- **Model tier**: per the paradigm's **Model Tier** rule (canon:
+  `project-meta/references/multi-agent-protocols.md#model-tier`) — dispatched
+  reviewers/scouts/workers default to **Sonnet**; escalate one agent to Opus only
+  on a concrete mid-tier shortfall, never precautionarily.
 - Read-only roles (Explorer/Reviewer) map to Codex's `explorer`; only the
   `prepare` Worker writes. `resumeFromRunId` journaling and git-worktree
   isolation are Claude-Code-only.
