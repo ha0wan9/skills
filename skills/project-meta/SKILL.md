@@ -17,7 +17,7 @@ Keep this file as the skill entrypoint. Load the linked reference files only as 
 
 Use this skill for any of these triggers:
 
-- Command trigger: the user says `/project-meta <command>`, especially `init`, `status`, `validate`, `deliver`, or `audit`.
+- Command trigger: the user says `/project-meta <command>`, especially `init`, `plan`, `status`, `validate`, `deliver`, or `audit`.
 - Bootstrap trigger: entering a repo or project where agent instructions, memory, or read order matter.
 - Memory trigger: creating, repairing, splitting, pruning, or syncing canonical memory files.
 - Harness trigger: improving agent instructions, behavior guardrails, validation loops, or project-specific operating rules.
@@ -109,6 +109,7 @@ When the user invokes `/project-meta <command>`, route via the recipes directory
 | Verb | Mode | Recipe |
 |---|---|---|
 | `init` | editing | [`recipes/init.md`](recipes/init.md) |
+| `plan` | editing | [`recipes/plan.md`](recipes/plan.md) |
 | `status` | read-only | [`recipes/status.md`](recipes/status.md) |
 | `validate` | read-only | [`recipes/validate.md`](recipes/validate.md) |
 | `deliver` | read-only | [`recipes/deliver.md`](recipes/deliver.md) |

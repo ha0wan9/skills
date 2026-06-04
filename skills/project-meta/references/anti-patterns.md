@@ -286,3 +286,24 @@ features; agents follow rules that no longer match the codebase.
 
 **Fix**: schedule periodic audits (`/project-meta audit`). Treat the audit
 as part of the harness, not as one-off cleanup.
+
+## Planning
+
+### AP-PLAN-1 — Unfalsifiable plan
+A build plan's items lack a **test target + data + accomplishment threshold**,
+so no step can be self-certified. The agent either loops on "is this done?"
+or declares victory on empty/vacuous output — a smoke test that "renders"
+against empty data, a feature "built" with no assertion that it works. Goal
+drift is the same failure seen over a longer horizon: with no non-goals fence
+and no per-phase check, each phase re-interprets the Goal and wanders off it.
+
+**Symptom**: a plan reads plausibly but "done" is a judgement call; an
+unattended run finishes "green" yet the result doesn't match the intent;
+reviewers can't point to the assertion that should have failed.
+
+**Fix**: make every plan item falsifiable — `templates/building-plan.md` §6
+requires test target / data / threshold per item, mandatory even at the
+`floor` tier (do not gate the floor behind a keyword — that re-introduces the
+bug, AP-SKL-2). For hand-off / unattended plans, the `autopilot`/`goal`
+keyword sets `readiness: strict` and `audit`'s Goal-readiness dimension gates
+GO/NO-GO. Verify the plan against the real repo, not its own claims.

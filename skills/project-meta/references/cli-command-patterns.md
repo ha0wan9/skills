@@ -19,10 +19,20 @@ The `/project-meta <command>` route table maps verbs to recipe files:
 | Command | Mode | Recipe |
 |---|---|---|
 | `/project-meta init` | editing | [`recipes/init.md`](../recipes/init.md) |
+| `/project-meta plan` | editing | [`recipes/plan.md`](../recipes/plan.md) |
 | `/project-meta status` | read-only | [`recipes/status.md`](../recipes/status.md) |
 | `/project-meta validate` | read-only | [`recipes/validate.md`](../recipes/validate.md) |
 | `/project-meta deliver` | read-only | [`recipes/deliver.md`](../recipes/deliver.md) |
 | `/project-meta audit` | read-only by default | [`recipes/audit.md`](../recipes/audit.md) |
+
+**`plan` readiness keyword.** `/project-meta plan` writes a falsifiable build plan at one
+of two tiers. The default `floor` tier mandates the §6 per-item verification matrix
+(test target + data + threshold). The words **`autopilot` / `goal` / `unattended`** in the
+request escalate it to `strict` — recording `readiness: strict` in the artifact frontmatter
+so `audit`'s Goal-readiness dimension runs a GO/NO-GO gate. The keyword is the human-facing
+trigger; the frontmatter field is the audit-facing, legible record. There is **no execution
+engine** — execution governance lives in `references/execution-policy.md`; `plan` only
+produces the target, `audit` only judges readiness.
 
 `SKILL.md` may list trigger examples and reference-loading hints, but it must not duplicate per-command workflow contracts. `README.md` may summarize the supported command surface for users, but it must point back here for the canonical route.
 
@@ -43,9 +53,8 @@ The agent loads exactly one recipe per `/project-meta <command>` invocation. Rec
 
 ## Reserved Commands
 
-These commands are useful but should stay reserved until the core five prove stable:
+These commands are useful but should stay reserved until the core set proves stable:
 
-- `/project-meta plan` — plan complex work before edits
 - `/project-meta sync` — sync canonical docs and mirrors (today: invoke `scripts/render_host_manifests.py` directly)
 - `/project-meta promote` — write validated lessons to the right memory layer
 - `/project-meta prune` — remove stale or duplicated harness guidance
@@ -71,5 +80,5 @@ Promotion path: when a reserved command sees consistent demand and a stable work
 - **Command surface bloat**: too many commands make triggering ambiguous. Keep the supported set small until usage proves the need for more.
 - **Over-triggering**: ordinary implementation tasks should not invoke project-meta unless they affect memory, docs, harness behavior, coordination, or durable lessons (the trigger-decision rule in `SKILL.md`).
 - **Unsafe automation**: commands that commit, push, sync, or rewrite docs MUST honor local `USER.md` and pre-commit delivery rules.
-- **Validation drift**: command contracts must be covered by `scripts/validate_target_harness.py` so docs and behavior do not silently diverge (AP-VAL-2).
+- **Validation drift**: command contracts must be covered by `scripts/validate_target_harness.py` so docs and behavior do not silently diverge (AP-VAL-2). *Build-plan coverage status:* provenance frontmatter on an instantiated build plan is already covered by `check_artifact_provenance`. The §6 verification-matrix completeness check (every row has test-target / data / threshold) is **not yet mechanized** — today it is enforced by hand in `audit`'s Goal-readiness dimension. Promoting it to a dedicated linter is the open AP-VAL-2 follow-up for this verb; until then, do not claim the matrix is mechanically gated.
 - **Recipe drift**: when a recipe's workflow changes, update the matching SKILL.md routing entry and the cli-command-patterns route table together. A recipe whose route is stale silently fires on the wrong verb.
