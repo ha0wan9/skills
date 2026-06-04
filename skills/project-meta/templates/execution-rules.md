@@ -125,6 +125,17 @@ This file is advisory. Real enforcement comes from:
 - Repo: pre-commit hooks, branch protection, CI gates
 
 Keep this file aligned with the active CLI configuration. One without the other is incomplete enforcement.
+
+## Codex Multi-Agent Projection
+
+When this repo uses Project Meta's multi-agent protocol under Codex:
+
+- Generate role seeds with `render_host_manifests.py --hosts codex-subagents`.
+- Treat the lead agent as an orchestrator: brief, receive verdicts, integrate, and report. Once dispatch triggers, the lead should not directly edit assigned worker files.
+- Use `explorer` for read-only context questions, `worker` for bounded edits, and `reviewer` for PASS / SUGGEST / BLOCKER review.
+- Back role intent with Codex sandbox / approval settings. TOML instructions alone are advisory.
+- Record dispatched work in `.harness/dispatch-log.jsonl` via `dispatch_ledger.py record`; validate or query the ledger before delivery.
+- Stop immediately on a reviewer `BLOCKER`. Resume only after the user chooses a path.
 ```
 
 ## AGENTS.md Insert

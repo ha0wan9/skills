@@ -75,7 +75,7 @@ Optional, when the user passes feature flags:
 
 6. **Optional opt-ins**:
    - `--workflow phase-lock`: instantiate `templates/phase-lock-contract.md` → `agents/phase-lock-contract.md`; create `.harness/phase-state.json` from the seed; create `.harness/gates/{brainstorm,plan,implement,review,finish}.sh` stubs.
-   - `--hooks`: copy `templates/hooks/scripts/*.sh` to `<target>/.claude/hooks/`; merge `templates/hooks/settings.json.fragment` into `<target>/.claude/settings.json`. Set `HARNESS_PROFILE=standard` default.
+   - `--hooks`: install hooks for the primary host. Claude Code primary: copy `templates/hooks/scripts/*.sh` to `<target>/.claude/hooks/`; merge `templates/hooks/settings.json.fragment` into `<target>/.claude/settings.json`; set `HARNESS_PROFILE=standard` default. Codex primary: run `python3 <project-meta>/scripts/install_codex_hooks.py --project-meta-dir <project-meta> --profile standard` to merge `~/.codex/hooks.json` and copy scripts under `~/.codex/hooks/project-meta/`. Do not pre-seed Codex hook trust hashes; let Codex ask the user to trust new commands on first run.
    - `--multi-host`: run `python3 scripts/render_host_manifests.py --target-root <repo>` to emit `.codex/`, `.opencode/`, `gemini-extension.json`, etc. Add `--hosts codex-subagents` to also emit `.codex/agents/{explorer,worker,reviewer}.toml` role configs — the Codex-side mechanical backing of the dispatch protocol (opt-in; not in the default host set).
 
 7. **Wire `.gitignore`** for `USER.md` (and the accidental root `USER.template.md`) before any of those files exist. The `.gitignore.template` from this skill or an equivalent rule must merge in.
