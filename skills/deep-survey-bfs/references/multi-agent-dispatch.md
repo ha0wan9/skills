@@ -72,9 +72,10 @@ replacement for the prose loop.
 | Model-driven dispatch | Agent tool / subagents | native subagents — search agents on a read-only `explorer` base | prose: dispatch one cluster at a time |
 | Scripted orchestration | Workflow `parallel()` + barrier | Agents SDK + `codex mcp` (handoffs/gating) | prose: sequential per-cluster search, then manual dedup |
 
-- **Model**: search subagents and the reviewer default to **Sonnet**; escalate a
-  single agent to Opus only on a concrete signal (it already returned
-  low-quality output at Sonnet tier), not precautionarily.
+- **Model tier**: per the paradigm's **Model Tier** rule (canon:
+  `project-meta/references/multi-agent-protocols.md#model-tier`) — search
+  subagents and the reviewer default to **Sonnet**; escalate one agent to Opus
+  only on a concrete mid-tier shortfall, never precautionarily.
 - The barrier below is mandatory **on every tier**, including the prose floor —
   a scripted `parallel()` does not remove the need for central dedup; it makes a
   missing barrier *more* dangerous.
