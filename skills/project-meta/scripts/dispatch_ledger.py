@@ -7,7 +7,8 @@ The engine (fan-out, briefing, adjudication) is the Workflow tool / Codex
 Agents-SDK / the prose loop. This script does the two deterministic halves:
 
   - record/validate/query  — the auditable dispatch chain (Reviewer-Between-
-    Subtasks "Logging": worker id, reviewer id, brief hash, verdict, comment)
+    Subtasks "Logging": worker id, reviewer id, brief hash, verdict, comment),
+    plus retro-inspect evidence (task_type + tier) for cross-run tier promotion
   - gate                   — the "Mandatory Subagent Dispatch" rule: a turn that
     edited >=2 harness files without dispatching is the AP-COORD-1 failure mode
 
@@ -136,6 +137,12 @@ def cmd_record(args: argparse.Namespace) -> int:
         "verdict": args.verdict,
         "brief_hash": args.brief_hash or "",
         "comment": args.comment or "",
+        # Retro-inspect evidence (multi-agent-protocols.md "Retro-inspect promotion"):
+        # task_type keys cross-run tier promotion; tier is the (model, effort) attempted,
+        # e.g. "sonnet/medium" or "opus/max". Both optional + free-form so the ledger
+        # stays decoupled from any specific tier vocabulary.
+        "task_type": args.task_type or "",
+        "tier": args.tier or "",
     }
     p = _ledger_path(root)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -229,6 +236,8 @@ def main(argv: list[str] | None = None) -> int:
     p_rec.add_argument("--verdict", default="pending")
     p_rec.add_argument("--brief-hash")
     p_rec.add_argument("--comment")
+    p_rec.add_argument("--task-type", help="retro-inspect key: the kind of subtask (e.g. 'reviewer:methodology')")
+    p_rec.add_argument("--tier", help="the (model, effort) attempted, e.g. 'sonnet/medium' or 'opus/max'")
     p_rec.set_defaults(func=cmd_record)
 
     p_val = sub.add_parser("validate", help="validate the dispatch ledger schema")

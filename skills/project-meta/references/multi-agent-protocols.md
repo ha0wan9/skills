@@ -78,6 +78,29 @@ Why: precautionary top-tier dispatch is the cost-side sibling of AP-COORD-4 (ove
 
 Runtime mapping: "mid/top tier" are Sonnet/Opus on Claude Code; on Codex (or any other runtime) map to that runtime's equivalent capability tiers. The *rule* — cheap default, escalate-one-on-signal — is runtime-agnostic; only the tier names differ. Downstream skills cite this section rather than restating the rule.
 
+### Tier is two axes (model × effort)
+
+A tier is not just the model — it is the pair **(model level, thinking effort)**:
+
+- **Model level** — Sonnet (default) → Opus (top); a trivial extraction may sit a notch lower still.
+- **Thinking effort** — low → medium → high → max, the reasoning-depth dial on a *given* model.
+
+The default dispatched tier is the *cheapest viable point* — Sonnet at low–medium effort, **not** Sonnet at max. Promotion (below) climbs this two-axis space, and the **cheap lever moves before the expensive one**: raising effort on the same model costs less than a model jump, so try it first unless the failure is clearly a capability ceiling rather than a depth shortfall.
+
+### Retro-inspect promotion (cross-run, per task-type)
+
+The escalate-on-signal rule above is *within-run* and *per-agent*: one agent fails now, you retry that agent higher this run. It does not persist — the next run re-dispatches the same kind of task at the default and re-pays the identical failed first trial. Close the loop with a **retro-inspection keyed by task-type** (the role + the kind of subtask), not by agent instance:
+
+1. **Record the failure as durable harness state.** When a dispatched agent of a given task-type fails or returns low-quality output at its tier, the Lead writes a *promotion record* to **repo memory** (via the Memory Contract — cite [`repo-memory-crud.md#memory-contract`](repo-memory-crud.md#memory-contract), do not restate it): the task-type, the tier attempted `(model, effort)`, the failure signal, and the date. The **dispatch ledger** (`.harness/dispatch-log.jsonl`, `scripts/dispatch_ledger.py`) is the *evidence* — it records `task_type` + `tier` + `verdict` per dispatch so retro-inspect reads structured history, not recalled vibes. **Ledger = transient evidence; repo memory = the durable learned policy** (the same split as "ledger is audit, `AGENTS.md` is canon"). Distilling evidence → durable record is Lead judgement (Roles: the Lead owns write-back), so a fresh agent cannot self-certify a promotion.
+
+2. **Promote on the next dispatch.** Before dispatching a task-type, the Lead consults its promotion record and *starts* at the recorded tier instead of the default — converting a repeated first-trial failure into a one-time cost.
+
+3. **Match the lever to the failure mode** (climb the cheap axis first):
+   - *shallow / truncated / ran out of reasoning depth* → bump **effort** (same model);
+   - *wrong approach / capability ceiling / effort already at max* → bump **model**.
+
+4. **Still evidence-gated, bounded, and not a one-way ratchet.** A promotion requires a *recorded* failure, never a hunch — the precautionary ban from the within-run rule still holds. Cap at (Opus, max). The record carries its *cause* so a later run can demote back toward the default once the cause is gone (the task changed, the fixture got fixed); a tier that only ever climbs is the cost-side AP-COORD-5 mis-sizing — paying for capability the task no longer needs. This is the same `record → predict → adjust` active-learning shape project-meta uses for preferences, specialized to tier selection. Amnesiac re-payment of the same failed first trial every run is **AP-COORD-6**.
+
 ## Mandatory Subagent Dispatch
 
 The complexity trigger is judgement-based; the rule below is mechanical.

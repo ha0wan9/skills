@@ -208,6 +208,29 @@ cross_subsystem`. State the derived pattern in the delivery so a misfire is
 visible. The mapping phase's own four constraints live in
 `multi-agent-protocols.md` "Context Mapping Phase".
 
+### AP-COORD-6 — Amnesiac tier selection
+A dispatched task-type that failed at its model tier last run is re-dispatched
+at the *same default tier* this run, re-paying the identical failed first trial,
+because the failure was never recorded and promoted. The within-run escalate-on-
+signal fix does not persist; without a cross-run record each run relearns the
+shortfall from scratch. The mirror failure is the one-way ratchet: a tier that
+only ever climbs and never demotes, paying for capability the task no longer
+needs (the cost-side AP-COORD-5).
+
+**Symptom**: the same kind of subagent task burns a Sonnet trial, fails, gets
+retried on Opus, and ships — then next session repeats the exact sequence; or
+every task-type has silently crept to (Opus, max) and no one can say which
+promotion is still earning its cost.
+
+**Fix**: retro-inspect, per `multi-agent-protocols.md` "Retro-inspect
+promotion". Record each failure (task-type, tier `(model, effort)`, signal, date)
+as durable harness state via the Memory Contract — the dispatch ledger
+(`scripts/dispatch_ledger.py`, fields `task_type`/`tier`/`verdict`) is the
+evidence; repo memory is the learned policy. Start the next dispatch of that
+task-type at the promoted tier; climb the cheap axis (effort) before the
+expensive one (model); cap at (Opus, max); record the *cause* so a stale
+promotion can be demoted. Evidence-gated always — never a precautionary promote.
+
 ## Validation & enforcement
 
 ### AP-VAL-1 — Advisory rules with no validator
