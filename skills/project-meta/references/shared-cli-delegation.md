@@ -42,7 +42,7 @@ layouts (Claude Code 2.1.x):
 
 - personal skill: `~/.claude/skills/project-meta/`
 - plugin (marketplace checkout): `~/.claude/plugins/marketplaces/<marketplace>/skills/project-meta/`
-- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/project-meta/<version>/skills/project-meta/`
+- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/project-meta/` (e.g. `<plugin>` = `profile-creator` when bundled — the cache segment is the *plugin* name, not `project-meta`)
 
 ```bash
 # Canonical executable copy: templates/hooks/scripts/verify-before-stop.sh
@@ -51,7 +51,7 @@ layouts (Claude Code 2.1.x):
 pm_dir=""
 for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
          "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-         "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta; do
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
   [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
 done
 if [ -n "$pm_dir" ]; then
