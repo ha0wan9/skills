@@ -66,6 +66,41 @@ When editing this repo as agent work:
 - For changes to `marketplace.json`, verify the JSON parses, that every `skills:[...]` path resolves to a directory containing a `SKILL.md`, and that every plugin `name` is unique.
 - Treat shared docs (this `AGENTS.md`, `README.md`) as primary documentation. Edits to user-facing behavior require a pre-commit delivery; see `skills/project-meta/references/documentation-delivery.md` for the delivery contract.
 
+## Workflow Preference: Validated Edit → Ship → Reload
+
+Once an edit to this repo is **validated**, ship it end-to-end without waiting for further
+prompting: commit → open PR → fresh-context review → merge-if-clean → reload the affected
+plugin locally. "Validated" here is a two-gate bar — **both** must hold before any merge:
+
+1. **Validator gate** — `scripts/ship_plugin.sh validate` exits 0 (marketplace.json sanity
+   always, plus `validate_project_meta.py` when `project-meta` changed, plus the dl-research
+   ledger validator when a `runs.jsonl` fixture changed).
+2. **Fresh-review gate** — a **fresh-context** review agent (dispatch via the Agent tool,
+   e.g. the `Explore`/general reviewer or `/code-review`) reads the PR diff and returns
+   **no blocking findings**. The reviewing agent must not be this working session — spawn a
+   clean one so the review is independent (see `skills/project-meta/references/multi-agent-protocols.md`).
+
+Merge policy is **review, merge if clean**: if the fresh review surfaces a blocking finding,
+**stop — do not merge**; report the findings and let the fix loop run again from gate 1.
+
+The deterministic legs are scripted in [`scripts/ship_plugin.sh`](scripts/ship_plugin.sh);
+the agent owns the two gates. Canonical sequence:
+
+```bash
+scripts/ship_plugin.sh validate                 # gate 1 — abort the whole flow if non-zero
+scripts/ship_plugin.sh open "<concise PR title>"  # commit (if needed) + push + open PR
+# gate 2: dispatch a FRESH review agent over the PR diff; merge only if it comes back clean
+scripts/ship_plugin.sh land                      # merge-if-clean, then reload changed plugins
+```
+
+`land` re-checks GitHub mergeability and refuses on `DIRTY`/`BEHIND`/`BLOCKED`; it then runs
+`claude plugin marketplace update ha0wan9-skills` and `claude plugin update <changed-plugins>`
+(use `scripts/ship_plugin.sh changed-plugins` to see the set). Plugin updates require a Claude
+Code restart to take effect — surface that reminder after a successful land.
+
+This is a personal workflow default for repo edits; for anything outside the validated-edit
+loop (release tagging, bulk refactors, destructive history rewrites) fall back to asking first.
+
 ## Adding A New Skill
 
 1. Create `skills/<new-skill-name>/SKILL.md` with name + description frontmatter. The `SKILL.md` `description` is the **canonical** description for the skill.
