@@ -38,7 +38,7 @@ None by default. Lazy-load only when status detection surfaces something needing
 5. **Inspect agent-facing docs**:
    - Topical files under `agents/`
    - Provenance frontmatter present on instantiated artifacts?
-   - Manifest (`agents/project-artifact-manifest.md`) up to date?
+   - Manifest (`agents/project-artifacts.md`) up to date?
 
 6. **Inspect mirrors**:
    - `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/agents.md`, etc.
