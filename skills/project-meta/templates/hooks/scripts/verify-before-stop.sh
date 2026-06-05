@@ -42,9 +42,9 @@ resolve_project_meta() {
     "$HOME/.codex/skills/project-meta" \
     "$HOME/.claude/skills/project-meta" \
     "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
-    "$HOME"/.codex/plugins/cache/*/project-meta/*/skills/project-meta \
+    "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
     "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-    "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta ; do
+    "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta ; do
     if [[ -n "$c" && -f "$c/$sentinel" ]]; then printf '%s\n' "$c"; return 0; fi
   done
   return 1

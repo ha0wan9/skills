@@ -133,7 +133,7 @@ locations (override, personal skill, plugin layouts); if none, use the floor.
 pm_dir=""
 for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
          "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-         "$HOME"/.claude/plugins/cache/*/project-meta/*/skills/project-meta; do
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
   [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
 done
 if [ -n "$pm_dir" ]; then
