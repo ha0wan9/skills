@@ -13,8 +13,17 @@
 # `land` re-checks GitHub mergeability but does NOT itself run the review — the agent
 # must only call `land` after the fresh review came back clean ("review, merge if clean").
 #
+# Version policy: EVERY shipped change must bump a version before the PR merges.
+# The agent picks the semver level by impact (patch = fix/docs/internal; minor =
+# new backward-compatible capability; major = breaking change). `check-version`
+# enforces it in both `validate` and `land`; `land` will not merge without it.
+#
 # Subcommands:
-#   validate            run repo validators on the changed plugins; exit 0 iff all pass
+#   validate            run repo validators + the version-bump gate; exit 0 iff all pass
+#   check-version       gate: every changed plugin's marketplace.json version must be
+#                       bumped vs base (root-only changes must bump marketplace version)
+#   bump <tgt> <level>  bump a version in marketplace.json. tgt = a plugin name or
+#                       "marketplace"; level = major|minor|patch. Edits the manifest.
 #   changed-plugins     print the plugin names touched vs the base branch (one per line)
 #   open "<title>"      stage all, commit if there are changes, push branch, open/echo PR
 #   land [--no-reload]  merge the current branch's PR if clean, then reload changed plugins
@@ -84,6 +93,9 @@ cmd_validate() {
   # Always: manifest must be coherent (cheap, catches the common drift).
   _validate_marketplace
 
+  # Version policy: a shippable change must bump a version.
+  cmd_check_version
+
   # project-meta has a dedicated dev validator.
   if grep -qx "project-meta" <<<"$plugins"; then
     info "running validate_project_meta.py"
@@ -107,6 +119,107 @@ cmd_validate() {
 }
 
 cmd_changed_plugins() { _changed_plugins; }
+
+# bump <target> <level> — edit a version in .claude-plugin/marketplace.json.
+# target = a plugin name (its plugins[].version) or "marketplace" (metadata.version).
+# level  = major | minor | patch. Keeps the bumped plugin's SKILL.md frontmatter
+# version in sync when that file declares one.
+cmd_bump() {
+  local target="${1:-}" level="${2:-}"
+  [[ -n "$target" && -n "$level" ]] || die "usage: ship_plugin.sh bump <plugin|marketplace> <major|minor|patch>"
+  case "$level" in major|minor|patch) : ;; *) die "level must be major|minor|patch (got: $level)" ;; esac
+  python3 - "$REPO_ROOT" "$target" "$level" <<'PY'
+import json, os, re, sys
+root, target, level = sys.argv[1], sys.argv[2], sys.argv[3]
+mani = os.path.join(root, ".claude-plugin", "marketplace.json")
+with open(mani) as f:
+    data = json.load(f)
+
+def bump(v):
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)$", v.strip())
+    if not m:
+        sys.exit(f"bump: version '{v}' is not X.Y.Z")
+    a, b, c = (int(x) for x in m.groups())
+    if level == "major": a, b, c = a + 1, 0, 0
+    elif level == "minor": b, c = b + 1, 0
+    else: c += 1
+    return f"{a}.{b}.{c}"
+
+if target == "marketplace":
+    old = data["metadata"]["version"]; new = bump(old)
+    data["metadata"]["version"] = new
+    skill_md = None
+else:
+    plug = next((p for p in data.get("plugins", []) if p.get("name") == target), None)
+    if plug is None:
+        sys.exit(f"bump: no plugin named '{target}' in marketplace.json")
+    old = plug["version"]; new = bump(old)
+    plug["version"] = new
+    skill_md = os.path.join(root, "skills", target, "SKILL.md")
+
+with open(mani, "w") as f:
+    json.dump(data, f, indent=2); f.write("\n")
+
+synced = ""
+if skill_md and os.path.isfile(skill_md):
+    txt = open(skill_md).read()
+    new_txt, n = re.subn(r"(version:\s*)\d+\.\d+\.\d+", rf"\g<1>{new}", txt, count=1)
+    if n:
+        open(skill_md, "w").write(new_txt)
+        synced = f"  (synced {os.path.relpath(skill_md, root)})"
+print(f"bumped {target}: {old} -> {new} [{level}]{synced}", file=sys.stderr)
+PY
+}
+
+# check-version — the gate. Every changed plugin must have a strictly higher
+# marketplace.json version than on the base branch; a change that touches no
+# plugin (root/infra only) must bump the marketplace metadata.version instead.
+cmd_check_version() {
+  local plugins; plugins="$(_changed_plugins || true)"
+  python3 - "$REPO_ROOT" "$BASE_BRANCH" "$plugins" <<'PY'
+import json, os, re, subprocess, sys
+root, base_ref, plugins_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+changed = [p for p in plugins_raw.split() if p]
+raw = subprocess.run(["git", "-C", root, "show", f"{base_ref}:.claude-plugin/marketplace.json"],
+                     capture_output=True, text=True)
+if raw.returncode != 0:
+    print("check-version: no base manifest (new repo?); skipping", file=sys.stderr)
+    sys.exit(0)
+base = json.loads(raw.stdout)
+cur = json.load(open(os.path.join(root, ".claude-plugin", "marketplace.json")))
+
+def ver(d, name):
+    if name == "marketplace":
+        return d.get("metadata", {}).get("version")
+    return next((p.get("version") for p in d.get("plugins", []) if p.get("name") == name), None)
+
+def parse(v):
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)$", (v or "").strip())
+    return tuple(int(x) for x in m.groups()) if m else None
+
+def higher(name):
+    b, c = parse(ver(base, name)), parse(ver(cur, name))
+    return b is not None and c is not None and c > b
+
+fails = []
+if changed:
+    for name in changed:
+        if not higher(name):
+            fails.append(f"plugin '{name}' version not bumped ({ver(base,name)} -> {ver(cur,name)}); "
+                         f"run: ship_plugin.sh bump {name} <major|minor|patch>")
+else:
+    if not higher("marketplace"):
+        fails.append(f"no plugin changed and marketplace version not bumped "
+                     f"({ver(base,'marketplace')} -> {ver(cur,'marketplace')}); "
+                     f"run: ship_plugin.sh bump marketplace <major|minor|patch>")
+
+if fails:
+    print("check-version: FAIL\n  - " + "\n  - ".join(fails), file=sys.stderr)
+    sys.exit(1)
+tgt = ", ".join(changed) if changed else "marketplace"
+print(f"check-version: ok ({tgt} bumped)", file=sys.stderr)
+PY
+}
 
 cmd_open() {
   local title="${1:-}"
@@ -141,6 +254,9 @@ cmd_land() {
 
   local branch; branch="$(git rev-parse --abbrev-ref HEAD)"
   local plugins; plugins="$(_changed_plugins || true)"
+
+  # Hard gate: never merge a change that did not bump a version.
+  cmd_check_version
 
   # Resolve the PR number up front: after a --delete-branch merge the branch ref is gone,
   # so a later branch-name lookup would fail; the number stays stable.
@@ -208,6 +324,8 @@ main() {
   local sub="${1:-}"; shift || true
   case "$sub" in
     validate)         cmd_validate "$@" ;;
+    check-version)    cmd_check_version "$@" ;;
+    bump)             cmd_bump "$@" ;;
     changed-plugins)  cmd_changed_plugins "$@" ;;
     open)             cmd_open "$@" ;;
     land)             cmd_land "$@" ;;

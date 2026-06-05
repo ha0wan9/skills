@@ -81,12 +81,22 @@ When editing this repo as agent work:
 
 Once an edit to this repo is **validated**, ship it end-to-end without waiting for further
 prompting: commit → open PR → fresh-context review → merge-if-clean → reload the affected
-plugin locally. "Validated" here is a two-gate bar — **both** must hold before any merge:
+plugin locally. "Validated" here is a three-gate bar — **all** must hold before any merge:
 
 1. **Validator gate** — `scripts/ship_plugin.sh validate` exits 0 (marketplace.json sanity
-   always, plus `validate_project_meta.py` when `project-meta` changed, plus the dl-research
-   ledger validator when a `runs.jsonl` fixture changed).
-2. **Fresh-review gate** — a **fresh-context** review agent (dispatch via the Agent tool,
+   always, the version-bump gate, plus `validate_project_meta.py` when `project-meta` changed,
+   plus the dl-research ledger validator when a `runs.jsonl` fixture changed).
+2. **Version-bump gate** — **every shipped change MUST bump a version** in
+   `.claude-plugin/marketplace.json`, and the bump must land before the PR is accepted.
+   Bump each changed plugin's `version`; for a change that touches no plugin (root/infra
+   only) bump the marketplace `metadata.version`. **You choose the semver level by impact:**
+   *patch* (x.y.**Z**) = bug fix, docs/wording, internal refactor with no user-visible change;
+   *minor* (x.**Y**.0) = new backward-compatible capability (new command, reference, script,
+   option); *major* (**X**.0.0) = breaking change (removed/renamed command, changed contract,
+   incompatible behavior). Apply it with `scripts/ship_plugin.sh bump <plugin|marketplace> <level>`.
+   `check-version` enforces this in both `validate` and `land`; without a bump, `land` refuses
+   to merge. The bump is also what makes the reload leg actually re-materialize the plugin.
+3. **Fresh-review gate** — a **fresh-context** review agent (dispatch via the Agent tool,
    e.g. the `Explore`/general reviewer or `/code-review`) reads the PR diff and returns
    **no blocking findings**. The reviewing agent must not be this working session — spawn a
    clean one so the review is independent (see `skills/project-meta/references/multi-agent-protocols.md`).
@@ -95,16 +105,18 @@ Merge policy is **review, merge if clean**: if the fresh review surfaces a block
 **stop — do not merge**; report the findings and let the fix loop run again from gate 1.
 
 The deterministic legs are scripted in [`scripts/ship_plugin.sh`](scripts/ship_plugin.sh);
-the agent owns the two gates. Canonical sequence:
+the agent owns the gates. Canonical sequence:
 
 ```bash
-scripts/ship_plugin.sh validate                 # gate 1 — abort the whole flow if non-zero
+scripts/ship_plugin.sh bump <plugin|marketplace> <major|minor|patch>  # gate 2 — pick level by impact
+scripts/ship_plugin.sh validate                 # gates 1+2 — marketplace/validators + version-bump; abort if non-zero
 scripts/ship_plugin.sh open "<concise PR title>"  # commit (if needed) + push + open PR
-# gate 2: dispatch a FRESH review agent over the PR diff; merge only if it comes back clean
-scripts/ship_plugin.sh land                      # merge-if-clean, then reload changed plugins
+# gate 3: dispatch a FRESH review agent over the PR diff; merge only if it comes back clean
+scripts/ship_plugin.sh land                      # re-runs version gate, merge-if-clean, then reload changed plugins
 ```
 
-`land` re-checks GitHub mergeability and refuses on `DIRTY`/`BEHIND`/`BLOCKED`; it then runs
+`land` re-runs `check-version` (refusing to merge an unbumped change), re-checks GitHub
+mergeability and refuses on `DIRTY`/`BEHIND`/`BLOCKED`; it then runs
 `claude plugin marketplace update ha0wan9-skills` and **reinstalls** each changed plugin —
 `claude plugin uninstall <plugin>@ha0wan9-skills` (best-effort) then `claude plugin install
 <plugin>@ha0wan9-skills` (use `scripts/ship_plugin.sh changed-plugins` to see the set).
