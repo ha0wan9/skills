@@ -24,6 +24,7 @@ Each hook is profile-aware: `HARNESS_PROFILE` toggles between `minimal` /
     load-agents-md.sh        # SessionStart
     format-on-edit.sh        # PostToolUse on Edit/Write/MultiEdit
     verify-before-stop.sh    # Stop
+    issue-tracker-reminder.sh # UserPromptSubmit (optional; issue-tracker capability)
 
 ~/.codex/
   hooks.json                  # merged by install_codex_hooks.py
@@ -127,6 +128,39 @@ If none of the artifacts are present (no phase-state, no verifier, not a
 git repo / nothing changed / <2 harness files), the hook is a no-op — the
 harness can ship it without forcing every repo to install phase-locks,
 define a verifier, or adopt the write-back / dispatch gates.
+
+### `issue-tracker-reminder.sh` — UserPromptSubmit (optional)
+
+Ships **only** with the `issue-tracker` capability (`/project-meta init
+--issue-tracker <tracker>` or `/project-meta settings`), not the default
+three-hook pack. When the user's prompt has feature-proposal shape, it reminds
+the agent to run the Track Loop in `agents/issue-tracking.md` (check the tracker
+for an existing ticket → write progress back → open one if missing).
+
+**Advisory only.** A shell hook has no MCP access, so it cannot query or write
+the tracker — it only reminds, and never blocks the turn. Self-skips when
+`agents/issue-tracking.md` is absent or the prompt has no feature-proposal shape.
+Tracker specifics live in that doc, not in the hook. See
+`references/issue-tracking-integration.md`.
+
+- `minimal`: disabled (exit 0)
+- `standard`: advisory reminder on a keyword match
+- `strict`: stronger MUST-phrased reminder (still non-blocking — a hook cannot
+  verify tracker state, so it must not fail the turn)
+
+Wire it under `UserPromptSubmit` in `settings.json` (the install step merges
+this; it is not in `settings.json.fragment` because it is opt-in):
+
+```json
+"UserPromptSubmit": [
+  {
+    "matcher": "*",
+    "hooks": [
+      { "type": "command", "command": "bash .claude/hooks/issue-tracker-reminder.sh" }
+    ]
+  }
+]
+```
 
 ## Profile Selection Guidance
 
