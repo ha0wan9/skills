@@ -142,9 +142,15 @@ cmd_land() {
   local branch; branch="$(git rev-parse --abbrev-ref HEAD)"
   local plugins; plugins="$(_changed_plugins || true)"
 
+  # Resolve the PR number up front: after a --delete-branch merge the branch ref is gone,
+  # so a later branch-name lookup would fail; the number stays stable.
+  local prnum
+  prnum="$(gh pr view "$branch" --json number -q .number 2>/dev/null || true)"
+  [[ -n "$prnum" ]] || die "no open PR found for branch $branch"
+
   local state
-  state="$(gh pr view "$branch" --json mergeStateStatus -q .mergeStateStatus 2>/dev/null || true)"
-  info "PR mergeStateStatus: ${state:-<unknown>}"
+  state="$(gh pr view "$prnum" --json mergeStateStatus -q .mergeStateStatus 2>/dev/null || true)"
+  info "PR #$prnum mergeStateStatus: ${state:-<unknown>}"
   case "$state" in
     CLEAN|UNSTABLE|HAS_HOOKS|"") : ;;  # UNSTABLE = mergeable but checks pending/failing
     BEHIND)  die "PR is BEHIND base; update the branch before landing" ;;
@@ -153,9 +159,16 @@ cmd_land() {
     *)       info "proceeding despite mergeStateStatus=$state" ;;
   esac
 
+  # gh's post-merge local cleanup (checkout base + delete local branch) fails inside a git
+  # worktree where base is checked out elsewhere — a cosmetic failure that must not abort
+  # the flow. Confirm the merge via the PR's actual state rather than gh's exit code.
   # shellcheck disable=SC2086
-  gh pr merge "$branch" $MERGE_FLAGS
-  info "merged $branch into $BASE_BRANCH"
+  gh pr merge "$prnum" $MERGE_FLAGS \
+    || info "gh pr merge exited non-zero (likely local-branch cleanup in a worktree); verifying state"
+  local merged
+  merged="$(gh pr view "$prnum" --json state -q .state 2>/dev/null || true)"
+  [[ "$merged" == "MERGED" ]] || die "PR #$prnum did not reach MERGED (state=${merged:-<unknown>}); not reloading"
+  info "merged PR #$prnum into $BASE_BRANCH"
 
   if [[ "$do_reload" == "1" ]]; then
     cmd_reload $plugins
