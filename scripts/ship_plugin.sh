@@ -178,7 +178,7 @@ cmd_land() {
 cmd_reload() {
   info "updating marketplace: $MARKETPLACE"
   claude plugin marketplace update "$MARKETPLACE" || info "marketplace update returned non-zero (continuing)"
-  local n
+  local n failed=0
   for n in "$@"; do
     [[ -n "$n" ]] || continue
     # `claude plugin update` is a no-op when the manifest version is unchanged, so a
@@ -188,9 +188,19 @@ cmd_reload() {
     # and refreshes the recorded gitCommitSha. Names in installed_plugins.json are
     # marketplace-qualified, so address as <name>@<mkt> (the bare name fails "not found").
     info "reinstalling plugin: $n@$MARKETPLACE"
-    claude plugin uninstall "$n@$MARKETPLACE" || info "plugin uninstall $n@$MARKETPLACE returned non-zero (continuing)"
-    claude plugin install "$n@$MARKETPLACE"   || info "plugin install $n@$MARKETPLACE returned non-zero (continuing)"
+    # Uninstall is best-effort: a not-yet-installed plugin makes it exit non-zero, and the
+    # install below is what actually matters, so swallow it and proceed.
+    claude plugin uninstall "$n@$MARKETPLACE" \
+      || info "uninstall $n@$MARKETPLACE non-zero (plugin may be absent; proceeding to install)"
+    # Install is load-bearing: if it fails after a successful uninstall the plugin is now
+    # GONE locally — surface loudly and mark the reload failed rather than swallowing it.
+    if ! claude plugin install "$n@$MARKETPLACE"; then
+      info "ERROR: install $n@$MARKETPLACE failed — plugin may now be UNINSTALLED locally; reinstall it manually"
+      failed=1
+    fi
   done
+  [[ "$failed" == "0" ]] \
+    || die "one or more plugins failed to reinstall (see above); fix them before restarting Claude Code"
   info "reload done — restart Claude Code to apply updated plugins"
 }
 
