@@ -18,7 +18,7 @@
 #   changed-plugins     print the plugin names touched vs the base branch (one per line)
 #   open "<title>"      stage all, commit if there are changes, push branch, open/echo PR
 #   land [--no-reload]  merge the current branch's PR if clean, then reload changed plugins
-#   reload [names...]   refresh local install: marketplace update + plugin update (per name)
+#   reload [names...]   refresh local install: marketplace update + reinstall (per name)
 #
 # Env overrides: BASE_BRANCH (default main), MARKETPLACE (default ha0wan9-skills),
 #                MERGE_FLAGS (default "--squash --delete-branch").
@@ -178,12 +178,29 @@ cmd_land() {
 cmd_reload() {
   info "updating marketplace: $MARKETPLACE"
   claude plugin marketplace update "$MARKETPLACE" || info "marketplace update returned non-zero (continuing)"
-  local n
+  local n failed=0
   for n in "$@"; do
     [[ -n "$n" ]] || continue
-    info "updating plugin: $n"
-    claude plugin update "$n" || info "plugin update $n returned non-zero (continuing)"
+    # `claude plugin update` is a no-op when the manifest version is unchanged, so a
+    # same-version edit never re-materializes the cache (it reports "already at the latest
+    # version" and the stale copy under .../plugins/cache/<mkt>/<plugin>/<version>/ stands).
+    # Reinstall instead: uninstall + install re-clones from the refreshed marketplace cache
+    # and refreshes the recorded gitCommitSha. Names in installed_plugins.json are
+    # marketplace-qualified, so address as <name>@<mkt> (the bare name fails "not found").
+    info "reinstalling plugin: $n@$MARKETPLACE"
+    # Uninstall is best-effort: a not-yet-installed plugin makes it exit non-zero, and the
+    # install below is what actually matters, so swallow it and proceed.
+    claude plugin uninstall "$n@$MARKETPLACE" \
+      || info "uninstall $n@$MARKETPLACE non-zero (plugin may be absent; proceeding to install)"
+    # Install is load-bearing: if it fails after a successful uninstall the plugin is now
+    # GONE locally — surface loudly and mark the reload failed rather than swallowing it.
+    if ! claude plugin install "$n@$MARKETPLACE"; then
+      info "ERROR: install $n@$MARKETPLACE failed — plugin may now be UNINSTALLED locally; reinstall it manually"
+      failed=1
+    fi
   done
+  [[ "$failed" == "0" ]] \
+    || die "one or more plugins failed to reinstall (see above); fix them before restarting Claude Code"
   info "reload done — restart Claude Code to apply updated plugins"
 }
 

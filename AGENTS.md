@@ -105,9 +105,18 @@ scripts/ship_plugin.sh land                      # merge-if-clean, then reload c
 ```
 
 `land` re-checks GitHub mergeability and refuses on `DIRTY`/`BEHIND`/`BLOCKED`; it then runs
-`claude plugin marketplace update ha0wan9-skills` and `claude plugin update <changed-plugins>`
-(use `scripts/ship_plugin.sh changed-plugins` to see the set). Plugin updates require a Claude
-Code restart to take effect — surface that reminder after a successful land.
+`claude plugin marketplace update ha0wan9-skills` and **reinstalls** each changed plugin —
+`claude plugin uninstall <plugin>@ha0wan9-skills` (best-effort) then `claude plugin install
+<plugin>@ha0wan9-skills` (use `scripts/ship_plugin.sh changed-plugins` to see the set).
+Reinstall rather than `claude plugin update`, because `update` is a no-op when the manifest
+version is unchanged (it reports "already at the latest version" and the materialized cache
+copy stays stale), so same-version edits would never reload. The uninstall is best-effort (a
+not-yet-installed plugin fails it harmlessly); the **install is load-bearing** — if it fails
+after a successful uninstall the plugin is left removed locally, so `reload` exits non-zero
+and refuses to report success. Plugin names in `installed_plugins.json` are
+marketplace-qualified, so the `@ha0wan9-skills` suffix is required — the bare name fails with
+"not found". Plugin reloads require a Claude Code restart to take effect — surface that
+reminder after a successful land.
 
 This is a personal workflow default for repo edits; for anything outside the validated-edit
 loop (release tagging, bulk refactors, destructive history rewrites) fall back to asking first.
