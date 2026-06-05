@@ -24,6 +24,7 @@ The `/project-meta <command>` route table maps verbs to recipe files:
 | `/project-meta validate` | read-only | [`recipes/validate.md`](../recipes/validate.md) |
 | `/project-meta deliver` | read-only | [`recipes/deliver.md`](../recipes/deliver.md) |
 | `/project-meta audit` | read-only by default | [`recipes/audit.md`](../recipes/audit.md) |
+| `/project-meta settings` | editing (read-only view by default) | [`recipes/settings.md`](../recipes/settings.md) |
 
 **`plan` readiness keyword.** `/project-meta plan` writes a falsifiable build plan at one
 of two tiers. The default `floor` tier mandates the §6 per-item verification matrix
@@ -62,7 +63,7 @@ These commands are useful but should stay reserved until the core set proves sta
 
 If a user invokes a reserved command, explain that it is reserved, then either map it to the closest supported command or ask before proceeding. Do not silently invoke a related command.
 
-Promotion path: when a reserved command sees consistent demand and a stable workflow shape, promote it by adding `recipes/<verb>.md` and an entry in the route table above.
+Promotion path: when a reserved command sees consistent demand and a stable workflow shape, promote it by adding `recipes/<verb>.md` and an entry in the route table above. `settings` was promoted this way and now owns the **profile + capability toggles** (`recipes/settings.md`). Keep the reserved verbs disjoint from it: if `doctor` is promoted it owns *health checks + repairs* (read-then-suggest), not toggles; `sync` owns *mirror regeneration*, which `settings` may invoke when toggling the multi-host capability but does not duplicate.
 
 ## Shared Command Rules
 

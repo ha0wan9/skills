@@ -17,7 +17,7 @@ Keep this file as the skill entrypoint. Load the linked reference files only as 
 
 Use this skill for any of these triggers:
 
-- Command trigger: the user says `/project-meta <command>`, especially `init`, `plan`, `status`, `validate`, `deliver`, or `audit`.
+- Command trigger: the user says `/project-meta <command>`, especially `init`, `plan`, `status`, `validate`, `deliver`, `audit`, or `settings`.
 - Bootstrap trigger: entering a repo or project where agent instructions, memory, or read order matter.
 - Memory trigger: creating, repairing, splitting, pruning, or syncing canonical memory files.
 - Harness trigger: improving agent instructions, behavior guardrails, validation loops, or project-specific operating rules.
@@ -25,6 +25,7 @@ Use this skill for any of these triggers:
 - Iteration trigger: a project lesson, failure, review finding, or recurring workflow should become durable guidance.
 - Coordination trigger: the user explicitly asks for multi-agent work, or task complexity warrants planning, delegated execution, and review.
 - User-preference trigger: the user asks to create, reset, or change local `USER.md` options.
+- Settings trigger: the user asks to view or change the harness enforcement profile (`HARNESS_PROFILE`) or to enable/disable an optional capability (hooks, phase-lock, multi-host, issue-tracker) after init — route to `settings`, not a full `init`.
 
 Do not use the skill for ordinary implementation work that does not touch project memory, operating rules, coordination, or durable knowledge.
 
@@ -114,6 +115,7 @@ When the user invokes `/project-meta <command>`, route via the recipes directory
 | `validate` | read-only | [`recipes/validate.md`](recipes/validate.md) |
 | `deliver` | read-only | [`recipes/deliver.md`](recipes/deliver.md) |
 | `audit` | read-only by default | [`recipes/audit.md`](recipes/audit.md) |
+| `settings` | editing (read-only view by default) | [`recipes/settings.md`](recipes/settings.md) |
 
 Cross-cutting policy (route contract, reserved verbs, shared rules, implementation risks) lives in [`references/cli-command-patterns.md`](references/cli-command-patterns.md). Recipes own *how each verb works*; that reference owns *what's true across all verbs*.
 
@@ -176,6 +178,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`templates/phase-lock-contract.md`](templates/phase-lock-contract.md). Run `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` to verify gates locally; the script is also the Stop-hook payload.
 - Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), or switching `HARNESS_PROFILE` between minimal/standard/strict:
   - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
+- Wiring a repo to an external issue tracker (Linear/GitHub/Jira) so feature work is mirrored — check-first / write-progress-back / open-if-missing — or installing/auditing the `issue-tracker` capability and its advisory reminder hook:
+  - load [`references/issue-tracking-integration.md`](references/issue-tracking-integration.md), then instantiate [`templates/issue-tracking.md`](templates/issue-tracking.md). Install via `/project-meta init --issue-tracker <tracker>` or `/project-meta settings enable issue-tracker`.
 - Generating per-host plugin manifests (`.claude/`, `.cursor/`, `.opencode/`, `.github/copilot-instructions.md`, `gemini-extension.json`) from one canonical AGENTS.md / CLAUDE.md, or detecting drift between canonical and a hand-edited mirror:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 - Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:

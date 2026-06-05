@@ -20,6 +20,9 @@ Checks (each marked PASS, WARN, or FAIL):
   rules that are missing from AGENTS.md.
 - Execution rules are present when AGENTS.md mentions bounded-execution
   agents, hard stops, or `agents/execution-rules.md`.
+- Issue-tracker capability, when installed, is fully wired: the doc is routed
+  from canonical memory and the advisory hook (if present) has its doc and is
+  wired in settings.json. A half-installed capability is a FAIL.
 
 This validator does not enforce runtime safety. It checks that the *policy*
 artifacts a target repo should ship are present and well-formed. Runtime
@@ -44,6 +47,7 @@ KNOWN_INSTANTIATED_ARTIFACTS = {
     "agents/memory-writeback-check.md",
     "agents/project-artifacts.md",
     "agents/execution-rules.md",
+    "agents/issue-tracking.md",
 }
 
 REQUIRED_PROVENANCE_FIELDS = (
@@ -320,6 +324,78 @@ def check_execution_rules(root: Path) -> Finding:
     )
 
 
+def check_issue_tracker(root: Path) -> Finding:
+    """Issue-tracker capability integrity: a capability is on iff fully wired.
+
+    - Not installed (no doc, no hook) -> PASS (skipped).
+    - Doc present but not routed from canonical memory -> FAIL (half-install).
+    - Reminder hook present without its doc -> FAIL (hook without workflow).
+    - Reminder hook present but not wired in settings.json -> WARN.
+    Provenance of agents/issue-tracking.md is covered by check_artifact_provenance.
+    """
+    doc = root / "agents" / "issue-tracking.md"
+    hook = root / ".claude" / "hooks" / "issue-tracker-reminder.sh"
+    doc_present = doc.is_file()
+    hook_present = hook.is_file()
+
+    if not doc_present and not hook_present:
+        return Finding(
+            "issue-tracker capability",
+            "PASS",
+            "not installed (skipping)",
+        )
+
+    issues: list[str] = []
+
+    if hook_present and not doc_present:
+        issues.append(
+            "reminder hook installed but agents/issue-tracking.md is missing "
+            "(hook without workflow)"
+        )
+
+    if doc_present:
+        routed = False
+        for memory_name in ("AGENTS.md", "CLAUDE.md"):
+            memory = root / memory_name
+            if memory.is_file():
+                text = memory.read_text(encoding="utf-8", errors="replace")
+                # Require a pointer to the artifact path, not the bare stem — an
+                # incidental mention of "issue-tracking" must not count as routing.
+                if "agents/issue-tracking.md" in text:
+                    routed = True
+                    break
+        if not routed:
+            issues.append(
+                "agents/issue-tracking.md present but not routed (no pointer to "
+                "agents/issue-tracking.md in AGENTS.md / CLAUDE.md) — half-install"
+            )
+
+    if issues:
+        return Finding("issue-tracker capability", "FAIL", "; ".join(issues))
+
+    if hook_present:
+        settings = root / ".claude" / "settings.json"
+        wired = (
+            settings.is_file()
+            and "issue-tracker-reminder" in settings.read_text(
+                encoding="utf-8", errors="replace"
+            )
+        )
+        if not wired:
+            return Finding(
+                "issue-tracker capability",
+                "WARN",
+                "reminder hook script present but not wired under UserPromptSubmit "
+                "in .claude/settings.json",
+            )
+
+    return Finding(
+        "issue-tracker capability",
+        "PASS",
+        "installed and wired (doc routed" + (", hook wired" if hook_present else "") + ")",
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -344,6 +420,7 @@ def main(argv: list[str] | None = None) -> int:
         check_artifact_provenance(root),
         check_mirror_alignment(root),
         check_execution_rules(root),
+        check_issue_tracker(root),
     ]
     for finding in findings:
         print(finding.render())
