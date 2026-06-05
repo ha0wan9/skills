@@ -70,7 +70,7 @@ Optional, when the user passes feature flags:
    - `templates/execution-rules.md` → `agents/execution-rules.md` (when bounded-execution agents will operate)
    - `templates/pre-commit-delivery.md` → `agents/pre-commit-delivery.md` (always)
    - `templates/readme-structure-map.md` → `agents/readme-structure.md` (when README is structurally important)
-   - `templates/project-artifact-manifest.md` → `agents/project-artifact-manifest.md` (always; tracks instantiated artifacts)
+   - `templates/project-artifact-manifest.md` → `agents/project-artifacts.md` (always; tracks instantiated artifacts)
    - `templates/memory-writeback-check.md` → `agents/memory-writeback-check.md` (always)
    - Each instantiated artifact MUST carry the YAML provenance frontmatter (`instantiated_from`, `source_reference`, `owner`, `review_policy`, `last_reviewed`).
 
