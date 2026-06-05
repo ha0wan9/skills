@@ -14,7 +14,10 @@ a thin floor (see [`shared-cli-delegation.md`](shared-cli-delegation.md)).
 - **Read leg (session start / before substantive work).** Resolve the canonical
   entrypoint (`CLAUDE.md` when Claude Code is primary, else `AGENTS.md`), read
   it, and load only the topical `agents/*.md` the task needs. Mechanized by
-  `repo_memory.py --target-root . read`.
+  `repo_memory.py --target-root . read`. In repos that accumulate git worktrees,
+  pair this with the **Worktree Trim Contract** (gather via
+  `worktree_audit.py`, then trim/surface/route) — see
+  [`worktree-hygiene.md`](worktree-hygiene.md).
 - **Write-back leg (turn close).** If the turn changed substantive files,
   decide **write now / suggest only / skip** for any durable lesson before
   ending. Mechanized by `repo_memory.py --target-root . writeback`: it flags a

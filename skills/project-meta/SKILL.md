@@ -53,6 +53,8 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/writing-skills.md`](references/writing-skills.md)
    - [`references/multi-host-manifests.md`](references/multi-host-manifests.md)
    - [`references/pressure-testing.md`](references/pressure-testing.md)
+   - [`references/worktree-hygiene.md`](references/worktree-hygiene.md)
+9. Near session start, before substantive work, run the **Worktree Trim Contract** when the repo carries git worktrees: `python3 scripts/worktree_audit.py --target-root . --base <base>`, then trim stale, surface in-progress, and route mergeable per [`references/worktree-hygiene.md`](references/worktree-hygiene.md).
 
 ## Core Rules
 
