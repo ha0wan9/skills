@@ -1,10 +1,10 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "978b6a91bef38c821a0191813f12062bff107354a625fbfd5e833d27c0231247",
-    "rev": 11,
+    "items_sha256": "c5c2fcb2f59defa985c0ae829d6851f04392be138797d7c51c4304565e376dd9",
+    "rev": 15,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-06-06T20:08:22Z"
+    "updated_at": "2026-06-06T20:35:58Z"
   },
   "milestones": [
     {
@@ -36,7 +36,7 @@
         "DASH-24",
         "DASH-25"
       ],
-      "status": "now",
+      "status": "done",
       "title": "Roadmap and review layer",
       "version": "v0.2"
     },

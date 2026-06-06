@@ -490,6 +490,165 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+_INLINE_CODE = re.compile(r"`([^`]+)`")
+_BOLD = re.compile(r"\*\*([^*]+)\*\*")
+_ITALIC = re.compile(r"(?<!\*)\*([^*\s][^*]*?)\*(?!\*)")
+_LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+_WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")
+
+
+def _esc_html(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-") or "page"
+
+
+def _md_inline(text: str) -> str:
+    """Inline Markdown on already-HTML-escaped text. Code spans are protected first so
+    formatting inside them is left literal."""
+    spans: list[str] = []
+
+    def stash(m: "re.Match[str]") -> str:
+        spans.append(f"<code>{m.group(1)}</code>")
+        return f"\x00{len(spans) - 1}\x00"
+
+    text = _INLINE_CODE.sub(stash, text)
+    text = _WIKILINK.sub(lambda m: f'<a href="#doc-{_slug(m.group(1))}" data-wikilink="{_slug(m.group(1))}">{m.group(1)}</a>', text)
+    text = _LINK.sub(lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>', text)
+    text = _BOLD.sub(r"<strong>\1</strong>", text)
+    text = _ITALIC.sub(r"<em>\1</em>", text)
+    for i, span in enumerate(spans):
+        text = text.replace(f"\x00{i}\x00", span)
+    return text
+
+
+def md_to_html(md: str) -> tuple[str, list[dict[str, Any]]]:
+    """Minimal, dependency-free Markdown -> HTML (DASH-25). Supports ATX headings, fenced
+    code, ordered/unordered lists, blockquotes, hr, paragraphs, and inline code/bold/italic/
+    links/[[wikilinks]]. The whole source is HTML-escaped first, so the only tags in the
+    output are the ones this renderer emits — doc content cannot inject markup."""
+    lines = _esc_html(md).split("\n")
+    out: list[str] = []
+    headings: list[dict[str, Any]] = []
+    para: list[str] = []
+    list_type: str | None = None
+    in_code = False
+    code_buf: list[str] = []
+
+    def flush_para() -> None:
+        if para:
+            out.append("<p>" + _md_inline(" ".join(para)) + "</p>")
+            para.clear()
+
+    def close_list() -> None:
+        nonlocal list_type
+        if list_type:
+            out.append(f"</{list_type}>")
+            list_type = None
+
+    for raw in lines:
+        stripped = raw.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            if in_code:
+                out.append("<pre><code>" + "\n".join(code_buf) + "</code></pre>")
+                code_buf = []
+                in_code = False
+            else:
+                flush_para()
+                close_list()
+                in_code = True
+            continue
+        if in_code:
+            code_buf.append(raw)
+            continue
+        if not stripped:
+            flush_para()
+            close_list()
+            continue
+        m = re.match(r"(#{1,6})\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            close_list()
+            level = len(m.group(1))
+            text = m.group(2).strip()
+            slug = _slug(text)
+            headings.append({"level": level, "text": text, "slug": slug})
+            out.append(f'<h{level} id="h-{slug}">{_md_inline(text)}</h{level}>')
+            continue
+        if re.match(r"(-{3,}|\*{3,}|_{3,})$", stripped):
+            flush_para()
+            close_list()
+            out.append("<hr>")
+            continue
+        m = re.match(r"[-*+]\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            if list_type != "ul":
+                close_list()
+                out.append("<ul>")
+                list_type = "ul"
+            out.append("<li>" + _md_inline(m.group(1)) + "</li>")
+            continue
+        m = re.match(r"\d+\.\s+(.*)$", stripped)
+        if m:
+            flush_para()
+            if list_type != "ol":
+                close_list()
+                out.append("<ol>")
+                list_type = "ol"
+            out.append("<li>" + _md_inline(m.group(1)) + "</li>")
+            continue
+        if stripped.startswith("&gt;"):  # blockquote (">" was HTML-escaped)
+            flush_para()
+            close_list()
+            out.append("<blockquote>" + _md_inline(stripped[4:].strip()) + "</blockquote>")
+            continue
+        para.append(stripped)
+
+    if in_code:  # unterminated fence — emit what we have
+        out.append("<pre><code>" + "\n".join(code_buf) + "</code></pre>")
+    flush_para()
+    close_list()
+    return "\n".join(out), headings
+
+
+def _doc_title(md: str, fallback: str) -> str:
+    for line in md.split("\n"):
+        m = re.match(r"#\s+(.*)$", line.strip())
+        if m:
+            return m.group(1).strip()
+    return fallback
+
+
+def collect_docs(root: Path) -> list[dict[str, Any]]:
+    """README.md + top-level docs/*.md, rendered to HTML for the dashboard wiki (DASH-25).
+    A derived view — the Markdown source stays canonical."""
+    candidates: list[Path] = []
+    readme = root / "README.md"
+    if readme.is_file():
+        candidates.append(readme)
+    docs_dir = root / "docs"
+    if docs_dir.is_dir():
+        candidates += sorted(p for p in docs_dir.glob("*.md") if p.is_file())
+    docs: list[dict[str, Any]] = []
+    for path in candidates:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        body, headings = md_to_html(text)
+        stem = "readme" if path.name == "README.md" else path.stem
+        docs.append(
+            {
+                "slug": _slug(stem),
+                "title": _doc_title(text, path.stem),
+                "path": str(path.relative_to(root)),
+                "html": body,
+                "headings": headings,
+            }
+        )
+    return docs
+
+
 def dashboard_data(root: Path) -> dict[str, Any]:
     p = paths(root)
     rows, roadmap, errors = validate_store(root)
@@ -513,6 +672,7 @@ def dashboard_data(root: Path) -> dict[str, Any]:
         "counts": counts,
         "items": rows,
         "roadmap": roadmap,
+        "docs": collect_docs(root),
     }
 
 

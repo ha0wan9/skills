@@ -48,6 +48,10 @@ None by default. Lazy-load only when status detection surfaces something needing
    - Hooks installed? (`<repo>/.claude/hooks/` + settings.json)
    - Phase-lock contract installed? (`agents/phase-lock-contract.md` + `.harness/`)
    - Multi-host manifests present?
+   - **Project Board present?** (`docs/backlog/items.jsonl`) — if so, surface it read-only:
+     `python3 scripts/board.py tx --root .` (integrity + item count + roadmap rev) and, for the
+     version timeline, `python3 scripts/board.py list --root . --version <vX>`. Never mutate
+     during status. The dashboard (`docs/dashboard.html`) is the derived view.
 
 8. **Inspect validation**:
    - Is `scripts/validate_target_harness.py` runnable against this repo?
@@ -65,7 +69,7 @@ Concise summary, ≤30 lines, covering:
 - Shared/user-facing docs (size, structure-map presence)
 - Agent-facing docs (count, provenance compliance)
 - Mirrors (canonical match status, drift warnings)
-- Capabilities installed: hooks / phase-lock / multi-host
+- Capabilities installed: hooks / phase-lock / multi-host / project board
 - Validation: last-run status, command to run now
 - Known gaps (bullet list)
 - Recommended next command (`init`, `validate`, `audit`, or specific repair)
@@ -93,4 +97,7 @@ ls .claude/hooks/*.sh 2>&1 | head
 
 # phase-lock state
 [ -f .harness/phase-state.json ] && jq -r '.phase' .harness/phase-state.json
+
+# project board (if present) — read-only integrity + counts
+[ -f docs/backlog/items.jsonl ] && python3 scripts/board.py tx --root .
 ```

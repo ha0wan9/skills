@@ -1267,6 +1267,52 @@ def check_inbox_concurrency() -> None:
         require(len({r['id'] for r in rows}) == n, "concurrent appends must not lose or duplicate rows")
 
 
+def check_dashboard_wiki() -> None:
+    """DASH-25: README + docs/*.md render into the dashboard as a derived wiki, and a
+    </script> in doc content cannot break out of the embedded data."""
+    with tempfile.TemporaryDirectory() as td:
+        target_root = Path(td) / "repo"
+        run_python_script_result("scripts/board.py", "init", "--root", str(target_root))
+        (target_root / "README.md").write_text("# Proj\n\nSee [[Guide]].\n\n## Setup\n- a\n", encoding="utf-8")
+        (target_root / "docs").mkdir(exist_ok=True)
+        (target_root / "docs" / "guide.md").write_text("# Guide\n\nUse `x`, beware `</script>`.\n", encoding="utf-8")
+        r = run_python_script_result("scripts/board.py", "render", "--root", str(target_root))
+        require(r.returncode == 0, f"render with docs failed: {r.stderr}")
+        html = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        require(html.count("</script>") == 1, "doc content must not add a second </script> (breakout guard)")
+        m = re.search(r"const BOARD_DATA = (\{.*?\});", html, re.DOTALL)
+        require(m is not None, "dashboard must embed BOARD_DATA")
+        docs = {d["slug"]: d for d in json.loads(m.group(1)).get("docs", [])}
+        require("readme" in docs and "guide" in docs, "wiki must collect README + docs/*.md")
+        require("<li>a</li>" in docs["readme"]["html"], "wiki must render markdown lists")
+        require('data-wikilink="guide"' in docs["readme"]["html"], "wiki must render [[wikilinks]]")
+        require("&lt;/script&gt;" in docs["guide"]["html"], "wiki must HTML-escape </script> in doc content")
+
+
+def check_capture_hook() -> None:
+    """DASH-02: the capture hook is dry-run-first — logs a candidate, never writes the
+    canonical store; HARNESS_PROFILE=minimal disables it; always exits 0."""
+    import os
+
+    hook = ROOT / "templates" / "hooks" / "scripts" / "capture-out-of-scope.sh"
+    require(hook.is_file(), "capture-out-of-scope.sh must exist")
+    with tempfile.TemporaryDirectory() as td:
+        env = {k: v for k, v in os.environ.items() if k != "HARNESS_PROFILE"}
+        env.update({"BOARD_ROOT": td, "BOARD_CAPTURE_MODE": "dryrun"})
+        r = subprocess.run(["bash", str(hook)], input='{"event":"SessionEnd"}', capture_output=True, text=True, env=env)
+        require(r.returncode == 0, f"capture hook must exit 0: {r.stderr}")
+        backlog = Path(td) / "docs" / "backlog"
+        require((backlog / ".capture-dryrun.log").is_file(), "dry-run capture must write a candidate log")
+        require(not (backlog / "items.jsonl").exists(), "capture must NOT write items.jsonl")
+        require(not (backlog / "roadmap.json").exists(), "capture must NOT write roadmap.json")
+        require(not (backlog / "inbox.jsonl").exists(), "dry-run capture must NOT write inbox.jsonl")
+    with tempfile.TemporaryDirectory() as td:
+        env = {**os.environ, "BOARD_ROOT": td, "HARNESS_PROFILE": "minimal"}
+        r = subprocess.run(["bash", str(hook)], input="{}", capture_output=True, text=True, env=env)
+        require(r.returncode == 0, "capture hook (minimal) must exit 0")
+        require(not (Path(td) / "docs" / "backlog" / ".capture-dryrun.log").exists(), "minimal profile must disable capture")
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1286,6 +1332,8 @@ CHECKS = (
     check_board_cli,
     check_review_tier,
     check_inbox_concurrency,
+    check_dashboard_wiki,
+    check_capture_hook,
 )
 
 

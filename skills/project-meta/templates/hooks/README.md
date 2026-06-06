@@ -162,6 +162,37 @@ this; it is not in `settings.json.fragment` because it is opt-in):
 ]
 ```
 
+### `capture-out-of-scope.sh` — SessionEnd (optional, Project Board DASH-02)
+
+Autonomous out-of-scope capture for the **Project Board** — **dry-run first**. On session
+end it records a *candidate* capture so out-of-scope features/bugs are not lost. Opt-in: not
+in `settings.json.fragment`.
+
+**Dry-run is the only shipped mode** (`BOARD_CAPTURE_MODE=dryrun`, default): it appends a
+marker to `docs/backlog/.capture-dryrun.log` and **never** calls a model or writes the store
+(`items.jsonl` / `roadmap.json` / `inbox.jsonl`). `BOARD_CAPTURE_MODE=append` is a documented
+**not-yet-implemented** opt-in that would classify via `claude -p --model sonnet` and atomically
+append a `fuzzy` row to `inbox.jsonl` only — gated on a false-positive/approval story (see
+`docs/backlog/project-board-system.md` Open questions). Promote captured items with
+`board.py promote` → `refine` (DASH-23). Capture is append-only and multi-instance-safe
+(DASH-24); all mutation of existing rows happens later at the single-writer refine gate.
+
+- `minimal`: disabled (exit 0)
+- `standard` / `strict`: dry-run logging (append mode stays opt-in regardless of profile)
+
+Always exits 0 — a capture hook must never fail a session. Wire under `SessionEnd`:
+
+```json
+"SessionEnd": [
+  {
+    "matcher": "*",
+    "hooks": [
+      { "type": "command", "command": "bash .claude/hooks/capture-out-of-scope.sh" }
+    ]
+  }
+]
+```
+
 ## Profile Selection Guidance
 
 | Profile | When to use |
