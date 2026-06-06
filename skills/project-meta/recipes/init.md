@@ -39,6 +39,7 @@ Optional, when the user passes feature flags:
 - `--hooks`: load [`templates/hooks/README.md`](../templates/hooks/README.md)
 - `--multi-host`: invoke `scripts/render_host_manifests.py`
 - `--issue-tracker <tracker>`: load [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md), then [`templates/issue-tracking.md`](../templates/issue-tracking.md)
+- `--board`: load [`docs/backlog/project-board-system.md`](../../../docs/backlog/project-board-system.md) (the Project Board design) — scaffold the repo-canonical backlog + dashboard via `scripts/board.py`
 
 ## Workflow
 
@@ -79,6 +80,7 @@ Optional, when the user passes feature flags:
    - `--hooks`: install hooks for the primary host. Claude Code primary: copy `templates/hooks/scripts/*.sh` to `<target>/.claude/hooks/`; merge `templates/hooks/settings.json.fragment` into `<target>/.claude/settings.json`; set `HARNESS_PROFILE=standard` default. Codex primary: run `python3 <project-meta>/scripts/install_codex_hooks.py --project-meta-dir <project-meta> --profile standard` to merge `~/.codex/hooks.json` and copy scripts under `~/.codex/hooks/project-meta/`. Do not pre-seed Codex hook trust hashes; let Codex ask the user to trust new commands on first run.
    - `--multi-host`: run `python3 scripts/render_host_manifests.py --target-root <repo>` to emit `.codex/`, `.opencode/`, `gemini-extension.json`, etc. Add `--hosts codex-subagents` to also emit `.codex/agents/{explorer,worker,reviewer}.toml` role configs — the Codex-side mechanical backing of the dispatch protocol (opt-in; not in the default host set).
    - `--issue-tracker <tracker>`: install the issue-tracking capability per [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md). Instantiate `templates/issue-tracking.md` → `agents/issue-tracking.md` with full provenance and the concrete tracker binding (ask the user for tracker/team/project/labels — outward-facing, confirm before writing); add a Topic Routing pointer from the canonical memory file and a closeout line in `agents/memory-writeback-check.md`; register it in `agents/project-artifacts.md`. If `--hooks` is also installed, copy `templates/hooks/scripts/issue-tracker-reminder.sh` and merge the `UserPromptSubmit` block from `templates/hooks/README.md` into `settings.json`. The reminder hook is **advisory only** — it never queries or gates on the tracker.
+   - `--board`: scaffold the Project Board — `python3 scripts/board.py init --root <repo>` (creates `docs/backlog/` store + derived `docs/dashboard.html`). Optionally wire the dry-run capture hook (`templates/hooks/scripts/capture-out-of-scope.sh` under `SessionEnd`, off by default). Grooming uses `/project-meta roadmap`; item refinement uses [`recipes/refine.md`](refine.md). The store is repo-canonical; the dashboard is always derived (never hand-edited).
 
 7. **Wire `.gitignore`** for `USER.md` (and the accidental root `USER.template.md`) before any of those files exist. The `.gitignore.template` from this skill or an equivalent rule must merge in.
 

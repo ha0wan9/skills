@@ -51,9 +51,14 @@ Lazy-load:
    <or "no behavior changes">
 
    ### Validation
-   <validate_target_harness.py exit code + summary>
+   <validate_target_harness.py exit code + summary — includes the `project board` finding when a board store is present>
    <project verifier output if .harness/verify.sh exists>
    <phase-lock check if installed>
+
+   ### Project board (when docs/backlog/ is in the change set)
+   <python3 scripts/board.py tx --root . — store integrity + item count + roadmap rev>
+   <confirm docs/dashboard.html was re-rendered from the store (derived, not hand-edited); a stale dashboard is a delivery WARN>
+   <or omit this section when the board is not touched>
 
    ### Commit scope
    <git diff --stat output>

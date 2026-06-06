@@ -396,6 +396,36 @@ def check_issue_tracker(root: Path) -> Finding:
     )
 
 
+def check_project_board(root: Path) -> Finding:
+    """Project Board store (DASH-17). Optional capability:
+    - No store (docs/backlog/items.jsonl absent) -> PASS (skipped).
+    - items.jsonl + roadmap.json parse and the roadmap items hash is current -> PASS.
+    - Store present but unparseable -> FAIL; roadmap missing/stale -> WARN (run board.py render).
+    """
+    import hashlib
+    import json
+
+    items = root / "docs" / "backlog" / "items.jsonl"
+    if not items.is_file():
+        return Finding("project board", "PASS", "no board store (skipped)")
+    try:
+        rows = [json.loads(line) for line in items.read_text(encoding="utf-8").split("\n") if line.strip()]
+    except (json.JSONDecodeError, OSError) as exc:
+        return Finding("project board", "FAIL", f"items.jsonl unparseable: {exc}")
+    roadmap_path = root / "docs" / "backlog" / "roadmap.json"
+    if not roadmap_path.is_file():
+        return Finding("project board", "WARN", "items.jsonl present but roadmap.json missing")
+    try:
+        roadmap = json.loads(roadmap_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return Finding("project board", "FAIL", f"roadmap.json unparseable: {exc}")
+    expected = roadmap.get("_meta", {}).get("items_sha256")
+    actual = hashlib.sha256(items.read_bytes()).hexdigest()
+    if expected and expected != actual:
+        return Finding("project board", "WARN", "roadmap items_sha256 is stale (run board.py render)")
+    return Finding("project board", "PASS", f"store healthy ({len(rows)} items)")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -421,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
         check_mirror_alignment(root),
         check_execution_rules(root),
         check_issue_tracker(root),
+        check_project_board(root),
     ]
     for finding in findings:
         print(finding.render())
