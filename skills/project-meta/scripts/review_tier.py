@@ -33,8 +33,16 @@ LEVELS = ("L0", "L1", "L2", "L3")
 PROFILES = ("minimal", "standard", "strict")
 
 # Paths whose change implies the harness floor (L2): agent-facing canon + contracts.
-HARNESS_PREFIXES = ("references/", "templates/", "agents/", "recipes/")
-HARNESS_FILES = ("SKILL.md", "AGENTS.md", "USER.md", ".claude-plugin/marketplace.json")
+# Matched by path SEGMENT (anywhere in the path) so it works both in a target project
+# (harness at repo root: agents/, AGENTS.md) and in this dev repo where the harness lives
+# under skills/<name>/{references,recipes,templates}/.
+HARNESS_DIRS = {"references", "templates", "agents", "recipes"}
+HARNESS_FILES = {"SKILL.md", "AGENTS.md", "USER.md", "marketplace.json"}
+
+
+def _is_harness_path(path: str) -> bool:
+    parts = path.split("/")
+    return any(part in HARNESS_DIRS for part in parts) or (parts[-1] in HARNESS_FILES if parts else False)
 
 
 def _git(args: list[str], cwd: Path) -> str | None:
@@ -67,10 +75,7 @@ def signals_from_diff(diff_range: str, cwd: Path) -> dict:
             if n.isdigit():
                 lines += int(n)
     name_list = [n for n in names.splitlines() if n.strip()]
-    harness_hit = any(
-        n.startswith(HARNESS_PREFIXES) or Path(n).name in HARNESS_FILES or n in HARNESS_FILES
-        for n in name_list
-    )
+    harness_hit = any(_is_harness_path(n) for n in name_list)
     new_skill = any(
         line.startswith("A") and line.rstrip().endswith("SKILL.md")
         for line in (status or "").splitlines()

@@ -1184,14 +1184,14 @@ def check_review_tier() -> None:
         (("--new-skill", "--profile", "strict"), "L3"),
         (("--new-skill", "--profile", "minimal"), "L3"),  # high stakes must not de-escalate
     )
-    out = ""
     for cli_args, expected in cases:
         out = run_python_script("scripts/review_tier.py", *cli_args)
         require(
             f"suggested floor: {expected}" in out,
             f"review_tier.py {cli_args} expected {expected}; got: {out.splitlines()[0] if out else '<none>'}",
         )
-    require("ESCALATE on judgment" in out, "review_tier.py must always print the escalation caveat")
+        # The escalation caveat must print for EVERY level, not just the last case.
+        require("ESCALATE on judgment" in out, f"review_tier.py {cli_args} must print the escalation caveat")
 
 
 def check_inbox_concurrency() -> None:
