@@ -16,7 +16,6 @@ import argparse
 import contextlib
 import datetime as dt
 import hashlib
-import html
 import json
 import os
 import re
@@ -630,11 +629,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_move.add_argument("--version")
     p_move.set_defaults(func=cmd_move)
 
-    for name in ("defer", "trim", "wontfix"):
+    for name, disposition in {"defer": "deferred", "trim": "trimmed", "wontfix": "wontfix"}.items():
         p_disp = sub.add_parser(name)
         add_common(p_disp)
         p_disp.add_argument("id")
-        disposition = "trimmed" if name == "trim" else name
         p_disp.set_defaults(func=cmd_disposition, disposition=disposition)
 
     p_edit = sub.add_parser("edit")

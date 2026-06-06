@@ -1154,6 +1154,17 @@ def check_board_cli() -> None:
         )
         require("\\u003c/script" in html_xss, "dashboard must emit escaped \\u003c for <")
 
+        # Regression: every disposition verb must map to a value in DISPOSITION_VALUES
+        # (the `defer`->`deferred` mapping was previously wrong, failing validation).
+        for verb, expected in (("defer", "deferred"), ("trim", "trimmed"), ("wontfix", "wontfix")):
+            d = run_python_script_result("scripts/board.py", verb, "TEST-001", "--root", str(target_root))
+            require(d.returncode == 0, f"board {verb} failed: {d.stderr}")
+            listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+            require(
+                f'"disposition": "{expected}"' in listing,
+                f"board {verb} must persist disposition={expected}",
+            )
+
 
 CHECKS = (
     check_required_files,
