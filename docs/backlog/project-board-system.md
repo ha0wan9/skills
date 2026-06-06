@@ -68,11 +68,19 @@ For a chosen milestone (e.g. v0.2): produce a **task decomposition** (reuse the 
 
 ### DASH-10 — The orchestration contract artifact
 `feat · target: v0.3 · Opus/main`
-A **committed, reviewable contract** signed ahead of the run, per task: model tier (**Opus** for hard tasks vs **Sonnet** for broadly-parallel ones), which tasks parallelize, the **orchestrator's effort level**, **human-in-the-loop** checkpoints, and where **multi-agent critical review** is required (review intensity per the DASH-19 levels).
+A **committed, reviewable contract** signed ahead of the run, per task: model tier (**Opus** for hard tasks vs **Sonnet** for broadly-parallel ones), which tasks parallelize, the **orchestrator's effort level**, **human-in-the-loop** checkpoints, where **multi-agent critical review** is required (review intensity per the DASH-19 levels), and the **per-step + whole-plan cost/runtime forecast** (DASH-22).
 
 ### DASH-11 — Contract → engine handoff
 `infra · target: v0.3 · engine`
 Emit the contract to **`/workflows`** (+ `/loop`). AP-COORD-7: **contract = policy, engine = mechanism — no self-built run loop**. This is the AP-COORD-7-compliant replacement for the KILL'd `autopilot` run-engine.
+
+### DASH-22 — Cost & runtime forecast (per-step + whole-plan)
+`feat · target: v0.3 · CLI/Sonnet`
+At `orchestrate` time, forecast **before signing the contract** so the operator can review and adjust:
+- **Per step:** estimated **token consumption** (task size/scope × model tier × parallel fan-out × review level — DASH-19) and **wall-clock**.
+- **Whole plan:** aggregate **token total** + estimated **runtime** = the dependency-ordered **critical path** (accounting for parallelism), not the naïve sum.
+
+Surfaced in the contract as **ranges** (low / expected / high), never false-precision points. Lets the operator trade off interactively — e.g. drop a step to Sonnet, shrink a parallel pool, or lower a review level when the forecast is too expensive. **Reuse/extend `scripts/context_cost_estimate.py`**; feed the forecast into the `/workflows` `budget` and `execution-policy` soft-budget gates. Record forecast-vs-actuals post-run to calibrate future estimates (ties `dispatch_ledger` + AP-COORD-6 retro-inspect).
 
 ---
 
@@ -139,4 +147,4 @@ Levels are consumed by existing review surfaces, not a parallel system: `audit`/
 
 ---
 
-_21 entries. Tentative `target`s are placeholders; real version assignment + stale-trim happens in `roadmap` grooming (DASH-08)._
+_22 entries. Tentative `target`s are placeholders; real version assignment + stale-trim happens in `roadmap` grooming (DASH-08)._
