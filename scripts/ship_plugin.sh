@@ -180,6 +180,8 @@ PY
 # check-version — the gate. Every changed plugin must have a strictly higher
 # marketplace.json version than on the base branch; a change that touches no
 # plugin (root/infra only) must bump the marketplace metadata.version instead.
+# A brand-new plugin (absent on the base branch) passes on first appearance with
+# any valid semver — there is no base version to exceed.
 cmd_check_version() {
   local plugins; plugins="$(_changed_plugins || true)"
   python3 - "$REPO_ROOT" "$BASE_BRANCH" "$plugins" <<'PY'
@@ -205,7 +207,11 @@ def parse(v):
 
 def higher(name):
     b, c = parse(ver(base, name)), parse(ver(cur, name))
-    return b is not None and c is not None and c > b
+    if c is None:
+        return False            # current version missing/malformed → not a valid bump
+    if b is None:
+        return True             # new plugin: first appearance with a valid version IS the bump
+    return c > b
 
 fails = []
 if changed:

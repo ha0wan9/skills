@@ -5,8 +5,8 @@
     "email": "haoran.wang@stereolabs.com"
   },
   "metadata": {
-    "description": "Agent harness skills: project-meta (repo memory + execution governance), global-meta (user/global Claude+Codex config root \u2014 dual-runtime profiles now, audit/evolve lifecycle proposed; supersedes profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (DEPRECATED \u2014 folded into global-meta), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
-    "version": "1.4.0"
+    "description": "Agent harness skills: project-meta (repo memory + execution governance), orchestration (turn a milestone into a signed orchestration contract, then hand it to the runtime's scripted engine; depends on project-meta), global-meta (user/global Claude+Codex config root \u2014 dual-runtime profiles now, audit/evolve lifecycle proposed; supersedes profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (DEPRECATED \u2014 folded into global-meta), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
+    "version": "1.5.0"
   },
   "plugins": [
     {
@@ -26,6 +26,25 @@
       "strict": false,
       "skills": [
         "./skills/project-meta"
+      ]
+    },
+    {
+      "name": "orchestration",
+      "version": "0.1.0",
+      "metadata": {
+        "compat": [
+          "claude-code",
+          "codex"
+        ],
+        "published": [
+          "claude-marketplace"
+        ]
+      },
+      "description": "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/orchestration"
       ]
     },
     {
