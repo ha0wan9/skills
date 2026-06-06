@@ -584,6 +584,60 @@ def cmd_inbox_add(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_promote(args: argparse.Namespace) -> int:
+    """Move an inbox capture into items.jsonl as a fuzzy item (backfilling required
+    fields), removing it from the inbox. The single-writer gate where a multi-instance
+    capture first becomes a mutable row (DASH-23/DASH-24). items.jsonl is written first,
+    inbox second, so a crash mid-promote can at worst duplicate (guarded), never lose."""
+    init_store(args.root)
+    with board_lock(args.root):
+        p = paths(args.root)
+        inbox_rows = read_jsonl(p["inbox"])
+        match = next((r for r in inbox_rows if r.get("id") == args.id), None)
+        if match is None:
+            raise SystemExit(f"no inbox item with id {args.id!r}")
+        before = file_hash(p["items"])
+        rows = read_jsonl(p["items"])
+        if any(r.get("id") == args.id for r in rows):
+            raise SystemExit(f"id {args.id} already in items.jsonl")
+        roadmap = read_json(p["roadmap"], initial_roadmap())
+        now = utc_now()
+        rows.append(
+            {
+                "id": match["id"],
+                "kind": match.get("kind", "feat"),
+                "title": match.get("title", ""),
+                "body": match.get("body", ""),
+                "acceptance_shape": "",
+                "rough_size": "",
+                "labels": match.get("labels", []),
+                "links": [],
+                "linear_id": None,
+                "maturity": "fuzzy",
+                "status": "unscheduled",
+                "disposition": "active",
+                "version": None,
+                "source": match.get("source", "capture"),
+                "created_at": match.get("created_at", now),
+                "updated_at": now,
+            }
+        )
+        errors: list[str] = []
+        ids: set[str] = set()
+        for row in rows:
+            if row.get("id") in ids:
+                errors.append(f"duplicate id: {row.get('id')}")
+            ids.add(str(row.get("id")))
+            errors.extend(validate_item(row))
+        if errors:
+            raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
+        write_items_and_roadmap_atomic(args.root, rows, roadmap, before)
+        write_jsonl_atomic(p["inbox"], [r for r in inbox_rows if r.get("id") != args.id])
+    render_dashboard(args.root, args.template)
+    print(f"promoted {args.id} from inbox -> items (fuzzy); refine next")
+    return 0
+
+
 def add_common(parser: argparse.ArgumentParser, *, subcommand: bool = True) -> None:
     default: Any = argparse.SUPPRESS if subcommand else Path.cwd()
     template_default: Any = argparse.SUPPRESS if subcommand else default_template()
@@ -672,6 +726,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_inbox.add_argument("--label", action="append")
     p_inbox.add_argument("--source")
     p_inbox.set_defaults(func=cmd_inbox_add)
+
+    p_promote = sub.add_parser("promote")
+    add_common(p_promote)
+    p_promote.add_argument("id", help="inbox item id to move into items.jsonl as fuzzy")
+    p_promote.set_defaults(func=cmd_promote)
 
     return parser
 

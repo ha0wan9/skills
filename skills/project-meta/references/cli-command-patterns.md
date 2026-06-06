@@ -25,6 +25,7 @@ The `/project-meta <command>` route table maps verbs to recipe files:
 | `/project-meta deliver` | read-only | [`recipes/deliver.md`](../recipes/deliver.md) |
 | `/project-meta audit` | read-only by default | [`recipes/audit.md`](../recipes/audit.md) |
 | `/project-meta settings` | editing (read-only view by default) | [`recipes/settings.md`](../recipes/settings.md) |
+| `/project-meta roadmap` | editing | [`recipes/roadmap.md`](../recipes/roadmap.md) |
 
 **`plan` readiness keyword.** `/project-meta plan` writes a falsifiable build plan at one
 of two tiers. The default `floor` tier mandates the §6 per-item verification matrix
@@ -60,7 +61,11 @@ These commands are useful but should stay reserved until the core set proves sta
 - `/project-meta promote` — write validated lessons to the right memory layer
 - `/project-meta prune` — remove stale or duplicated harness guidance
 - `/project-meta doctor` — comprehensive health checks + suggested repairs
-- `/project-meta roadmap` — proposed Project Board grooming mode; reserved until `docs/backlog/project-board-system.md` DASH-05/06/08/17 are implemented and validated
+
+> `roadmap` was promoted out of this list in Project Board v0.2 (DASH-05/08) — it now owns the
+> collaborative versioned-roadmap + joint co-review transaction ([`recipes/roadmap.md`](../recipes/roadmap.md)).
+> `refine` (DASH-23, [`recipes/refine.md`](../recipes/refine.md)) stays a sub-workflow of `roadmap`, not a core verb,
+> until demonstrated standalone demand.
 
 If a user invokes a reserved command, explain that it is reserved, then either map it to the closest supported command or ask before proceeding. Do not silently invoke a related command.
 
