@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.5.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.6.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -17,7 +17,7 @@ Keep this file as the skill entrypoint. Load the linked reference files only as 
 
 Use this skill for any of these triggers:
 
-- Command trigger: the user says `/project-meta <command>`, especially `init`, `plan`, `status`, `validate`, `deliver`, `audit`, or `settings`.
+- Command trigger: the user says `/project-meta <command>`, especially `init`, `plan`, `roadmap`, `status`, `validate`, `deliver`, `audit`, or `settings`.
 - Bootstrap trigger: entering a repo or project where agent instructions, memory, or read order matter.
 - Memory trigger: creating, repairing, splitting, pruning, or syncing canonical memory files.
 - Harness trigger: improving agent instructions, behavior guardrails, validation loops, or project-specific operating rules.

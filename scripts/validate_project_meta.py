@@ -98,6 +98,13 @@ COMMAND_ROUTE_EXPECTATIONS = {
             "repo-memory-structure",
         ),
     },
+    "/project-meta roadmap": {
+        "mode": "editing",
+        "required_refs": (
+            "review-tier",
+            "multi-agent-protocols",
+        ),
+    },
 }
 
 
@@ -380,6 +387,8 @@ def check_required_files() -> None:
         "scripts/render_user_preferences.py",
         "scripts/validate_target_harness.py",
         "templates/board.dashboard.html",
+        "recipes/roadmap.md",
+        "recipes/refine.md",
         *sorted(REQUIRED_TEMPLATES),
         *sorted(REQUIRED_REFERENCES),
     ):
@@ -1166,6 +1175,43 @@ def check_board_cli() -> None:
                 f'"disposition": "{expected}"' in listing,
                 f"board {verb} must persist disposition={expected}",
             )
+
+        # DASH-23 ladder: capture (inbox) -> promote (items, fuzzy) -> refine (refined).
+        cap = run_python_script_result(
+            "scripts/board.py", "inbox-add", "--root", str(target_root),
+            "--id", "CAP-9", "--title", "fuzzy capture",
+        )
+        require(cap.returncode == 0, f"board inbox-add failed: {cap.stderr}")
+        prom = run_python_script_result("scripts/board.py", "promote", "CAP-9", "--root", str(target_root))
+        require(prom.returncode == 0, f"board promote failed: {prom.stderr}")
+        inbox_file = target_root / "docs" / "backlog" / "inbox.jsonl"
+        inbox_left = [ln for ln in inbox_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        require(not any('"id": "CAP-9"' in ln for ln in inbox_left), "promote must drain the inbox row")
+        listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+        promoted = next(r for r in json.loads(listing) if r["id"] == "CAP-9")
+        require(promoted["maturity"] == "fuzzy", "promoted item must land as fuzzy")
+        ref = run_python_script_result(
+            "scripts/board.py", "refine", "CAP-9", "--root", str(target_root),
+            "--acceptance-shape", "objective threshold", "--rough-size", "S",
+        )
+        require(ref.returncode == 0, f"board refine failed: {ref.stderr}")
+        listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+        refined = next(r for r in json.loads(listing) if r["id"] == "CAP-9")
+        require(refined["maturity"] == "refined", "refine must advance fuzzy -> refined")
+
+        # Regression: U+2028/U+2029 (and other non-\n unicode separators) in field content
+        # must NOT corrupt the store — read_jsonl must split on "\n" only, not str.splitlines().
+        sep_title = "alpha\u2028beta\u2029gamma"
+        sep = run_python_script_result(
+            "scripts/board.py", "add", "--root", str(target_root),
+            "--id", "SEP-1", "--title", sep_title,
+        )
+        require(sep.returncode == 0, f"board add with U+2028/U+2029 failed: {sep.stderr}")
+        sep_tx = run_python_script_result("scripts/board.py", "tx", "--root", str(target_root))
+        require(sep_tx.returncode == 0, f"store corrupted by U+2028/U+2029: {sep_tx.stderr}{sep_tx.stdout}")
+        listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+        sep_item = next(r for r in json.loads(listing) if r["id"] == "SEP-1")
+        require(sep_item["title"] == sep_title, "U+2028/U+2029 must round-trip intact in the stored title")
 
 
 def check_review_tier() -> None:

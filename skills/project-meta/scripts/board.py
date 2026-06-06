@@ -69,7 +69,11 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     rows: list[dict[str, Any]] = []
-    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    # Split on "\n" ONLY — never str.splitlines(), which also breaks on U+2028/U+2029,
+    # \r, \v, \f, U+0085 etc. json.dumps(ensure_ascii=False) emits those literally inside
+    # string values (a real \n inside a value is escaped to \\n), so splitlines() would tear
+    # a single valid record into broken halves and permanently corrupt the store.
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").split("\n"), start=1):
         if not line.strip():
             continue
         try:
@@ -279,6 +283,8 @@ def validate_item(row: dict[str, Any]) -> list[str]:
     for key in required:
         if key not in row:
             errors.append(f"{row.get('id', '<missing id>')}: missing {key}")
+    if not (isinstance(row.get("id"), str) and row.get("id").strip()):
+        errors.append(f"{row.get('id')!r}: id must be a non-empty string")
     if row.get("kind") not in KIND_VALUES:
         errors.append(f"{row.get('id')}: bad kind {row.get('kind')!r}")
     if row.get("maturity") not in MATURITY_VALUES:
@@ -584,6 +590,60 @@ def cmd_inbox_add(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_promote(args: argparse.Namespace) -> int:
+    """Move an inbox capture into items.jsonl as a fuzzy item (backfilling required
+    fields), removing it from the inbox. The single-writer gate where a multi-instance
+    capture first becomes a mutable row (DASH-23/DASH-24). items.jsonl is written first,
+    inbox second, so a crash mid-promote can at worst duplicate (guarded), never lose."""
+    init_store(args.root)
+    with board_lock(args.root):
+        p = paths(args.root)
+        inbox_rows = read_jsonl(p["inbox"])
+        match = next((r for r in inbox_rows if r.get("id") == args.id), None)
+        if match is None:
+            raise SystemExit(f"no inbox item with id {args.id!r}")
+        before = file_hash(p["items"])
+        rows = read_jsonl(p["items"])
+        if any(r.get("id") == args.id for r in rows):
+            raise SystemExit(f"id {args.id} already in items.jsonl")
+        roadmap = read_json(p["roadmap"], initial_roadmap())
+        now = utc_now()
+        rows.append(
+            {
+                "id": match["id"],
+                "kind": match.get("kind", "feat"),
+                "title": match.get("title", ""),
+                "body": match.get("body", ""),
+                "acceptance_shape": "",
+                "rough_size": "",
+                "labels": match.get("labels", []),
+                "links": [],
+                "linear_id": None,
+                "maturity": "fuzzy",
+                "status": "unscheduled",
+                "disposition": "active",
+                "version": None,
+                "source": match.get("source", "capture"),
+                "created_at": match.get("created_at", now),
+                "updated_at": now,
+            }
+        )
+        errors: list[str] = []
+        ids: set[str] = set()
+        for row in rows:
+            if row.get("id") in ids:
+                errors.append(f"duplicate id: {row.get('id')}")
+            ids.add(str(row.get("id")))
+            errors.extend(validate_item(row))
+        if errors:
+            raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
+        write_items_and_roadmap_atomic(args.root, rows, roadmap, before)
+        write_jsonl_atomic(p["inbox"], [r for r in inbox_rows if r.get("id") != args.id])
+    render_dashboard(args.root, args.template)
+    print(f"promoted {args.id} from inbox -> items (fuzzy); refine next")
+    return 0
+
+
 def add_common(parser: argparse.ArgumentParser, *, subcommand: bool = True) -> None:
     default: Any = argparse.SUPPRESS if subcommand else Path.cwd()
     template_default: Any = argparse.SUPPRESS if subcommand else default_template()
@@ -672,6 +732,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_inbox.add_argument("--label", action="append")
     p_inbox.add_argument("--source")
     p_inbox.set_defaults(func=cmd_inbox_add)
+
+    p_promote = sub.add_parser("promote")
+    add_common(p_promote)
+    p_promote.add_argument("id", help="inbox item id to move into items.jsonl as fuzzy")
+    p_promote.set_defaults(func=cmd_promote)
 
     return parser
 

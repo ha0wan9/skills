@@ -48,7 +48,7 @@ last_reviewed: 2026-06-06
 | **DASH-23** | `recipes/refine.md` + refine sub-agent flow reading `.refine-guidance.md`; `board.py refine` exists | a fuzzy inbox item → `refined` with scope/acceptance-shape/size; guidance file read; promotion confirmed |
 | **DASH-05** | `recipes/roadmap.md` collaborative mode; promote `roadmap` from reserved → route table | `/project-meta roadmap` routes; asks meaningful questions; co-builds versioned milestones |
 | **DASH-06** | Version-milestone model — close out (roadmap.json + dashboard render already ship it) | dashboard renders ROAD by version; acceptance recorded |
-| **DASH-08** | `recipes/co-review.md` (or roadmap sub-step): read both, write both atomically (board.py mechanism), resolve dedup, emit refine-guidance; L2 via review-tier | one transaction updates items+roadmap atomically; `refined` item is in one version XOR pool; L2 panel runs |
+| **DASH-08** | **folded into `recipes/roadmap.md`** as its core transaction (no separate `co-review.md` — co-review IS the roadmap session): read both, write both atomically (board.py mechanism), resolve dedup, emit refine-guidance; L2 via review-tier | one transaction updates items+roadmap atomically; `refined` item is in one version XOR pool; L2 panel runs |
 
 ## Wave 3 — Capture + integration + wiki  *(later PR)*
 
