@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchestration"
+  short_description: "Turn a milestone into a signed orchestration contract, then hand it to the engine."
+  default_prompt: "Use /orchestrate to turn a chosen project-meta milestone into a committed, reviewable orchestration contract (per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a coarse non-predictive budget hint), sign it, then emit it to the scripted engine — the Codex Agents-SDK + .codex/agents/*.toml roles here, the Claude Code Workflow tool on Claude Code, degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine; depends on project-meta for the multi-agent and review-tier canon."

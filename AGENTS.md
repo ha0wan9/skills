@@ -1,6 +1,6 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), [`sketch-asset-generator`](skills/sketch-asset-generator/), [`meta-debug`](skills/meta-debug/), and [`openclaw-devops`](skills/openclaw-devops/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`orchestration`](skills/orchestration/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), [`sketch-asset-generator`](skills/sketch-asset-generator/), [`meta-debug`](skills/meta-debug/), and [`openclaw-devops`](skills/openclaw-devops/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
@@ -18,6 +18,7 @@
 | `AGENTS.md` (this file) | agent-facing routing for the marketplace |
 | `.claude-plugin/marketplace.json` | plugin manifest; canonical source for installable plugin names and skill locations |
 | `skills/project-meta/` | full project-meta skill, including its own SKILL.md, references, templates, agents/openai.yaml |
+| `skills/orchestration/` | orchestration skill (split out, depends on project-meta): `orchestrate` recipe, the orchestration-contract schema + template + example, engine-handoff reference, and `scripts/budget_hint.py` (non-predictive budget hint). Owns orchestration policy, not the run engine. |
 | `skills/dl-research/` | full dl-research skill, including phases, modes, references, templates, agents/openai.yaml |
 | `skills/deep-survey-bfs/` | full deep-survey-bfs skill, including phases, references, templates, scripts (`arxiv_search.py`, `coverage_check.py`, `claims_validate.py`, `bias_audit.py`), agents/openai.yaml |
 | `skills/profile-creator/` | multi-Claude profile creation skill with shared plugin-store conventions |
