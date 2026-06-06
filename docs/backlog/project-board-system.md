@@ -17,17 +17,58 @@ The persistent, CLI-managed, repo-canonical project surface — **Backlog/Issues
 
 **Legend** — `kind`: feat (capability) · infra (plumbing) · docs · chore. `tier`: which model executes (CLI = no model · Sonnet = dispatched worker · Opus/main = primary). `target`: tentative version, TBD in grooming.
 
+## Architecture
+
+Four cross-cutting planes (govern every stage; all policy, left of the engine) × a conductor-driven value spine × one engine boundary × a closed feedback loop.
+
+```
+          ┌─────────────────────────  CROSS-CUTTING PLANES  ─────────────────────────┐
+          │  govern every stage; all policy (project-meta), left of the engine boundary │
+          │   · Review-tier   L0 self · L1 Sonnet · L2 panel · L3 adversarial  (19–21)  │
+          │   · Exec-tier     CLI=no-model · Sonnet=worker · Opus=hard         (15)     │
+          │   · Cost-forecast per-step + plan token & runtime, low/exp/high    (22)     │
+          │   · Source-of-truth  store=canonical → dashboard=derived → Linear=mirror    │
+          └───────────────────────────────────────────────────────────────────────────┘
+
+  VALUE SPINE   (conductor = main session: drives the spine + delegates side-work per Exec-tier)
+
+   any session
+      └─ autonomous capture (headless-Sonnet hook · DASH-02) ─┐
+                                                              ▼
+   ┌──────────────────────────────────────────────────────────┐
+   │ ① BACKLOG / ISSUES   inbox · docs/backlog = canonical      │◄──── trim / defer ──┐
+   │   maturity: fuzzy ──refine(DASH-23)──► refined             │                     │
+   └──────────────────────────────────────────────────────────┘                     │
+                       │ joint co-review TX → assign-to-version · trim-stale (DASH-08 · L2)
+                       ▼                                          ▲ refinement-guidance feedback
+   ② /project-meta roadmap   versioned milestones · collaborative · review L2 ─────────┘
+                       │ pick a milestone (v0.2)
+                       ▼
+      /project-meta plan   falsifiable build-plan = task × acceptance   (shipped)
+                       │ + orchestration dimension
+                       ▼
+   ③ /project-meta orchestrate   contract: tier·parallel·effort·human·review-level·cost-forecast — signed ahead
+                       │ sign → emit
+   ════════════════════╪════════  engine boundary (AP-COORD-7: contract=policy · engine=mechanism)  ════════
+                       ▼
+      /workflows (+/loop)  execute ──► run outcomes ──► status + forecast-vs-actuals ──► (back to ① & calibrate)
+
+   ┌─ Dashboard  static HTML · render = derived view · edit = File System Access API ──┐
+   │   renders ①②③ + run status   =   user-facing documentation, iterated             │
+   └────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## A. Backlog & Issue system (the capture pool)
 
 ### DASH-01 — Repo-canonical backlog/issue/bug store
 `infra · target: v0.1 · CLI`
-Features/issues/bugs live in `docs/backlog/` (repo = source of truth; HTML derived; Linear mirror). **Parseable format** — first-line `{"_meta":…}` object or a sidecar `.provenance`, **never `#` comments** (they break JSON/JSONL — board-review Blocker #1). Statuses include an `untriaged` holding state.
+Features/issues/bugs live in `docs/backlog/` (repo = source of truth; HTML derived; Linear mirror). **Parseable format** — first-line `{"_meta":…}` object or a sidecar `.provenance`, **never `#` comments** (they break JSON/JSONL — board-review Blocker #1). Each item carries a **`maturity`** dimension (orthogonal to `status`): `fuzzy → refined → scheduled → in-progress → done` (+ `trimmed/wontfix`). Autonomous capture (DASH-02) lands items as **`fuzzy`** (the inbox); only **`refined`** items are roadmap-eligible. Ladder + transitions in DASH-23.
 
 ### DASH-02 — Autonomous out-of-scope capture via headless Sonnet agent
 `feat · target: v0.1 · Sonnet`
-When the agent surfaces a feature/bug **out of the current session's scope**, capture it autonomously. Mechanism: a `Stop`/`SessionEnd` **command hook** → cheap shell pre-filter (only on feature/bug-shape language) → **headless Sonnet agent** (`claude -p --model sonnet`, has tools) → dedup-check `docs/backlog/` → record. Keeps main context clean. Profile-gated (`minimal` off); `SessionEnd`-tendency to avoid over-fire (AP-VAL-1). Captured items land **`untriaged`** — never auto-promoted to a roadmap/version.
+When the agent surfaces a feature/bug **out of the current session's scope**, capture it autonomously. Mechanism: a `Stop`/`SessionEnd` **command hook** → cheap shell pre-filter (only on feature/bug-shape language) → **headless Sonnet agent** (`claude -p --model sonnet`, has tools) → dedup-check `docs/backlog/` → record. Keeps main context clean. Profile-gated (`minimal` off); `SessionEnd`-tendency to avoid over-fire (AP-VAL-1). Captured items land **`fuzzy`** (the inbox) — never auto-promoted to a roadmap/version; they must be refined first (DASH-23).
 > Caveat: native `agent`-type hooks are tool-events-only, so capture uses *command hook → headless Sonnet*, not an agent-type hook on Stop.
 
 ### DASH-03 — Optional Linear mirror (push-only)
@@ -37,6 +78,24 @@ Reuse the existing `issue-tracker` Track Loop: repo canonical → Linear; check 
 ### DASH-04 — Backlog CLI (CRUD + render trigger)
 `infra · target: v0.1 · CLI`
 `scripts/board.py` (std-lib, deterministic): `add / move <id> <status> / edit / list / render`. The write surface the Sonnet capture agent (DASH-02) and humans both use. Every mutation auto-triggers render (DASH-14).
+
+### DASH-23 — Requirement refinement (fuzzy → concrete)
+`feat · target: v0.2 · Sonnet`
+The maturity ladder's first promotion gate — turns a vague capture into a roadmap-eligible requirement:
+
+```
+capture(fuzzy) ──refine──► refined ──co-review(DASH-08)──► scheduled@vX ──► in-progress ──► done
+     │ raw idea / vague bug    │ scope + acceptance-shape + rough size               ▲
+     └──── drop ◄──────────────┴──── defer / trim (stale · off-direction) ◄──────────┘
+```
+
+A **Sonnet sub-agent drafts** the concrete requirement (scope · acceptance-shape · rough size) and **asks the operator** where genuinely ambiguous; the `fuzzy→refined` **promotion is confirmed** (async-draft / deliberate-promote, so the requirement can't drift from intent). `refine` ≠ `plan`: refine clarifies *one item* (item-level); `plan` decomposes a *chosen milestone* into tasks (milestone-level). Optional L1 review (is the requirement well-formed / testable?).
+
+**Co-review feedback → sharper refinement.** The refinement agent **reads guidance distilled from DASH-08 co-reviews** — the current roadmap direction, the acceptance-shape patterns that passed, and recurring trim/staleness reasons — so it refines `fuzzy` items toward **concrete, direction-aligned angles** instead of blind. Recorded via the Memory Contract / `repo_memory`; sharpens over time (ties AP-COORD-6 retro-inspect).
+
+### DASH-24 — Backlog↔Roadmap async coupling contract
+`infra · target: v0.2 · policy`
+The two stores run at **different cadences** and stay decoupled: **backlog = async, append-only producer** (real-time capture from any session — DASH-02; never blocks, never touches the roadmap); **roadmap = deliberate, periodic consumer/curator** (pulls only in `roadmap` sessions). The model is **async-capture / deliberate-promote** (an inbox): capture is real-time, every state-advancing transition (refine, schedule) is a deliberate gate. They couple **only** at the DASH-08 joint co-review transaction. **Async correctness = single writer per transition** (AP-COORD-7 multi-writer discipline): capture writes `fuzzy`; refine writes `fuzzy→refined`; co-review writes `refined→scheduled/defer/trim` + roadmap versions; engine writes `scheduled→in-progress→done`. No two writers touch the same transition → no race. Co-review also emits the refinement-guidance feedback consumed by DASH-23.
 
 ---
 
@@ -54,9 +113,9 @@ Each milestone ↔ a **version number** (v0.1, v0.2, …). The roadmap is the ve
 `feat · target: v0.2 · Sonnet (panel)`
 Each built/revised roadmap passes a **review**: feasibility · robustness · usefulness · usability (per feature). Reuse the skill-critic / multi-agent review machinery; GO/NO-GO style, no gamed numeric score. **This is an L2 instance of DASH-19's tiered review.**
 
-### DASH-08 — Backlog grooming coupled to roadmap
-`feat · target: v0.2 · Sonnet`
-On roadmap build/review, **groom the backlog together**: assign items to versions, **trim stale/unneeded** features & bugs → keep the backlog clean. This is where DASH-02 captures get triaged out of `untriaged`.
+### DASH-08 — Joint backlog↔roadmap co-review (one transaction)
+`feat · target: v0.2 · Sonnet (L2 panel)`
+Grooming is **not** "clean the backlog, then make the roadmap" — it is a **single co-review transaction** that reads *both* (roadmap draft + backlog snapshot), decides jointly, and **writes both back atomically** so they can never diverge (a `refined` item is either in a version or in the pool — never both/neither). Decisions flow **both ways**: refined items → pulled into versions; over-heavy versions → items deferred back; off-direction items → trimmed stale; new milestone goals → spawn new items. Reviewed at **L2** (DASH-19): roadmap lenses (feasibility/robustness/usefulness/usability) + backlog lenses (still-relevant / refined-enough / right-version / staleness). Async mechanics + single-writer rule in DASH-24; co-review also feeds refinement guidance back to DASH-23.
 
 ---
 
@@ -147,4 +206,4 @@ Levels are consumed by existing review surfaces, not a parallel system: `audit`/
 
 ---
 
-_22 entries. Tentative `target`s are placeholders; real version assignment + stale-trim happens in `roadmap` grooming (DASH-08)._
+_24 entries. Tentative `target`s are placeholders; real version assignment + stale-trim happens in `roadmap` grooming (DASH-08)._
