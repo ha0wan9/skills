@@ -119,6 +119,37 @@ def write_text_atomic(path: Path, text: str) -> None:
             os.unlink(tmp)
 
 
+STALE_LOCK_SECONDS = 3600  # a lock older than this is treated as left by a crashed run
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True  # exists (e.g. owned by another user) or a platform without signals
+    return True
+
+
+def _lock_is_stale(lock: Path) -> bool:
+    """A lock is stale if its recorded pid is no longer running, or the file is
+    older than STALE_LOCK_SECONDS — both signatures of a crashed mutation that
+    would otherwise block every future write until the lock is removed by hand."""
+    try:
+        text = lock.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return True
+    m = re.search(r"pid=(\d+)", text)
+    if m and not _pid_alive(int(m.group(1))):
+        return True
+    try:
+        age = dt.datetime.now(dt.UTC).timestamp() - lock.stat().st_mtime
+    except FileNotFoundError:
+        return True
+    return age > STALE_LOCK_SECONDS
+
+
 @contextlib.contextmanager
 def board_lock(root: Path) -> Iterator[None]:
     p = paths(root)
@@ -127,7 +158,16 @@ def board_lock(root: Path) -> Iterator[None]:
     try:
         fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError as exc:
-        raise SystemExit(f"board store is locked: {lock}") from exc
+        # Break a lock left behind by a crashed run (dead pid / stale mtime); a live
+        # lock still wins. The second O_EXCL closes the unlink->create race safely.
+        if not _lock_is_stale(lock):
+            raise SystemExit(f"board store is locked: {lock}") from exc
+        with contextlib.suppress(FileNotFoundError):
+            lock.unlink()
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError as exc2:
+            raise SystemExit(f"board store is locked: {lock}") from exc2
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(f"pid={os.getpid()} utc={utc_now()}\n")
@@ -192,14 +232,22 @@ def normalize_labels(values: list[str] | None) -> list[str]:
     return labels
 
 
-def next_id(rows: list[dict[str, Any]], prefix: str = "PB") -> str:
-    max_seen = 0
-    pat = re.compile(rf"^{re.escape(prefix)}-(\d+)$")
+def next_id(rows: list[dict[str, Any]], prefix: str | None = None) -> str:
+    """Allocate the next sequential id. The prefix defaults to the dominant prefix
+    already in the store (so a store seeded as DASH-* keeps producing DASH-*),
+    falling back to 'PB' for an empty store."""
+    pat = re.compile(r"^([A-Za-z]+)-(\d+)$")
+    counts: dict[str, int] = {}
+    maxima: dict[str, int] = {}
     for row in rows:
         m = pat.match(str(row.get("id", "")))
         if m:
-            max_seen = max(max_seen, int(m.group(1)))
-    return f"{prefix}-{max_seen + 1:03d}"
+            pfx, num = m.group(1), int(m.group(2))
+            counts[pfx] = counts.get(pfx, 0) + 1
+            maxima[pfx] = max(maxima.get(pfx, 0), num)
+    if prefix is None:
+        prefix = max(counts, key=lambda k: (counts[k], maxima[k])) if counts else "PB"
+    return f"{prefix}-{maxima.get(prefix, 0) + 1:03d}"
 
 
 def find_item(rows: list[dict[str, Any]], item_id: str) -> dict[str, Any]:
@@ -417,7 +465,6 @@ def row_matches(row: dict[str, Any], args: argparse.Namespace) -> bool:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    init_store(args.root)
     rows = [row for row in read_jsonl(paths(args.root)["items"]) if row_matches(row, args)]
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2, sort_keys=True))
@@ -470,7 +517,17 @@ def render_dashboard(root: Path, template: Path) -> None:
     if not template.exists():
         raise SystemExit(f"dashboard template not found: {template}")
     data = dashboard_data(root)
-    payload = json.dumps(data, ensure_ascii=False, sort_keys=True)
+    # Embedded inside a <script> block. json.dumps does NOT escape '<', so a value
+    # containing '</script>' (or '<!--') would close the tag early — corrupting the
+    # dashboard and enabling stored XSS once arbitrary content (DASH-02/DASH-25) is fed
+    # in. Escape the three HTML-significant chars to \uXXXX: still valid JSON (they only
+    # occur inside string values), and no '</script>' can survive.
+    payload = (
+        json.dumps(data, ensure_ascii=False, sort_keys=True)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
     template_text = template.read_text(encoding="utf-8")
     if "__BOARD_DATA_JSON__" not in template_text:
         raise SystemExit(f"dashboard template missing __BOARD_DATA_JSON__ marker: {template}")
@@ -485,7 +542,10 @@ def cmd_render(args: argparse.Namespace) -> int:
 
 
 def cmd_tx(args: argparse.Namespace) -> int:
-    init_store(args.root)
+    p = paths(args.root)
+    if not p["items"].exists() and not p["roadmap"].exists():
+        print(f"board tx: no store at {store_dir(args.root)}")
+        return 0
     rows, roadmap, errors = validate_store(args.root)
     if errors:
         print("board tx: FAIL", file=sys.stderr)

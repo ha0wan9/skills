@@ -1138,6 +1138,22 @@ def check_board_cli() -> None:
         require("Smoke item" in html, "dashboard must include rendered item data")
         require("docs/backlog/items.jsonl" in html, "dashboard must point to canonical item store")
 
+        # Regression: a value containing </script> must not break out of the dashboard's
+        # <script> block (would corrupt BOARD_DATA + enable stored XSS once DASH-02/DASH-25
+        # feed arbitrary content). The renderer must escape it to <.
+        inj = run_python_script_result(
+            "scripts/board.py", "add", "--root", str(target_root),
+            "--id", "XSS-1", "--title", "inj",
+            "--body", "x</script><img src=y onerror=alert(1)>",
+        )
+        require(inj.returncode == 0, f"board add (injection case) failed: {inj.stderr}")
+        html_xss = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        require(
+            "</script><img src=y onerror=alert(1)>" not in html_xss,
+            "dashboard must escape </script> in item content (script-break / XSS guard)",
+        )
+        require("\\u003c/script" in html_xss, "dashboard must emit escaped \\u003c for <")
+
 
 CHECKS = (
     check_required_files,

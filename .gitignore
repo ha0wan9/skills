@@ -8,3 +8,6 @@ __pycache__/
 # keeps committed gate scripts at .harness/gates/*.sh.
 .harness/meta-debug/
 .harness/phase-state.json
+
+# Project Board mutation lock (board.py); transient, never committed.
+.board.lock
