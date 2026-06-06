@@ -24,8 +24,8 @@ backend.
    - budget estimate;
    - tracking URL or artifact location.
 6. If launch deviates from design, mark `design_deviation=true` and explain.
-7. Run `python scripts/validate_ledger.py <study-root>/runs.jsonl`. Fix
-   reported errors before handoff.
+
+**MUST delivery gate:** run `python scripts/validate_ledger.py <study-root>/runs.jsonl` after updating the ledger. A non-zero exit blocks handoff — fix all reported errors before handing off to `monitor`. See `examples/sample-study/runs.jsonl` for a valid reference.
 
 ## Hand Off
 

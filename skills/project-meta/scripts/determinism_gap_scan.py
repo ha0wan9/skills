@@ -56,7 +56,7 @@ def rules_referencing_scripts(body: str) -> list[tuple[str, str]]:
 def hooked_scripts(skills_root: Path) -> set[str]:
     """Collect script basenames referenced by any hook config under the marketplace."""
     found: set[str] = set()
-    patterns = ["**/settings*.json*", "**/hooks*.json", "**/hooks/*.sh", "**/*.fragment"]
+    patterns = ["**/settings*.json*", "**/hooks*.json", "**/hooks/*.sh", "**/hooks/scripts/*.sh", "**/*.fragment"]
     for pat in patterns:
         for f in skills_root.rglob(pat):
             if f.is_file():

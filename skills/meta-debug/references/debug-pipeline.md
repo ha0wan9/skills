@@ -32,19 +32,15 @@ bug vs **heisenbug** (flaky). Gate: a one-line problem statement + severity.
 ### 1. context (clean agent, bounded case file)
 Dispatch a **fresh-context** agent to collect ONLY the relevant context. It MUST
 read the project's maintenance harness in **project-meta layout and bootstrap
-order** — not ad-hoc grep:
-1. Detect the primary tool, then read the **canonical memory entrypoint**
-   (`CLAUDE.md` when Claude Code is primary, `AGENTS.md` when Codex is primary;
-   the other is the mirror) and follow its loader/index into the **topical
-   memory** it routes to (`agents/*.md`). Selective read — load only what's
-   relevant to the bug.
-2. Read user-preference (`USER.md`) and any README structure map.
-3. Read prior related debugging lessons (`state/lessons.jsonl`).
-4. Then the suspected code/config.
+order** — not ad-hoc grep. For the full layout and bootstrap sequence, defer to
+[`../../project-meta/references/repo-memory-structure.md`](../../project-meta/references/repo-memory-structure.md)
+and [`../../project-meta/references/mirrors-and-updates.md`](../../project-meta/references/mirrors-and-updates.md).
+The meta-debug-specific reading discipline on top:
+1. **Selective read** — load only topical memory (`agents/*.md`) relevant to the bug area; do not read the entire harness.
+2. Read prior related debugging lessons (`state/lessons.jsonl`).
+3. Then the suspected code/config.
 
-`project-meta` owns *how* this harness is laid out — defer to its
-`references/repo-memory-structure.md` and `references/mirrors-and-updates.md`. If
-the repo has no harness, run `/project-meta init` first.
+If the repo has no harness, run `/project-meta init` first.
 
 Emit a bounded **case file**: bug statement, environment, suspected area,
 constraints (latency/compat/…), cited memory excerpts (path + why), and prior
@@ -107,8 +103,11 @@ separation, the file-count tier selecting cheap subagent *dispatch* vs a scripte
 - **Definition-of-done** per worker = its candidate passes the red test AND the
   characterization tests *inside its own sandbox*. Drop the ones that don't.
 - **Isolation backings**: Claude Code — `Workflow` `parallel()` with agents at
-  `isolation:"worktree"` (or `Agent` `isolation:"worktree"`); Codex — native
-  subagents; OpenClaw — `openclaw sandbox` containers or git worktrees.
+  `isolation:"worktree"` (or `Agent` `isolation:"worktree"`); Codex — dispatch via
+  `.codex/agents/*.toml` (Agents-SDK) or a plain subagent turn per candidate;
+  OpenClaw/other — `openclaw sandbox` containers or git worktrees, one per
+  candidate; fallback prose: a sequential per-subtask loop with a fresh context
+  window per candidate.
 - The lead **does not edit inside workers' sandboxes**; it integrates only the
   phase-7 winner.
 
@@ -133,9 +132,10 @@ health gate + revert.)
   fix pattern · regression-test pointer). `debug_session.py close --outcome
   fixed …` writes it into `state/lessons.jsonl` (the fast journal) automatically.
   Then, if the lesson is **durable and project-relevant**, promote it into
-  **project-meta canonical memory** per project-meta's CRUD + End-Check rules:
-  update only the canonical `agents/*.md` file it belongs to, sync mirrors only if
-  structure/high-priority guidance changed, keep provenance.
+  **project-meta canonical memory** per
+  [`../../project-meta/references/repo-memory-crud.md`](../../project-meta/references/repo-memory-crud.md)
+  (Memory Contract): update only the canonical `agents/*.md` file it belongs to,
+  sync mirrors only if structure/high-priority guidance changed, keep provenance.
 - If the bug came from a tracked backlog (e.g. openclaw-devops' bugs panel),
   **close its entry**: `openclaw_devops.py bugs --update <BUG-N> --status fixed
   --session <this dbg-id> --lesson "…"`. A session that fixes a tracked bug must

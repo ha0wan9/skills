@@ -7,7 +7,7 @@ description: >-
   methodology, or run a bounded autonomous ratchet loop. Use for
   project-agnostic model training, ablation, optimization, and research
   workflow orchestration.
-metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # DL Research
@@ -45,6 +45,37 @@ canonical study root. The preferred convention is:
 - branch/worktree identity: `res/<study-id>`
 - study root: `agents/research/<study-id>/`
 - run name prefix: `<study-id>-<HnEn>-<experiment-name>`
+
+## Trigger Decision
+
+Invoke this skill when the request matches one of these shapes:
+
+- A request to **run, design, or evaluate a DL experiment** (ablation, hyperparameter study, architecture comparison, optimization trial) with an experimental component — even a single run.
+- A request to **frame a research question** for a DL project: define success criteria, scope, baseline, or budget.
+- A request to **survey evidence** (existing runs, prior work, code truth) as a precursor to designing experiments — when the survey feeds an experiment plan.
+- A request to **launch, monitor, or track training runs** against a study ledger.
+- A request to **evaluate completed runs** against a design gate or decision rule.
+- A request to **synthesize research findings** into a study conclusion or promotion decision.
+- A request to **audit an existing study** for methodology soundness, protocol drift, or reproducibility gaps.
+- A request to **initialize or repair project research infrastructure** (adapter, study-root config, ledger schema).
+- A request to **run an autonomous ratchet loop** to improve a metric within a fixed editable surface.
+
+Do not invoke for: pure literature surveys with no experiment plan (delegate to `deep-survey-bfs`); harness/AGENTS.md bootstrapping with no study (delegate to `project-meta`).
+
+## Bootstrap Order
+
+On every invocation the agent MUST load in this order:
+
+1. This `SKILL.md` in full (always loaded).
+2. Detect or confirm: phase or mode, `study-id`, study root, adapter path. State these before acting.
+3. Load exactly one phase or mode file (see Phases table).
+4. Lazy references — load only when the task class requires it:
+   - `references/adapter-contract.md` — when no project adapter exists or backend details are unclear.
+   - `references/dl-methodology-checklist.md` — for design, evaluate, and audit when methodology risk is non-trivial.
+   - `references/decision-rules.md` — for design, evaluate, synthesize, and ratchet decisions.
+   - `references/multi-agent-harness.md` — when a phase asks for managed clean-context review or independent reviewers.
+   - `references/agent-charter.md` — only when creating a reviewer prompt or adjudicating reviewer disagreement.
+5. Load templates only when scaffolding or repairing an artifact.
 
 ## H/E Identity
 
@@ -95,24 +126,6 @@ If arguments do not start with a phase or mode:
 State the detected phase, `study-id`, study root, and reason before loading a
 procedure file.
 
-## Loading Rules
-
-1. Read exactly one phase or mode file after resolution.
-2. Load `references/adapter-contract.md` when no project adapter exists or
-   when backend details are unclear.
-3. Load `references/dl-methodology-checklist.md` for design, evaluate, and
-   audit when methodology risk is non-trivial.
-4. Load `references/decision-rules.md` for design, evaluate, synthesize, and
-   ratchet decisions.
-5. Load `references/multi-agent-harness.md` when a phase asks for managed
-   clean-context review, or when the user requests independent reviewers. This
-   harness specializes project-meta's Task Dispatch paradigm (Roles, Context
-   Package, Reviewer-Between-Subtasks, Synchronous Gates, Ordering Barriers,
-   runtime backings) for DL research; a reviewer `block` is a hard STOP.
-6. Load `references/agent-charter.md` only when creating a reviewer prompt or
-   adjudicating reviewer disagreement.
-7. Load templates only when scaffolding or repairing an artifact.
-
 ## Optional Front-End
 
 `templates/frontend/report.html` is a project-agnostic HTML report
@@ -131,24 +144,29 @@ JSONL schema, and customisation notes.
 
 ## Cross-Cutting Invariants
 
-- Never skip `frame`; an audit needs a stable question, scope, budget, and
+- MUST NOT skip `frame`; an audit needs a stable question, scope, budget, and
   success criteria.
-- `dl-research init` only creates or repairs the project adapter. It must not
-  create a study directory unless the user also asks for `frame`.
-- Every real project study must name the repo-local adapter and write the
-  resolved study root in `index.md`.
-- Respect adapter patterns for branch, root, run names, editable surface,
+- MUST NOT use `dl-research init` to create a study directory unless the user
+  also asks for `frame`; init only creates or repairs the project adapter.
+- MUST name the repo-local adapter and write the resolved study root in
+  `index.md` for every real project study.
+- MUST respect adapter patterns for branch, root, run names, editable surface,
   protected files, metric parsing, tracking, and graph generation.
-- Treat the eval harness, metric parser, protected files, and data split as
-  protocol. Changes require explicit protocol-change approval and must be
+- MUST treat the eval harness, metric parser, protected files, and data split
+  as protocol. Changes require explicit protocol-change approval and must be
   recorded before use.
-- Separate evidence, interpretation, and hypothesis in analytic notes.
-- Prefer cheap probes before full training when they can answer the question.
-- Every run, including crashes and discarded attempts, must have a ledger row.
-- Ledger rows for H/E studies must include `track_id`, canonical
-  `experiment_id` such as `H1.E1`, and `slug` such as `H1E1-<experiment-name>`.
-- A result can be promoted only if the decision rule for this study permits it.
-- Do not change secrets or credentials as part of research workflow setup.
+- MUST separate evidence, interpretation, and hypothesis in analytic notes.
+- MUST record every run — including crashes and discarded attempts — in a
+  ledger row.
+- MUST include `track_id`, canonical `experiment_id` (e.g. `H1.E1`), and
+  `slug` (e.g. `H1E1-<experiment-name>`) on every ledger row for H/E studies.
+- MUST NOT promote a result unless the decision rule for this study permits it.
+- MUST NOT change secrets or credentials as part of research workflow setup.
+- MUST run `python scripts/validate_ledger.py <study-root>/runs.jsonl` before
+  any phase handoff or commit that mutates `runs.jsonl`. A non-zero exit is a
+  hard delivery gate — fix reported errors before proceeding.
+- Default: prefer cheap probes before full training when they can answer the
+  question.
 
 ## Skill Arbitration
 
@@ -188,11 +206,12 @@ in references — the agent reads them before encountering the situation.
 - **`study-id` is fixed at `frame`.** Renaming after `prepare`/`launch`
   corrupts run names, ledger lookups, and graph node IDs. Fork a new study
   instead of renaming.
-- **`runs.jsonl` is mutated by `prepare`, `launch`, `monitor`, `evaluate`, and
-  `ratchet`.** After every mutation, run
-  `python scripts/validate_ledger.py <study-root>/runs.jsonl` and fix the
-  reported errors before phase handoff. The validator is dependency-free and
-  catches schema drift the eye misses.
+- **`runs.jsonl` delivery gate is a hard MUST.** After every mutation of
+  `runs.jsonl` (phases: `prepare`, `launch`, `monitor`, `evaluate`, `ratchet`),
+  MUST run `python scripts/validate_ledger.py <study-root>/runs.jsonl` and fix
+  all reported errors before phase handoff or commit. Non-zero exit blocks
+  handoff. The validator is dependency-free and catches schema drift the eye
+  misses. See `examples/sample-study/` for a passing reference.
 
 ## Output Footer
 

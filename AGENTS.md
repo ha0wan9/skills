@@ -1,6 +1,6 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), and [`sketch-asset-generator`](skills/sketch-asset-generator/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), [`sketch-asset-generator`](skills/sketch-asset-generator/), [`meta-debug`](skills/meta-debug/), and [`openclaw-devops`](skills/openclaw-devops/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
@@ -23,6 +23,8 @@
 | `skills/profile-creator/` | multi-Claude profile creation skill with shared plugin-store conventions |
 | `skills/calendar-crud-workflow/` | calendar event CRUD workflow skill for stable calendars, title prefixes, searchable tags, source links, and safe batch operations |
 | `skills/sketch-asset-generator/` | extraction-first design-system asset packs from sketches or source UI; direct token/SVG/code extraction by default, GPT Image fallback; ships `scripts/validate_asset_pack.py` and `scripts/render_contact_sheet.py`, schema, references, and example fixtures |
+| `skills/meta-debug/` | gated, rollbackable, looping meta-debug pipeline (triage → repro → red test → hypotheses → sandbox fixes → canary → lesson); composes with project-meta; ships `scripts/debug_session.py` |
+| `skills/openclaw-devops/` | OpenClaw maintenance DevOps — health probe, bounded self-repair, transactional auto-update + rollback, ops lessons + bugs backlog; delegates systematic debugging to meta-debug; ships `scripts/openclaw_devops.py` |
 | `scripts/validate_project_meta.py` | dev-only validator; not shipped to install. Validates the project-meta skill content under `skills/project-meta/` |
 
 ## Bounded Doc Loading

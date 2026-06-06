@@ -60,7 +60,7 @@ _changed_plugins() {
 #     plugin names are unique, and each plugin description matches its SKILL.md. ---
 _validate_marketplace() {
   python3 - "$REPO_ROOT" <<'PY'
-import json, os, sys
+import json, os, re, sys
 root = sys.argv[1]
 mani = os.path.join(root, ".claude-plugin", "marketplace.json")
 with open(mani) as f:
@@ -79,6 +79,12 @@ for p in data.get("plugins", []):
         sm = os.path.join(d, "SKILL.md")
         if not os.path.isfile(sm):
             errs.append(f"{n}: no SKILL.md in {sk}")
+            continue
+        # If SKILL.md frontmatter declares a version, it must match the manifest version.
+        head = open(sm, encoding="utf-8").read()[:4000]
+        mv = re.search(r"version:\s*(\d+\.\d+\.\d+)", head)
+        if mv and mv.group(1) != p.get("version"):
+            errs.append(f"{n}: SKILL.md version {mv.group(1)} != manifest version {p.get('version')}")
 if errs:
     print("marketplace.json invalid:\n  - " + "\n  - ".join(errs), file=sys.stderr)
     sys.exit(1)

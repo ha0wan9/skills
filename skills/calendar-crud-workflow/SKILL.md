@@ -1,192 +1,84 @@
 ---
 name: calendar-crud-workflow
 description: Standardize calendar event CRUD from fuzzy requests into stable calendars, title prefixes, searchable description tags, source links, and safe batch create/update/delete workflows. Use when the user asks to schedule, classify, bulk add, migrate, tag, color, or clean up calendar events across Google Calendar, Apple/iOS Calendar, Notion Calendar, or MCP calendar tools, especially when deciding between separate calendars, title labels, event colors, and description tags.
-metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Calendar CRUD Workflow
 
 > **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
 
-Use this skill to turn vague scheduling requests into safe, normalized calendar operations. The goal is stable cross-device behavior, searchable metadata, and reversible bulk changes.
+Turn vague scheduling requests into safe, normalized calendar operations with stable cross-device behavior, searchable metadata, and reversible bulk changes.
 
-## Core Model
+## Trigger Decision
 
-Each event has four independent classification layers:
+Use this skill for any of these request shapes:
 
-| Layer | Purpose | Stable across Google/iOS/Apple? |
+- **Schedule / create**: user provides event details (time, topic, link) and wants them on a calendar.
+- **Classify / tag**: user has existing events and wants them categorized, prefixed, or tagged.
+- **Bulk add**: user provides a list (schedule page, email, spreadsheet) to convert into multiple events.
+- **Migrate / move**: user wants events moved between calendars or restructured across categories.
+- **Color**: user asks for calendar-level or event-level color assignment across Google/iOS/Apple.
+- **Clean up / delete**: user wants events removed, deduplicated, or archived.
+
+Do not use this skill for repo-harness setup or project memory operations — those belong to `project-meta`.
+
+## Bootstrap Order
+
+1. Read the user's request and extract action, scope, and calendar candidate.
+2. Read existing events in the target time window before any write.
+3. Confirm classification (calendar → prefix → description tags) before acting.
+4. Load [`references/crud-procedure.md`](references/crud-procedure.md) for full step-by-step detail when needed.
+
+## Core Rules
+
+- **MUST read existing events before any write.** Search the bounded time window and check for duplicate title/source/link combinations before creating, updating, or deleting.
+- **MUST present a batch proposal and get explicit confirmation before executing any batch create, update, or delete.** Do not silently apply bulk changes.
+- **MUST NOT silently fall back from a calendar color to an event color.** If the user asked for stable cross-device color and the required calendar cannot be created, ask the user to create it or supply a calendar ID.
+- **MUST NOT create a new video-conference link unless the user explicitly asked.** If the source provides a Zoom or Meet link, attach that link instead.
+- **MUST dedupe-check before create.** If a matching title/time/source combination already exists, report it and ask before adding a duplicate.
+- **MUST NOT delete a recurring-series event without first confirming scope** (this instance / this-and-following / entire series).
+- Default: prefer a separate calendar for stable large categories; use description tags for fine-grained labels; use title prefixes only for temporary state or at-a-glance triage when calendar color is insufficient.
+- Do not create a calendar for every small topic — use description tags instead.
+
+## Skill Arbitration
+
+| Request shape | Owning skill | This skill's role |
 |---|---|---|
-| Calendar | Large category, calendar-level color, show/hide control | Yes |
-| Title prefix | Temporary status or workflow marker | Yes |
-| Title | Human-readable event name | Yes |
-| Description tags | Fine-grained searchable labels and provenance | Mostly yes |
+| Calendar CRUD (create/update/delete/move/color/tag) | **`calendar-crud-workflow`** | acts |
+| Repo-harness setup, project memory, CLAUDE.md writes | **`project-meta`** | dispatches; do not act |
+| Mixed: set up a project *and* schedule its events | **`project-meta`** first, then this skill | hand off after harness is ready |
 
-Prefer separate calendars for large stable categories, title prefixes for temporary status, and description tags for fine-grained semantics.
+## Gotchas
 
-## Category Rules
+- **Event color vs. calendar color.** iOS and Apple Calendar only expose calendar-level colors reliably; event colors created in Google often render as the calendar color on Apple. Always classify calendar first; use event color only for Google-local visual distinction.
+- **Recurring-event scope.** Editing or deleting a recurring event without scope clarity corrupts the series. Distinguish this instance, this-and-following, and entire series before any write.
+- **Description overwrite.** A normalized description update can silently drop existing Zoom links, notes, or attendee instructions. Preserve unrelated fields; merge, don't replace.
+- **Missing end time.** Many source pages omit end times. Infer the smallest defensible duration from adjacent events and mark it `(inferred)` in the description — never silently omit.
 
-Use a separate calendar when the category needs stable color, independent visibility, or reliable iOS/Apple sync:
+## Quick Workflow
 
-- `Work`: company, client, recruiting, operational, administrative work
-- `Personal`: life, health, family, errands, personal plans
-- `Research`: papers, experiments, academic talks, reading groups, research planning
-- `Teaching`: courses, TA duties, office hours, educational delivery
-- Project calendars such as `Neuromatch`: recurring program-specific schedules that need their own stable color and on/off control
+Full detail for each step is in [`references/crud-procedure.md`](references/crud-procedure.md).
 
-Do not create a calendar for every small topic. Use description tags instead.
+1. **Parse intent** — extract action, scope, title, time, calendar candidate, links, tags.
+2. **Read before write** — search time window, check duplicates, read full payload for updates.
+3. **Classify calendar first** — calendar → title prefix → description tags → event color (last resort).
+4. **Draft write plan** — for batches, show `Date | Time | Calendar | Title | Link | Tags | Confidence | Notes` and wait for confirmation.
+5. **Create / Update / Move / Delete** — follow the op-specific rules in the reference; use diff-oriented updates; verify moves before deleting the source.
 
-## Prefix Rules
+## When To Load References
 
-Prefixes come in two kinds with different rules.
+| Task class | Reference to load |
+|---|---|
+| Any create / update / delete / move / classify / recolor | [`references/crud-procedure.md`](references/crud-procedure.md) |
+| Classification model, calendar categories, prefix rules, description contract | [`references/crud-procedure.md`](references/crud-procedure.md) |
 
-**State prefixes** express transient workflow status and are stripped once the status resolves. Use them freely, on any calendar:
+## Output Footer
 
-- `[Hold]`: placeholder, not confirmed
-- `[Tentative]`: time or commitment uncertain
-- `[Prep]`: preparation block
-
-**Type prefixes** mark a durable category for at-a-glance triage:
-
-- `[Admin]`: administrative task
-- `[Paper]`: paper reading or discussion
-- `[NMA]`: Neuromatch marker
-
-Type is taxonomy, so it normally belongs on a calendar or in a description tag — not the title. Use a type prefix **only** when both hold:
-
-1. the event is **not** already on a type-specific calendar that conveys the same category, and
-2. you need to scan or filter that type by eye in a compact agenda/month view where calendar color is not enough.
-
-Otherwise express the type as a description tag (`Tags: admin`, `Tags: paper`) and omit the prefix. When the event is on a dedicated project calendar, never add a redundant type prefix; a state prefix is still fine.
-
-## Description Contract
-
-Normalize descriptions with stable fields:
+End each invocation with:
 
 ```text
-Tags: neuromatch, neuroai, course, professional-development
-Source: https://...
-Links:
-- Zoom: https://...
-- Reference: https://...
-Notes:
-...
+**Skill**: calendar-crud-workflow  **Status**: <done|blocked|needs-confirmation>  **Next**: <action|done>
 ```
 
-Use lowercase tags. Prefer `kebab-case` for multi-word tags. Keep source links and meeting links distinct.
-
-## CRUD Workflow
-
-### 1. Parse Intent
-
-Extract:
-
-- action: create, read, update, delete, move, copy, classify, recolor
-- scope: single event, batch, recurring series, time window
-- category/calendar candidate
-- title and optional prefix
-- start/end/timezone, or duration if end time is missing
-- location and meeting links
-- attendees, reminders, transparency, recurrence
-- tags, source, confidence, unresolved fields
-
-Normalize relative dates into absolute dates before writing.
-
-### 2. Read Before Write
-
-Before create/update/delete/move:
-
-- Search the bounded time window.
-- Check duplicate title/source/link combinations.
-- Read full event payload when preserving attendees, recurrence, reminders, location, or description matters.
-- For recurring events, distinguish this instance, this-and-following, and entire series.
-
-### 3. Classify Calendar First
-
-Choose calendar before color:
-
-```text
-Need stable iOS/Apple color? -> use/create a separate calendar.
-Need only Google-local visual distinction? -> event color is acceptable.
-Need searchable small labels? -> description tags.
-Need temporary state? -> title prefix.
-```
-
-If the required calendar does not exist and the tool cannot create calendars, ask the user to create it or provide a calendar ID. Do not silently fall back to event color when the user asked for stable cross-device color.
-
-### 4. Draft Write Plan
-
-For batch operations, show a compact proposal before writing unless the user has already given explicit, low-risk instructions:
-
-```text
-Date | Time | Calendar | Title | Link | Tags | Confidence | Notes
-```
-
-Proceed directly only when time, target calendar, and source are clear and duplicate checks pass.
-
-### 5. Create Events
-
-Create events with:
-
-- target calendar ID
-- normalized title
-- start/end with timezone
-- location set to the primary join/register link when useful
-- description contract fields
-- reminders preserved or defaulted intentionally
-- do not create a new video-conference link unless the user asks; if the source already provides a Zoom or Meet link, attach that one instead
-
-If a page gives a start time but no end time, infer the smallest defensible duration from adjacent events or local precedent and mark it as inferred in the description.
-
-### 6. Update Events
-
-Use a diff-oriented update:
-
-```text
-Title: old -> new
-Calendar: primary -> Neuromatch
-Location: tracking link -> Zoom registration link
-Tags: add neuroai, course
-```
-
-Preserve unrelated fields. Do not replace rich descriptions unless the normalized description includes all important source, link, and notes fields.
-
-### 7. Move Between Calendars
-
-Prefer a native move operation if available. If not:
-
-1. Read full source event.
-2. Create a clone in the target calendar.
-3. Verify the clone exists with matching title/time/link.
-4. Delete the source event only after verification.
-5. Report old and new event IDs.
-
-Preserve attendees, recurrence, reminders, transparency, location, and description unless the user asked to change them.
-
-### 8. Delete Events
-
-Deletion is high impact:
-
-- Single explicit event: confirm identity by title/time before deleting.
-- Batch delete: list the exact events first.
-- Recurring event: require scope clarity before deleting.
-
-## Output Style
-
-For a completed operation, report:
-
-- event count changed
-- target calendar(s)
-- any inferred durations or unresolved TBD items
-- whether links came from email, source page, or calendar payload
-- verification result
-
-Keep the final answer concise. Do not paste long tracking URLs unless the user asks.
-
-## Common Failure Modes
-
-- Using event color for categories that must sync to Apple/iOS colors.
-- Creating many tiny calendars for tags.
-- Losing Zoom links by overwriting descriptions with source-only notes.
-- Creating Google Meet links accidentally when the source provides Zoom.
-- Updating a recurring instance as if it were a one-off event.
-- Bulk writing without checking duplicates.
+Report: event count changed, target calendar(s), any inferred durations, unresolved TBD items, link provenance (email / source page / calendar payload), and verification result. Keep URLs out of the summary unless the user asks.

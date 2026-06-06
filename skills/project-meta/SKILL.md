@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -60,12 +60,12 @@ Do not use the skill for ordinary implementation work that does not touch projec
 
 - Detect the primary agent tool before assigning canonical-vs-mirror roles. When Claude Code is the primary consumer, `CLAUDE.md` is the canonical entrypoint and `AGENTS.md` is the mirror. When Codex/GPT-5.4 is primary, `AGENTS.md` is canonical and `CLAUDE.md` is the mirror. In both cases, treat `.github/copilot-instructions.md` as secondary. See `references/mirrors-and-updates.md` for the tool-awareness policy.
 - If the repo has no established convention, default to `AGENTS.md` for project memory and `USER.md` for stable user preferences.
-- On first project init, or when the user asks to reset or change local preferences, use the installed `USER.template.md` as a questionnaire and target-config input. Ask which preset and checklist items to enable, then create or repair ignored local `USER.md` with only selected checked preferences. Prefer `scripts/render_user_preferences.py` when available. Do not copy or commit `USER.template.md` into a target repo by default.
+- Default: on first project init, or when the user asks to reset or change local preferences, use the installed `USER.template.md` as a questionnaire and target-config input. Ask which preset and checklist items to enable, then create or repair ignored local `USER.md` with only selected checked preferences. Prefer `scripts/render_user_preferences.py` when available. Do not copy or commit `USER.template.md` into a target repo by default.
 - Shared/user-facing docs are the primary project explanation, but primary does not mean eager full-context loading. Use selective reads unless the task requires the whole document.
 - If a shared doc becomes long or structurally important, maintain a README structure map in agent-facing documentation. Store headings, section purposes, routing hints, and update triggers there; do not copy user-facing prose.
 - References define protocols; templates define copyable skill-level seeds. Project-level artifacts instantiated from Project Meta seeds must be concrete to that project and keep `instantiated_from`, `source_reference`, owner, review policy, and last review metadata.
 - The canonical `/project-meta <command>` route table lives in `references/cli-command-patterns.md`. Keep this entrypoint to trigger policy and reference-routing summaries; do not duplicate command workflow contracts here.
-- In larger repos, prefer a short project-memory loader/index plus narrow topical memory files.
+- Default: in larger repos, prefer a short project-memory loader/index plus narrow topical memory files.
 - If the repo-memory structure is missing, bloated, inconsistent, or messy enough to slow future work, restructure it instead of working around it.
 - Keep repo memory concise, durable, and free of speculative or session-only notes.
 - Update only the canonical file that matches the lesson learned. Sync mirrors only when canonical structure or high-priority guidance changed.
@@ -75,7 +75,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
 - Treat repeated agent mistakes as missing harness: improve documentation, routing, validation, or tooling instead of only patching the immediate output.
 - Make the harness agent-legible: a concise map, versioned sources of truth, selective loading, behavior guardrails, and rules that can be verified or promoted into tooling.
 - Preserve the existing agent-facing documentation framework and pair it with user-facing documentation prepared for user review.
-- Trigger the multi-agent protocol when the user explicitly asks for it or when complexity warrants it. For complex work, separate planning from execution: a lead agent owns decomposition, context packaging, review criteria, and integration while workers handle bounded subtasks. The protocol is one runtime-agnostic contract with per-runtime mechanical backings (Claude Code Workflow / Agent tool; Codex native subagents / Agents-SDK; prose loop as the floor). A file-count tier selector (≥2 of the harness file set — but single-file and trivial ≤10-line/docs-only edits stay single-context) selects cheap *subagent dispatch*; escalating to a scripted *engine* is a separate opt-in/higher-scope bar — never raw file count (AP-COORD-4). Editing recipes (`init`) own dispatch; read-only verbs (`deliver`/`audit`/`validate`/`status`) never edit. See `references/multi-agent-protocols.md` for the exact tiers.
+- **MUST** dispatch via the multi-agent protocol when its conditions match (see `references/multi-agent-protocols.md`); editing recipes dispatch, read-only verbs never edit; escalate to a scripted engine only on opt-in/scope, never raw file count (AP-COORD-4).
 - Before committing harness changes, present a concise delivery for user review that separates user-facing documentation from agent-facing documentation.
 
 ## Skill Arbitration
@@ -90,6 +90,8 @@ When the user's request would match `project-meta` *and* a peer skill on this ma
 | Debug / root-cause / systematically fix a hard, flaky, or recurring bug (gated repro → red test → hypotheses → top-k sandbox fixes → validate → ship) | **`meta-debug`** | provides the harness it reads/writes: `meta-debug` collects context in project-meta memory layout, dispatches its top-k sandbox fixes via project-meta's multi-agent protocol, and promotes lessons into canonical memory via project-meta's CRUD rules. Run `/project-meta init` first if no harness exists. |
 | Mixed: "research X and set up the repo for me" | **`project-meta` first**, then peer | run init/audit, then explicitly delegate the research portion |
 | Survey or research output needs to be packaged as a target-repo artifact (with provenance frontmatter, mirror sync, delivery summary) | **`project-meta`** | wraps the peer's output for delivery |
+| Schedule, classify, or bulk-edit calendar events (CRUD across Google/Apple/Notion/MCP calendars) | **`calendar-crud-workflow`** | not this skill — defer; run `/project-meta init` only if the calendar work lives in a repo that needs a harness |
+| Create a new multi-Claude config profile (`~/.claude-<name>/`, launcher, shared-plugins symlink) | **`profile-creator`** | not this skill — defer; `project-meta` owns repo memory, not user-level Claude config dirs |
 
 If an arbitration is unclear, ask the user before invoking either skill. Never silently invoke both.
 
@@ -175,7 +177,7 @@ Detail for each step lives in the artifact owning that step:
 - About to write or audit a harness rule, design a skill, set up coordination, or diagnose recurring agent behaviour failures:
   - load [`references/anti-patterns.md`](references/anti-patterns.md). Cite anti-pattern IDs (e.g. AP-SKL-2) inline when the rule you are writing fixes a named pattern, so the lineage is auditable.
 - Need to author a new skill, audit an existing skill against the project-meta contract, or scaffold from `templates/SKILL.template.md`:
-  - load [`references/writing-skills.md`](references/writing-skills.md). The audit checklist there is the gate before publishing.
+  - load [`references/writing-skills.md`](references/writing-skills.md) and [`references/skill-critics.md`](references/skill-critics.md). The audit checklist in writing-skills.md plus the deterministic critic suite in skill-critics.md are the gate before publishing.
 - Installing or configuring an opt-in phase-lock workflow (brainstorm → plan → implement → review → finish gates), or diagnosing a phase-lock failure:
   - load [`templates/phase-lock-contract.md`](templates/phase-lock-contract.md). Run `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` to verify gates locally; the script is also the Stop-hook payload.
 - Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), or switching `HARNESS_PROFILE` between minimal/standard/strict:
@@ -186,6 +188,16 @@ Detail for each step lives in the artifact owning that step:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 - Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:
   - load [`references/pressure-testing.md`](references/pressure-testing.md). Use [`templates/pressure-test-scenarios.json`](templates/pressure-test-scenarios.json) as a starting fixture; run `python3 scripts/pressure_test_skill.py SKILL_DIR SCENARIOS_FILE` to walk a verdict pass.
+
+## Output Footer
+
+At the end of every invocation, print a single status line:
+
+```
+project-meta/<verb> done — <N> file(s) written, <N> file(s) read, memory updated: <yes|no>, delivery shown: <yes|no>
+```
+
+Omit counts that are zero. This line is the handoff signal for the user and for any orchestrating agent checking completion.
 
 ## End Check
 

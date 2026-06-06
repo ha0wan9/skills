@@ -17,6 +17,7 @@ If paper_index.md is omitted, it is inferred as <survey-dir>/paper_index.md.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -42,14 +43,23 @@ def parse_paper_ids(paper_index_text: str) -> set[str]:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) < 3:
-        print("usage: claims_validate.py <claims.jsonl> <survey.md> [paper_index.md]",
-              file=sys.stderr)
-        return 2
-    claims_path = Path(argv[1])
-    survey_path = Path(argv[2])
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("claims_jsonl", metavar="claims.jsonl",
+                        help="Path to the claims.jsonl file")
+    parser.add_argument("survey_md", metavar="survey.md",
+                        help="Path to the survey.md file")
+    parser.add_argument("paper_index_md", metavar="paper_index.md", nargs="?",
+                        help="Path to paper_index.md (default: <survey-dir>/paper_index.md)")
+    args = parser.parse_args(argv[1:])
+
+    claims_path = Path(args.claims_jsonl)
+    survey_path = Path(args.survey_md)
     paper_index_path = (
-        Path(argv[3]) if len(argv) >= 4 else survey_path.parent / "paper_index.md"
+        Path(args.paper_index_md) if args.paper_index_md
+        else survey_path.parent / "paper_index.md"
     )
 
     errors: list[str] = []

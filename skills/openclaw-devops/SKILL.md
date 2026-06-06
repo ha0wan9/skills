@@ -11,6 +11,7 @@ description: >-
   repairing, upgrading, rolling back, or scheduling maintenance for an OpenClaw
   gateway/node install, when logging or tracking bugs in the backlog, or when
   OpenClaw is broken / out of date / crash-looping / failing config validation.
+metadata: {version: 1.2.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # OpenClaw DevOps
@@ -88,10 +89,16 @@ that pipeline calls: `rollback` (phase-0 mitigate / phase-8 revert) and `verify`
 |---|---|---|
 | Maintain/repair/update/roll back/health-check an OpenClaw install; schedule a maintenance cron | **openclaw-devops** | acts |
 | Systematic debugging of a hard/flaky/recurring bug (gated repro→fix→ship) | **meta-debug** | openclaw-devops **defers** to it as the debug base layer, and provides the OpenClaw `rollback`/`verify` mechanics its phases invoke. |
-| Audit OpenClaw skills/cron quality, tool-failure reporting (observe-only) | **openclaw-ops-audit** | not this skill — ops-audit *observes*; devops *acts*. |
+| Observe-only audit of OpenClaw skill/cron quality or tool-failure reporting (no mutations) | out of scope for this skill | This skill *acts*; pure-observation auditing is not a capability it ships. |
 
 ## Gotchas
 
+- **State is written to the project repo, not the skill install dir** — the
+  install dir is wiped on marketplace updates and is shared across repos.
+  Resolution order: `--state-dir` CLI flag › `$OPENCLAW_DEVOPS_STATE_DIR` env
+  var › `<nearest .git ancestor of cwd>/.harness/openclaw-devops/` › CWD
+  fallback. Pass `--state-dir` or set the env var when running outside a git
+  repo or to direct multiple repos to separate state paths.
 - **System `/usr/lib` copy needs sudo; the engine only acts if `sudo -n` works.**
   Without passwordless sudo it updates the user copy, marks the system copy
   `skipped`, and warns about skew. Scope a sudoers rule for full automation

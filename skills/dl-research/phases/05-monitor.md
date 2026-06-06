@@ -14,8 +14,8 @@ Use while runs are active or when the user asks for status.
    - crashes, stale metrics, invalid data, budget warnings;
    - manual interventions.
 5. Update ledger rows with the newest status and metric summary.
-6. Run `python scripts/validate_ledger.py <study-root>/runs.jsonl` after
-   updates. Fix reported errors before handoff.
+
+**MUST delivery gate:** run `python scripts/validate_ledger.py <study-root>/runs.jsonl` after updating the ledger. A non-zero exit blocks handoff — fix all reported errors before handing off to `evaluate`. See `examples/sample-study/runs.jsonl` for a valid reference.
 
 ## Hand Off
 

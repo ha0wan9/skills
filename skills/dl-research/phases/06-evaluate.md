@@ -22,8 +22,8 @@ Use when one or more runs have completed and need a verdict against the design.
    are surprising, or when repeats disagree. The reviewer receives only the
    protocol, design gates, ledger rows, and raw metric artifacts.
 8. Write or append `04-evaluation.md`; update `runs.jsonl` verdict fields.
-9. Run `python scripts/validate_ledger.py <study-root>/runs.jsonl`. Fix
-   reported errors before handoff.
+
+**MUST delivery gate:** run `python scripts/validate_ledger.py <study-root>/runs.jsonl` after updating verdict fields. A non-zero exit blocks handoff — fix all reported errors before handing off to `synthesize`. See `examples/sample-study/runs.jsonl` for a valid reference.
 
 ## Hand Off
 

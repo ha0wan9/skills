@@ -11,7 +11,7 @@ description: >-
   versioned incrementally as new evidence arrives. Use when the user asks for
   a literature review, comprehensive survey, "research X for me", or to
   expand/audit an existing survey.
-metadata: {version: 1.0.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Deep Survey (BFS)
@@ -109,7 +109,9 @@ State the detected phase, `survey-id`, study root, and reason before loading.
     fan-out search (delegation template, runtime backings, dedup ordering
     barrier) and during `synthesize` for the `claims-adversary` gate — the
     survey specialization of project-meta's Task Dispatch paradigm.
-15. Load templates only when scaffolding the matching artifact.
+15. Load `references/loop-mode.md` when the survey is running under `/loop`
+    (ScheduleWakeup / self-paced async iteration).
+16. Load templates only when scaffolding the matching artifact.
 
 ## Cross-Cutting Invariants
 
@@ -118,9 +120,9 @@ State the detected phase, `survey-id`, study root, and reason before loading.
   a new survey, not a silent edit.
 - Every paper has a stable ID (`P001`, `P002`, ...) that all later sections
   reference. Renumbering invalidates every cross-reference.
-- Every claim in `survey.md` resolves to a row in `claims.jsonl` that names the
-  paper ID, the section/page, and a verbatim quote or table reference. No
-  speculation, no "I think", no implicit synthesis without a backing claim.
+- **MUST** resolve every claim in `survey.md` to a row in `claims.jsonl` that
+  names the paper ID, the section/page, and a verbatim quote or table reference.
+  No speculation, no "I think", no implicit synthesis without a backing claim.
 - Mark unknown values explicitly (e.g., "未披露", "not disclosed", "N/A") in
   comparison tables. Never guess.
 - Round N is gap-driven, not curiosity-driven. Each Round N entry must name
@@ -141,7 +143,7 @@ State the detected phase, `survey-id`, study root, and reason before loading.
   existing buckets still partition cleanly. Cross-cutting sub-questions are
   allowed: cross-tag one paper row across SQs (union the tags), but count each
   paper once in the bias audit — see `references/taxonomy-revision.md`.
-- Bias audit must run before synthesis. If institution / country / year /
+- **MUST** run the bias audit before synthesis. If institution / country / year /
   method-route distribution is over-concentrated (any one bucket > 60% of
   ★★★ papers), trigger an additional Round N targeted at the under-represented
   bucket. `scripts/bias_audit.py` computes institution/country/year/venue (and
@@ -153,9 +155,9 @@ State the detected phase, `survey-id`, study root, and reason before loading.
   read-only and return candidate rows; only the lead writes `paper_index.md`,
   after central dedup/merge. Never let parallel agents append index rows
   directly — that double-counts papers (see `references/multi-agent-dispatch.md`).
-- Synthesis must pass the `claims-adversary` review gate before shipping. A
-  `block` verdict is a hard STOP — fix the flagged claims and re-run; never set
-  status `synthesized` over an open `block`.
+- **MUST** pass the `claims-adversary` review gate before status `synthesized`.
+  A `block` verdict is a hard STOP — fix the flagged claims and re-run; never
+  set status `synthesized` over an open `block`.
 - Do not change secrets, credentials, or external accounts as part of survey
   work.
 
@@ -193,28 +195,32 @@ State the detected phase, `survey-id`, study root, and reason before loading.
 
 ## Running Under /loop Dynamic Mode
 
-When the survey is being progressed asynchronously via `/loop` (no
-fixed interval; ScheduleWakeup self-pacing), maintain a
-`loop_state.json` artifact at the survey root scaffolded from
-`templates/loop_state.json`. Read it at the start of every fired
-iteration so the agent immediately knows iteration number, current
-task, target paper IDs, blockers, and completed targets without
-re-deriving from `paper_index.md` and `claims.jsonl`.
+Load `references/loop-mode.md` for the full per-iteration hygiene procedure
+(loop_state.json scaffold, progress journaling, ScheduleWakeup stop conditions).
 
-Per-iteration loop hygiene:
+## Trigger Decision
 
-1. Read `loop_state.json`. If missing, scaffold from the template.
-2. Use `current_task.target_paper_ids` and `target_metric_keywords` to
-   plan the next 60-180 seconds of work. Prefer
-   `scripts/extract_paper_metrics.py` for PDF table surfacing.
-3. After completing the work, append a one-line entry to
-   `audits/r<N>-progress.jsonl` summarizing what landed.
-4. Update `loop_state.json`: increment `iteration`, set
-   `last_updated_utc`, move the just-finished task into
-   `completed_targets`, pop the next target from `next_targets` into
-   `current_task`. Add to `blockers` if a target failed.
-5. If any `stop_conditions` flip true, omit `ScheduleWakeup` and
-   write a final summary instead.
+Invoke this skill when the request shape matches any of:
+
+- the request is **literature-only**: surveying, mapping, or auditing published
+  work with no experimental or code component
+- the user says "literature review", "comprehensive survey", "research X for me",
+  or asks to expand/audit an existing survey
+- the request asks for a coverage matrix, gap audit, or sub-question decomposition
+  over a body of papers
+- a peer skill (e.g. `dl-research`) explicitly delegates its survey phase here
+
+Do NOT invoke when the work is primarily experimental, code-generation, or
+artifact-delivery without a literature component — see Skill Arbitration below.
+
+## Bootstrap Order
+
+**First invocation** (no survey directory): state `survey-id` + root → confirm
+scope → load `phases/00-frame.md` → run `frame` → Auto-detect next phase.
+
+**Re-entry** (directory exists): run Auto-detect → state phase, `survey-id`,
+root, and reason → load the matching phase file plus any Loading Rules it
+requires.
 
 ## Skill Arbitration
 
