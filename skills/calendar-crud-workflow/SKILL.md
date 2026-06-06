@@ -6,7 +6,7 @@ metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-mark
 
 # Calendar CRUD Workflow
 
-> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
+> **Runtimes:** Claude Code · Codex &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Turn vague scheduling requests into safe, normalized calendar operations with stable cross-device behavior, searchable metadata, and reversible bulk changes.
 

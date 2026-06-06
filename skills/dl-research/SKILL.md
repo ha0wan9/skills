@@ -12,7 +12,7 @@ metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-mark
 
 # DL Research
 
-> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
+> **Runtimes:** Claude Code · Codex &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Project-agnostic meta skill for Deep Learning research workflows. It defines
 the research lifecycle, adapter contract, H/E identity rules, ledger shape, and

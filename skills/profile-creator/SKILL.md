@@ -32,7 +32,7 @@ Plugins are shared: every profile's `plugins/` is a symlink to `~/.claude-shared
 
 **MUST NOT** run `claude plugin marketplace add/update` from a new profile. Reason: the CLI writes a profile-specific absolute path (e.g. `~/.claude-<name>/plugins/…`) into `known_marketplaces.json` and `installed_plugins.json`, replacing the shared `~/.claude-shared/…` paths and breaking plugin lookups in every other profile ("corrupted installLocation" failure). Plugin administration MUST go through `ccplug` only.
 
-**MUST** validate the profile name against `^[a-z0-9][a-z0-9-]*$` before creating anything. Exit with a clear remediation message if invalid.
+**MUST** validate the profile name against `^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$` before creating anything (lowercase alphanumerics and hyphens; no leading/trailing hyphen). Exit with a clear remediation message if invalid.
 
 **MUST** verify `~/.claude-shared/plugins` exists before creating a symlink. Exit with a clear remediation message if missing — do not create the profile directory until prerequisites pass.
 

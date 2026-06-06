@@ -17,7 +17,7 @@ import shutil
 import sys
 from pathlib import Path
 
-NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+NAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
 
 LAUNCHER_SIMPLE = """\
 #!/usr/bin/env bash
@@ -55,7 +55,7 @@ def validate_name(name: str) -> None:
         )
 
 
-def check_prerequisites(name: str, seed_from: str | None) -> None:
+def check_prerequisites(name: str, seed_from: str | None, dry_run: bool = False) -> None:
     profile_dir = Path.home() / f".claude-{name}"
     if profile_dir.exists():
         die(
@@ -66,11 +66,17 @@ def check_prerequisites(name: str, seed_from: str | None) -> None:
 
     shared_plugins = Path.home() / ".claude-shared" / "plugins"
     if not shared_plugins.exists():
-        die(
+        msg = (
             f"Shared plugins directory {shared_plugins} does not exist.\n"
             "  Remediation: create ~/.claude-shared/plugins/ first, or run\n"
             "  the shared-store setup before creating profiles."
         )
+        # Under --dry-run, warn instead of aborting so the preview still runs
+        # on a machine that hasn't set up the shared store yet.
+        if dry_run:
+            print(f"[dry-run] WARNING: {msg}")
+        else:
+            die(msg)
 
     if seed_from is not None:
         seed_dir = Path.home() / f".claude-{seed_from}"
@@ -204,7 +210,7 @@ def main() -> None:
     args = parser.parse_args()
 
     validate_name(args.name)
-    check_prerequisites(args.name, args.seed_from)
+    check_prerequisites(args.name, args.seed_from, args.dry_run)
     create_profile(args.name, args.isolated, args.seed_from, args.dry_run)
 
 

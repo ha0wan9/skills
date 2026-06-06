@@ -16,7 +16,7 @@ metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-mark
 
 # Deep Survey (BFS)
 
-> **Runtimes:** Claude Code · Codex · OpenClaw &nbsp;|&nbsp; **Published:** Claude Marketplace
+> **Runtimes:** Claude Code · Codex &nbsp;|&nbsp; **Published:** Claude Marketplace
 
 Thin router for breadth-first literature surveys. Resolve the phase, resolve
 `survey-id`, then load only the procedure file you need. Survey artifacts live

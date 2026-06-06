@@ -80,6 +80,9 @@ def set_state_dir(base: Path) -> None:
 
 # Bind at import to a sensible default so the module is import-safe (no
 # NameError if a function is called as a library). main() re-binds via arg.
+# NOTE: this resolves against the cwd at import time. Library callers that
+# change cwd after import must call set_state_dir(resolve_state_dir(...))
+# again before invoking a command; the CLI does this in main().
 set_state_dir(resolve_state_dir(None))
 
 OK, WARN, FAIL = "ok", "warn", "fail"

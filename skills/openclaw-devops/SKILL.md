@@ -106,7 +106,7 @@ that pipeline calls: `rollback` (phase-0 mitigate / phase-8 revert) and `verify`
 - **The OpenClaw cron should be a thin agentTurn that just runs the engine and
   posts its summary.** Maintenance determinism must live in the script, not a
   flaky LLM turn.
-- **`cycle` holds a flock** (`state/devops.lock`); overlapping fires exit cleanly.
+- **`cycle` holds a flock** (`<state-dir>/devops.lock` — default `.harness/openclaw-devops/devops.lock` under the project repo, or `$OPENCLAW_DEVOPS_STATE_DIR`/`--state-dir` when overridden); overlapping fires exit cleanly.
 - **Version "major" is calendar-based** (`version_major_index`, default 0 = year).
 - **Restart order matters**: gateway → chloe → node (node dials the gateway).
 

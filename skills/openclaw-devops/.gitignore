@@ -1,1 +1,4 @@
+# Legacy guard: pre-1.2 the engine wrote runtime state here. It now resolves a
+# project-scoped <repo>/.harness/openclaw-devops/ dir (or --state-dir / env).
+# Kept so an older build can't accidentally commit state into the skill.
 state/
