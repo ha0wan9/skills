@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.7.0",
+      "version": "1.8.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -40,7 +40,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing.",
+      "description": "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract \u2014 per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint \u2014 then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing.",
       "source": "./",
       "strict": false,
       "skills": [

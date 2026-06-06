@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.7.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.8.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -187,6 +187,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
 - Wiring a repo to an external issue tracker (Linear/GitHub/Jira) so feature work is mirrored — check-first / write-progress-back / open-if-missing — or installing/auditing the `issue-tracker` capability and its advisory reminder hook:
   - load [`references/issue-tracking-integration.md`](references/issue-tracking-integration.md), then instantiate [`templates/issue-tracking.md`](templates/issue-tracking.md). Install via `/project-meta init --issue-tracker <tracker>` or `/project-meta settings enable issue-tracker`.
+- Mirroring Project Board rows to Linear:
+  - load [`references/linear-mirror.md`](references/linear-mirror.md) and [`recipes/mirror-linear.md`](recipes/mirror-linear.md). Use `board.py mirror-linear` for the push-only, interactive-only dry-run/export path; never run a live Linear push from headless capture.
 - Generating per-host plugin manifests (`.claude/`, `.cursor/`, `.opencode/`, `.github/copilot-instructions.md`, `gemini-extension.json`) from one canonical AGENTS.md / CLAUDE.md, or detecting drift between canonical and a hand-edited mirror:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 - Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:

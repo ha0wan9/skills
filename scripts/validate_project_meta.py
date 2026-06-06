@@ -387,8 +387,10 @@ def check_required_files() -> None:
         "scripts/render_user_preferences.py",
         "scripts/validate_target_harness.py",
         "templates/board.dashboard.html",
+        "references/linear-mirror.md",
         "recipes/roadmap.md",
         "recipes/refine.md",
+        "recipes/mirror-linear.md",
         *sorted(REQUIRED_TEMPLATES),
         *sorted(REQUIRED_REFERENCES),
     ):
@@ -825,6 +827,30 @@ def check_user_template_presets() -> None:
         require(token in template, f"USER.template.md missing preset token: {token}")
 
 
+def check_linear_mirror_docs() -> None:
+    ref = read("references/linear-mirror.md")
+    recipe = read("recipes/mirror-linear.md")
+    for token in (
+        "Push-only",
+        "Interactive-only",
+        "Dry-run by default",
+        "link back",
+        "linear_id",
+        "board.py mirror-linear",
+        "Reverse drift",
+    ):
+        require(token in ref, f"linear-mirror reference missing: {token}")
+    for token in (
+        "Read-only by default",
+        "references/issue-tracking-integration.md",
+        "--json",
+        "board.py edit <PROJECT-BOARD-ID> --linear-id",
+        "Headless push",
+        "Two-way sync",
+    ):
+        require(token in recipe, f"mirror-linear recipe missing: {token}")
+
+
 def check_trigger_cases() -> None:
     for case in TRIGGER_CASES:
         should_use, refs = classify_prompt(case.prompt)
@@ -1148,6 +1174,32 @@ def check_board_cli() -> None:
         html = dashboard.read_text(encoding="utf-8")
         require("Smoke item" in html, "dashboard must include rendered item data")
         require("docs/backlog/items.jsonl" in html, "dashboard must point to canonical item store")
+        require("showSaveFilePicker" in html, "dashboard must offer File System Access API edit-back")
+        require("items.patched.jsonl" in html, "dashboard must include download-patched-store fallback")
+        require("roadmap.patched.json" in html, "dashboard must include patched roadmap fallback")
+        require("items_sha256" in html, "dashboard must patch roadmap items_sha256 for edit-back")
+        require("Experimental browser edit-back" in html, "dashboard must mark browser edit-back experimental")
+        require("CLI remains canonical" in html, "dashboard must state the CLI stays canonical")
+
+        mirror = run_python_script_result("scripts/board.py", "mirror-linear", "--root", str(target_root))
+        require(mirror.returncode == 0, f"board mirror-linear failed: {mirror.stderr}")
+        require("Linear mirror dry-run/export only" in mirror.stdout, "mirror-linear must be dry-run by default")
+        require("create TEST-001" in mirror.stdout, "mirror-linear dry-run must list rows to push")
+        mirror_json = run_python_script("scripts/board.py", "mirror-linear", "--root", str(target_root), "--json")
+        exported = json.loads(mirror_json)
+        require(exported.get("dry_run") is True, "mirror-linear JSON must mark dry_run=true")
+        require(exported["items"][0]["action"] == "create", "mirror-linear must create rows without linear_id")
+        require("Repo backlink:" in exported["items"][0]["body"], "mirror-linear body must link back to repo")
+
+        set_linear = run_python_script_result(
+            "scripts/board.py", "edit", "TEST-001", "--root", str(target_root), "--linear-id", "LIN-123"
+        )
+        require(set_linear.returncode == 0, f"board edit --linear-id failed: {set_linear.stderr}")
+        mirror_json = run_python_script("scripts/board.py", "mirror-linear", "--root", str(target_root), "--json")
+        exported = json.loads(mirror_json)
+        test_item = next(item for item in exported["items"] if item["id"] == "TEST-001")
+        require(test_item["action"] == "update", "mirror-linear must update rows with linear_id")
+        require(test_item["linear_id"] == "LIN-123", "mirror-linear must export linear_id")
 
         # Regression: a value containing </script> must not break out of the dashboard's
         # <script> block (would corrupt BOARD_DATA + enable stored XSS once DASH-02/DASH-25
@@ -1334,6 +1386,7 @@ CHECKS = (
     check_ui_metadata,
     check_readme_layout,
     check_user_template_presets,
+    check_linear_mirror_docs,
     check_trigger_cases,
     check_template_provenance,
     check_template_surface_contract,

@@ -490,6 +490,86 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+def linear_state_hint(status: str) -> str:
+    return {
+        "unscheduled": "Backlog",
+        "scheduled": "Todo",
+        "in_progress": "In Progress",
+        "done": "Done",
+    }.get(status, "Backlog")
+
+
+def linear_body(row: dict[str, Any], root: Path) -> str:
+    links = row.get("links") if isinstance(row.get("links"), list) else []
+    source = str(row.get("source") or "docs/backlog/items.jsonl")
+    backlink = links[0] if links else source
+    parts = [
+        f"Project Board item: {row.get('id', '')}",
+        "",
+        str(row.get("body") or "").strip(),
+        "",
+        "Acceptance:",
+        str(row.get("acceptance_shape") or "").strip() or "(not specified)",
+        "",
+        f"Repo backlink: {backlink}",
+        f"Canonical store: {paths(root)['items'].relative_to(root)}",
+        f"Status: {row.get('status', '')}",
+        f"Version: {row.get('version') or '-'}",
+    ]
+    labels = row.get("labels") if isinstance(row.get("labels"), list) else []
+    if labels:
+        parts.append("Labels: " + ", ".join(str(label) for label in labels))
+    return "\n".join(parts).strip() + "\n"
+
+
+def mirror_linear_rows(root: Path, rows: list[dict[str, Any]], *, include_done: bool) -> list[dict[str, Any]]:
+    candidates = []
+    for row in rows:
+        if row.get("disposition") != "active":
+            continue
+        if not include_done and row.get("status") == "done":
+            continue
+        candidates.append(
+            {
+                "id": row.get("id"),
+                "linear_id": row.get("linear_id"),
+                "action": "update" if row.get("linear_id") else "create",
+                "title": f"[{row.get('id')}] {row.get('title', '')}",
+                "state_hint": linear_state_hint(str(row.get("status") or "unscheduled")),
+                "repo_backlink": (row.get("links") or [row.get("source") or "docs/backlog/items.jsonl"])[0],
+                "source": row.get("source") or "docs/backlog/items.jsonl",
+                "body": linear_body(row, root),
+                "dry_run": True,
+            }
+        )
+    return candidates
+
+
+def cmd_mirror_linear(args: argparse.Namespace) -> int:
+    """Dry-run/export Project Board rows for an interactive, push-only Linear mirror.
+
+    This command deliberately performs no network calls and no writes. It is the repo-canonical
+    plan leg for the issue-tracker Track Loop; an operator/agent with Linear access performs the
+    live push and records returned ids with `board.py edit <id> --linear-id <LINEAR-ID>`.
+    """
+    rows, _roadmap, errors = validate_store(args.root)
+    if errors:
+        raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
+    planned = mirror_linear_rows(args.root, rows, include_done=args.include_done)
+    if args.json:
+        print(json.dumps({"dry_run": True, "items": planned}, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    print("Linear mirror dry-run/export only (push-only, interactive-only; no network writes).")
+    print("Repo remains canonical; Linear bodies must link back and created ids are recorded as linear_id.")
+    if not planned:
+        print("no active items to mirror")
+        return 0
+    for item in planned:
+        lid = item.get("linear_id") or "-"
+        print(f"{item['action']:<6} {item['id']:<8} linear={lid:<12} state={item['state_hint']:<11} {item['title']}")
+    return 0
+
+
 _INLINE_CODE = re.compile(r"`([^`]+)`")
 _BOLD = re.compile(r"\*\*([^*]+)\*\*")
 _ITALIC = re.compile(r"(?<!\*)\*([^*\s][^*]*?)\*(?!\*)")
@@ -895,6 +975,12 @@ def build_parser() -> argparse.ArgumentParser:
         p_list.add_argument(f"--{key}")
     p_list.add_argument("--json", action="store_true")
     p_list.set_defaults(func=cmd_list)
+
+    p_mirror_linear = sub.add_parser("mirror-linear")
+    add_common(p_mirror_linear)
+    p_mirror_linear.add_argument("--include-done", action="store_true", help="include done items in the export")
+    p_mirror_linear.add_argument("--json", action="store_true", help="emit machine-readable dry-run export")
+    p_mirror_linear.set_defaults(func=cmd_mirror_linear)
 
     p_render = sub.add_parser("render")
     add_common(p_render)
