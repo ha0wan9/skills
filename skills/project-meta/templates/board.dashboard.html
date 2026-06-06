@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Board</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --ink: #1f2933;
+      --muted: #65717d;
+      --line: #d7d9d2;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-soft: #d9f1ed;
+      --warn: #a15c00;
+      --done: #2f6f46;
+      --shadow: 0 1px 2px rgba(20, 28, 35, 0.08);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--bg); }
+    header { padding: 24px clamp(16px, 4vw, 44px) 16px; border-bottom: 1px solid var(--line); background: #fbfbf8; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); line-height: 1.12; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 0; }
+    p { margin: 0; }
+    .meta { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; max-width: 780px; }
+    .count { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); min-height: 76px; }
+    .count strong { display: block; font-size: 24px; line-height: 1.1; }
+    .count span { color: var(--muted); font-size: 13px; }
+    main { padding: 22px clamp(16px, 4vw, 44px) 36px; display: grid; gap: 22px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 8px 10px; font: inherit; cursor: pointer; }
+    button.active { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
+    section { min-width: 0; }
+    .roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .milestone, .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+    .milestone { padding: 14px; }
+    .milestone .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 12px; background: #eef0ea; color: var(--muted); white-space: nowrap; }
+    .badge.now { background: var(--accent-soft); color: #0b4d48; }
+    .badge.done { background: #ddf0e2; color: var(--done); }
+    .badge.todo { background: #f1eee5; color: var(--warn); }
+    .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .column { min-width: 0; }
+    .column h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stack { display: grid; gap: 10px; }
+    .card { padding: 12px; min-width: 0; }
+    .card header { padding: 0; border: 0; background: transparent; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .card h4 { margin: 0 0 8px; font-size: 15px; line-height: 1.25; letter-spacing: 0; overflow-wrap: anywhere; }
+    .card .body { color: var(--muted); font-size: 13px; line-height: 1.42; margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; font-size: 12px; color: var(--muted); background: #fbfbf8; }
+    .empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; font-size: 13px; }
+    footer { color: var(--muted); font-size: 12px; padding: 0 clamp(16px, 4vw, 44px) 30px; }
+    @media (max-width: 820px) {
+      .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Project Board</h1>
+    <p class="meta" id="meta"></p>
+    <div class="counts" id="counts"></div>
+  </header>
+  <main>
+    <section>
+      <h2>Roadmap</h2>
+      <div class="roadmap" id="roadmap"></div>
+    </section>
+    <section>
+      <div class="toolbar" id="filters"></div>
+    </section>
+    <section>
+      <h2>Backlog</h2>
+      <div class="board" id="board"></div>
+    </section>
+  </main>
+  <footer id="footer"></footer>
+  <script>
+    const BOARD_DATA = __BOARD_DATA_JSON__;
+    const STATUSES = ["unscheduled", "scheduled", "in_progress", "done"];
+    let activeDisposition = "active";
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    }
+
+    function renderCounts() {
+      const labels = [
+        ["items", "All items"],
+        ["active", "Active"],
+        ["refined", "Refined"],
+        ["done", "Done"]
+      ];
+      document.getElementById("counts").innerHTML = labels.map(([key, label]) => `
+        <div class="count"><strong>${esc(BOARD_DATA.counts[key] || 0)}</strong><span>${esc(label)}</span></div>
+      `).join("");
+    }
+
+    function renderRoadmap() {
+      const milestones = BOARD_DATA.roadmap.milestones || [];
+      const byId = new Map(BOARD_DATA.items.map(item => [item.id, item]));
+      document.getElementById("roadmap").innerHTML = milestones.length ? milestones.map(m => {
+        const itemTitles = (m.items || []).map(id => byId.get(id)).filter(Boolean).map(item => `<span class="chip">${esc(item.id)}</span>`).join("");
+        return `<article class="milestone">
+          <div class="top"><strong>${esc(m.version || m.id || "")}</strong><span class="badge ${esc(m.status || "todo")}">${esc(m.status || "todo")}</span></div>
+          <h3>${esc(m.title || "")}</h3>
+          <p class="meta">${esc(m.detail || "")}</p>
+          <div class="chips">${itemTitles}</div>
+        </article>`;
+      }).join("") : `<div class="empty">No roadmap milestones yet.</div>`;
+    }
+
+    function renderFilters() {
+      const filters = ["active", "deferred", "trimmed", "wontfix", "all"];
+      document.getElementById("filters").innerHTML = filters.map(value => `
+        <button type="button" class="${activeDisposition === value ? "active" : ""}" data-filter="${value}">${esc(value)}</button>
+      `).join("");
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeDisposition = button.dataset.filter;
+          render();
+        });
+      });
+    }
+
+    function visibleItems() {
+      if (activeDisposition === "all") return BOARD_DATA.items;
+      return BOARD_DATA.items.filter(item => item.disposition === activeDisposition);
+    }
+
+    function renderBoard() {
+      const items = visibleItems();
+      document.getElementById("board").innerHTML = STATUSES.map(status => {
+        const cards = items.filter(item => item.status === status);
+        return `<div class="column">
+          <h3>${esc(status)} (${cards.length})</h3>
+          <div class="stack">${cards.length ? cards.map(renderCard).join("") : `<div class="empty">No items.</div>`}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderCard(item) {
+      const labels = [...(item.labels || []), item.kind, item.maturity, item.version].filter(Boolean);
+      return `<article class="card">
+        <header><h4>${esc(item.id)} · ${esc(item.title)}</h4><span class="badge">${esc(item.disposition)}</span></header>
+        ${item.acceptance_shape ? `<p class="body">${esc(item.acceptance_shape)}</p>` : ""}
+        ${item.body ? `<p class="body">${esc(item.body)}</p>` : ""}
+        <div class="chips">${labels.map(label => `<span class="chip">${esc(label)}</span>`).join("")}</div>
+      </article>`;
+    }
+
+    function render() {
+      document.getElementById("meta").textContent = `Generated ${BOARD_DATA.generated_at} from ${BOARD_DATA.source_reference}`;
+      document.getElementById("footer").textContent = `Store: ${BOARD_DATA.store.items} · ${BOARD_DATA.store.roadmap}`;
+      renderCounts();
+      renderRoadmap();
+      renderFilters();
+      renderBoard();
+    }
+
+    render();
+  </script>
+</body>
+</html>

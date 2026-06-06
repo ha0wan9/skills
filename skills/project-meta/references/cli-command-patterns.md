@@ -60,6 +60,7 @@ These commands are useful but should stay reserved until the core set proves sta
 - `/project-meta promote` — write validated lessons to the right memory layer
 - `/project-meta prune` — remove stale or duplicated harness guidance
 - `/project-meta doctor` — comprehensive health checks + suggested repairs
+- `/project-meta roadmap` — proposed Project Board grooming mode; reserved until `docs/backlog/project-board-system.md` DASH-05/06/08/17 are implemented and validated
 
 If a user invokes a reserved command, explain that it is reserved, then either map it to the closest supported command or ask before proceeding. Do not silently invoke a related command.
 
