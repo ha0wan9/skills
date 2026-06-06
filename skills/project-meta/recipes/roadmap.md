@@ -23,6 +23,7 @@ go in which version*; `plan` turns *one chosen milestone* into a falsifiable bui
 
 - [`references/review-tier.md`](../references/review-tier.md) — the co-review is an **L2** instance (multi-expert panel).
 - [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — how to dispatch the parallel L2 panel on clean context.
+- [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — shared command rules, including **deliver before commit** for editing recipes.
 - [`recipes/refine.md`](refine.md) — the item-prep sub-workflow (`fuzzy → refined`) this session calls when a candidate item is not yet concrete.
 
 ## Workflow — one co-review transaction (DASH-08), not two phases

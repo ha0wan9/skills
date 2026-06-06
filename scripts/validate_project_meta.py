@@ -1199,6 +1199,20 @@ def check_board_cli() -> None:
         refined = next(r for r in json.loads(listing) if r["id"] == "CAP-9")
         require(refined["maturity"] == "refined", "refine must advance fuzzy -> refined")
 
+        # Regression: U+2028/U+2029 (and other non-\n unicode separators) in field content
+        # must NOT corrupt the store — read_jsonl must split on "\n" only, not str.splitlines().
+        sep_title = "alpha\u2028beta\u2029gamma"
+        sep = run_python_script_result(
+            "scripts/board.py", "add", "--root", str(target_root),
+            "--id", "SEP-1", "--title", sep_title,
+        )
+        require(sep.returncode == 0, f"board add with U+2028/U+2029 failed: {sep.stderr}")
+        sep_tx = run_python_script_result("scripts/board.py", "tx", "--root", str(target_root))
+        require(sep_tx.returncode == 0, f"store corrupted by U+2028/U+2029: {sep_tx.stderr}{sep_tx.stdout}")
+        listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+        sep_item = next(r for r in json.loads(listing) if r["id"] == "SEP-1")
+        require(sep_item["title"] == sep_title, "U+2028/U+2029 must round-trip intact in the stored title")
+
 
 def check_review_tier() -> None:
     ref = read("references/review-tier.md")

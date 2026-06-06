@@ -69,7 +69,11 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     rows: list[dict[str, Any]] = []
-    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    # Split on "\n" ONLY — never str.splitlines(), which also breaks on U+2028/U+2029,
+    # \r, \v, \f, U+0085 etc. json.dumps(ensure_ascii=False) emits those literally inside
+    # string values (a real \n inside a value is escaped to \\n), so splitlines() would tear
+    # a single valid record into broken halves and permanently corrupt the store.
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").split("\n"), start=1):
         if not line.strip():
             continue
         try:
@@ -279,6 +283,8 @@ def validate_item(row: dict[str, Any]) -> list[str]:
     for key in required:
         if key not in row:
             errors.append(f"{row.get('id', '<missing id>')}: missing {key}")
+    if not (isinstance(row.get("id"), str) and row.get("id").strip()):
+        errors.append(f"{row.get('id')!r}: id must be a non-empty string")
     if row.get("kind") not in KIND_VALUES:
         errors.append(f"{row.get('id')}: bad kind {row.get('kind')!r}")
     if row.get("maturity") not in MATURITY_VALUES:

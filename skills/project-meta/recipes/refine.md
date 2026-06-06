@@ -23,6 +23,7 @@ it cannot drift from intent.
 ## Required references
 
 - [`references/review-tier.md`](../references/review-tier.md) — optional **L1** check (is the refined item well-formed / testable?).
+- [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — shared command rules, including **deliver before commit** for editing recipes.
 
 ## Workflow
 
@@ -46,7 +47,9 @@ it cannot drift from intent.
 
 The item advances `fuzzy → refined` with a concrete scope, acceptance-shape, and rough size;
 the dashboard is re-rendered. Only `maturity: refined` + `disposition: active` items are
-roadmap-eligible.
+roadmap-eligible. As an editing recipe, the resulting board change is a shared, user-facing
+artifact — **deliver it for operator review before any `git commit`** (pre-commit delivery,
+per `references/cli-command-patterns.md`).
 
 ## Anti-patterns
 
@@ -54,3 +57,8 @@ roadmap-eligible.
 - **Refining at capture time** — capture is append-only and multi-instance (DASH-24); all
   mutation of existing rows happens here, at the single-writer gate.
 - **Storing guidance in `repo_memory`** (capped) instead of `.refine-guidance.md`.
+- **Treating `refine` as a standalone route-table verb** — load it from `roadmap` or run the
+  `board.py` steps directly until DASH-17 promotes it on demonstrated demand.
+- **Confusing `board.py promote` with the reserved `/project-meta promote`** — they are
+  unrelated: `board.py promote` moves an inbox capture into `items.jsonl`; the reserved
+  `/project-meta promote` (memory layer) is a different, unbuilt concept.
