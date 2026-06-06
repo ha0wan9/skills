@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.3.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -91,7 +91,9 @@ When the user's request would match `project-meta` *and* a peer skill on this ma
 | Mixed: "research X and set up the repo for me" | **`project-meta` first**, then peer | run init/audit, then explicitly delegate the research portion |
 | Survey or research output needs to be packaged as a target-repo artifact (with provenance frontmatter, mirror sync, delivery summary) | **`project-meta`** | wraps the peer's output for delivery |
 | Schedule, classify, or bulk-edit calendar events (CRUD across Google/Apple/Notion/MCP calendars) | **`calendar-crud-workflow`** | not this skill — defer; run `/project-meta init` only if the calendar work lives in a repo that needs a harness |
-| Create a new multi-Claude config profile (`~/.claude-<name>/`, launcher, shared-plugins symlink) | **`profile-creator`** | not this skill — defer; `project-meta` owns repo memory, not user-level Claude config dirs |
+| Create/manage a Claude *or Codex* config profile, or the global config root (`~/.claude*`, `~/.codex*`) | **`global-meta`** (supersedes `profile-creator`) | not this skill — defer; `project-meta` owns repo memory, not user-level config dirs (`global-meta` reuses project-meta's engine) |
+| Multi-agent orchestration *execution* — spawning/parallelizing subagents, scripted workflows, effort tier | **the runtime engine** (Claude Code Workflow / "ultracode"; Codex Agents-SDK) — not a skill | `project-meta` owns the *policy* (when to dispatch, review/verify topology) and delegates *execution* to the engine. It recommends/prepares but **cannot enable it** (user-gated). Never re-implement it — AP-COORD-7. Reference it generically ("scripted-engine tier"), not by name. |
+| Intra-task software-engineering *method* (brainstorm→plan→TDD→review→verify) | **the methodology plugin** (e.g. `superpowers`) — external, not bindable | defer for intra-task process; `project-meta` *reclaims* only harness/skill authoring + cross-task governance. Assume the methodology's SessionStart bootstrap is mandatory/uncontrollable — be additive, never contradictory. |
 
 If an arbitration is unclear, ask the user before invoking either skill. Never silently invoke both.
 
