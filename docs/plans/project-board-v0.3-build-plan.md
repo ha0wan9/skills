@@ -33,7 +33,7 @@ goal: "Ship the v0.3 'Mirrors and orchestration' milestone: a new orchestration 
 
 - **Gate command per wave:** `scripts/ship_plugin.sh validate` (marketplace sanity + version-bump gate + `validate_project_meta.py` when project-meta changed) → exits 0. Plus `python3 skills/project-meta/scripts/skill_architecture_lint.py` over the new skill.
 - **Branch/PR rule:** one PR per wave from this worktree branch; **fresh-context review agent** over the diff (gate 3) before `land`; merge only if clean.
-- **Version bump (mechanical lockstep):** every wave bumps a version in `.claude-plugin/marketplace.json` — the new `orchestration` plugin for waves 1–2, `project-meta` for wave 3.
+- **Version bump (mechanical lockstep):** every wave bumps a version in `.claude-plugin/marketplace.json` — the new `orchestration` plugin in Wave 1, `project-meta` in Wave 2 (when project-meta changes).
 - **Route-registration touch-points (lockstep):** a new skill MUST land in all of: its own `SKILL.md`, a `marketplace.json` plugin entry (description copied **verbatim** from SKILL.md frontmatter), the `AGENTS.md` routing table, `README.md`, and the marketplace `metadata.description`. Missing any one = stale manifest.
 
 ## 3. Tiers

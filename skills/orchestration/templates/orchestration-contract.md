@@ -37,7 +37,7 @@ orchestrates_plan: docs/plans/<milestone>-build-plan.md
 # Orchestration Contract — <milestone>
 
 **Orchestrates:** `<build plan>` — milestone `<vX>`. Policy signed ahead of the run; the engine
-([engine-handoff.md]) is the mechanism. AP-COORD-7.
+(see `orchestration/references/engine-handoff.md`) is the mechanism. AP-COORD-7.
 
 ## Per-task contract
 One row per task in the build plan's build order. `budget_hint` = the tier:class:fanout line.

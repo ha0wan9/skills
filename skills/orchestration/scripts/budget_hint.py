@@ -16,7 +16,8 @@ Usage:
     budget_hint.py --task <tier>:<class>:<fanout>[:<label>] [--task ...] [--json]
 
     <tier>   = cli | sonnet | opus       (cli = no model = 0 tokens)
-    <class>  = mechanical | edit | review | research | plan | scaffold | (other → default)
+    <class>  = mechanical | lint | edit | review | research | plan | hard | scaffold
+               (lint≈mechanical, hard≈plan; any other value → default band, flagged with *)
     <fanout> = positive int (parallel copies of this task); default 1
 
 Examples:

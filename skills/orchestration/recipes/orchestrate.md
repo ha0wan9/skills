@@ -42,8 +42,9 @@ milestone — it decides how the already-planned work runs.
    `orchestrator_effort`, `human_checkpoint` (🔴 for new dep / ops / live backend / push / open
    decision), and `review_level` (auto-derive a floor with `review_tier.py`; escalate on judgment
    and **state why** — never silently de-escalate high stakes).
-3. **Budget-hint it.** Run [`scripts/budget_hint.py`](../scripts/budget_hint.py) over the per-task
-   `tier:class:fanout` lines. Paste the wide low/expected/high band into the contract. It is a
+3. **Budget-hint it.** Run [`scripts/budget_hint.py`](../scripts/budget_hint.py) (python3, stdlib
+   only — no install) over the per-task `tier:class:fanout` lines. Paste the wide low/expected/high
+   band into the contract. It is a
    **hint to eyeball Opus-heaviness / fan-out width before signing — "estimate, not a guarantee,"**
    not the engine `budget`. If it looks Opus-heavy or too wide, adjust tiers/parallelism and re-run.
 4. **Instantiate + deliver the contract.** Fill
