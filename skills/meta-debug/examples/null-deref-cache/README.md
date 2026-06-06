@@ -35,9 +35,17 @@ python3 $DBG show dbg-20260603T165614Z --state-dir skills/meta-debug/examples/nu
 State here lives under the example dir via `--state-dir`; a real run defaults to
 `<repo-root>/.harness/meta-debug/` (never the skill's install dir — AP-SKL-6).
 
+To run the automated smoke test (non-interactive, exits 0 on success):
+
+```bash
+bash skills/meta-debug/tests/smoke_test.sh
+```
+
 ## Smoke test
 
 This example doubles as the script smoke test: every `debug_session.py` subcommand
 (`start`, `phase`, `hypothesis` add/confirm/refute, `candidate`, `checkpoint`,
 `close`, `show`) was exercised to produce the artifacts above, with the gate
-ordering enforced throughout.
+ordering enforced throughout. The smoke test at
+[`tests/smoke_test.sh`](../../tests/smoke_test.sh) runs `show` and `list` against
+this example's `--state-dir`, asserting exit 0.

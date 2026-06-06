@@ -37,13 +37,53 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SKILL_ROOT = HERE.parent
 DEFAULT_CONFIG = SKILL_ROOT / "config.json"
-STATE_DIR = SKILL_ROOT / "state"
-LOCK_FILE = STATE_DIR / "devops.lock"
-STATE_FILE = STATE_DIR / "state.json"
-HISTORY_FILE = STATE_DIR / "history.jsonl"
-LESSONS_FILE = STATE_DIR / "lessons.jsonl"
-BUGS_FILE = STATE_DIR / "bugs.json"
-BUGS_LOCK = STATE_DIR / "bugs.lock"
+
+# State is PROJECT-scoped, never written into the skill's own install dir:
+# a marketplace install lives in a read-only / update-wiped plugin cache, and
+# one install serving many repos would bleed state + history + lessons + bugs
+# across projects (AP-SKL-6). Resolution order:
+#   --state-dir CLI arg > $OPENCLAW_DEVOPS_STATE_DIR > <nearest .git ancestor
+#   of cwd>/.harness/openclaw-devops/ > <cwd>/.harness/openclaw-devops/
+# These globals are bound by set_state_dir() at import and re-bound in main().
+STATE_DIR: Path
+LOCK_FILE: Path
+STATE_FILE: Path
+HISTORY_FILE: Path
+LESSONS_FILE: Path
+BUGS_FILE: Path
+BUGS_LOCK: Path
+
+
+def resolve_state_dir(cli_arg: str | None) -> Path:
+    if cli_arg:
+        return Path(cli_arg).expanduser().resolve()
+    env = os.environ.get("OPENCLAW_DEVOPS_STATE_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+    start = Path.cwd().resolve()
+    for cand in (start, *start.parents):
+        if (cand / ".git").exists():
+            return cand / ".harness" / "openclaw-devops"
+    return start / ".harness" / "openclaw-devops"
+
+
+def set_state_dir(base: Path) -> None:
+    global STATE_DIR, LOCK_FILE, STATE_FILE, HISTORY_FILE, LESSONS_FILE, BUGS_FILE, BUGS_LOCK
+    STATE_DIR = base
+    LOCK_FILE = base / "devops.lock"
+    STATE_FILE = base / "state.json"
+    HISTORY_FILE = base / "history.jsonl"
+    LESSONS_FILE = base / "lessons.jsonl"
+    BUGS_FILE = base / "bugs.json"
+    BUGS_LOCK = base / "bugs.lock"
+
+
+# Bind at import to a sensible default so the module is import-safe (no
+# NameError if a function is called as a library). main() re-binds via arg.
+# NOTE: this resolves against the cwd at import time. Library callers that
+# change cwd after import must call set_state_dir(resolve_state_dir(...))
+# again before invoking a command; the CLI does this in main().
+set_state_dir(resolve_state_dir(None))
 
 OK, WARN, FAIL = "ok", "warn", "fail"
 BUG_STATUSES = ["open", "triaged", "in-progress", "fixed", "wontfix", "duplicate"]
@@ -742,6 +782,9 @@ def main(argv: list[str] | None = None) -> int:
         description="OpenClaw DevOps maintenance engine (sanity/repair/update/verify/rollback/cycle).",
         epilog="Missing host tools (openclaw/systemctl/npm) surface as failed checks, not crashes.")
     ap.add_argument("command", choices=["sanity", "repair", "update", "verify", "rollback", "cycle", "lessons", "bugs"])
+    ap.add_argument("--state-dir", metavar="DIR",
+                    help="project-scoped state dir (default: <repo-root>/.harness/openclaw-devops, "
+                         "or $OPENCLAW_DEVOPS_STATE_DIR)")
     ap.add_argument("--config", default=str(DEFAULT_CONFIG), help="path to config.json")
     # bugs panel / backlog (any agent or cron can log a bug; track to resolution)
     ap.add_argument("--add", action="store_true", help="bugs: log a new bug (needs --title)")
@@ -770,6 +813,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-update", action="store_true", help="cycle: skip update phase")
     ap.add_argument("--to-version", help="rollback: target version (default: recorded previous)")
     args = ap.parse_args(argv)
+    set_state_dir(resolve_state_dir(args.state_dir))
 
     cfg = Config(Path(expand(args.config)))
 

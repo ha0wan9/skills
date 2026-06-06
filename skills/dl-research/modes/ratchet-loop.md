@@ -53,9 +53,10 @@ past it" rule — resume only by re-entry after the user resolves the block.
   decision rule allows it.
 - Record crashes and timeouts as rows, not invisible failures.
 - Preserve enough diff/context for the best row to be reproduced.
-- After every iteration that writes to `runs.jsonl`, run
-  `python scripts/validate_ledger.py <study-root>/runs.jsonl`. A schema error
-  stops the loop until fixed.
+- **MUST delivery gate:** after every iteration that writes to `runs.jsonl`,
+  run `python scripts/validate_ledger.py <study-root>/runs.jsonl`. A non-zero
+  exit stops the loop until all errors are fixed — never proceed past a schema
+  error. See `examples/sample-study/runs.jsonl` for a valid reference.
 
 ## Output
 

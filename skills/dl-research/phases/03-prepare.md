@@ -32,8 +32,9 @@ Use when a design row must become reproducible run material.
    the adapter.
 8. Append a `prepared` ledger row or update the design table with the prepared
    artifact paths. Include `experiment_id` (canonical, e.g. `H1.E1` or `E1`)
-   and, for H/E studies, `track_id`, `slug`, and `parent_id`. Run
-   `python scripts/validate_ledger.py <study-root>/runs.jsonl` after writing.
+   and, for H/E studies, `track_id`, `slug`, and `parent_id`.
+
+**MUST delivery gate:** run `python scripts/validate_ledger.py <study-root>/runs.jsonl` after writing the ledger row. A non-zero exit blocks handoff — fix all reported errors before proceeding to `launch`. See `examples/sample-study/runs.jsonl` for a valid reference.
 
 ## Hand Off
 

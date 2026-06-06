@@ -16,6 +16,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from collections import defaultdict
@@ -115,11 +116,18 @@ def is_starstarstar(value: str) -> bool:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print("usage: coverage_check.py <paper_index.md> <index.md>", file=sys.stderr)
-        return 2
-    pi_path = Path(argv[1])
-    idx_path = Path(argv[2])
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("paper_index_md", metavar="paper_index.md",
+                        help="Path to paper_index.md")
+    parser.add_argument("index_md", metavar="index.md",
+                        help="Path to index.md")
+    args = parser.parse_args(argv[1:])
+
+    pi_path = Path(args.paper_index_md)
+    idx_path = Path(args.index_md)
     if not pi_path.is_file() or not idx_path.is_file():
         print("input files do not exist", file=sys.stderr)
         return 2

@@ -32,12 +32,13 @@ metadata:
 
 | Plugin | Claude Code | Codex | OpenClaw | Published |
 |---|:--:|:--:|:--:|---|
-| `calendar-crud-workflow` | ✅ | ✅ | ✅ | Claude Marketplace |
-| `deep-survey-bfs` | ✅ | ✅ | ✅ | Claude Marketplace |
-| `dl-research` | ✅ | ✅ | ✅ | Claude Marketplace |
+| `calendar-crud-workflow` | ✅ | ✅ | ❌ | Claude Marketplace |
+| `deep-survey-bfs` | ✅ | ✅ | ❌ | Claude Marketplace |
+| `dl-research` | ✅ | ✅ | ❌ | Claude Marketplace |
 | `meta-debug` | ✅ | ✅ | ✅ | Claude Marketplace |
 | `openclaw-devops` | ✅ | ✅ | ✅ | Claude Marketplace |
 | `project-meta` | ✅ | ✅ | ⚠️ | Claude Marketplace |
+| `sketch-asset-generator` | ✅ | ✅ | ❌ | Claude Marketplace |
 | `profile-creator` | ✅ | ❌ | ❌ | Claude Marketplace |
 
 ✅ supported · ⚠️ untested (installs Claude Code / Codex harness artifacts) · ❌ not supported by design. `profile-creator` manages Claude Code config dirs (`~/.claude-<name>`, `CLAUDE_CONFIG_DIR`, `ccplug`) and is intrinsically Claude-Code-only. All skills are currently published only to the Claude Code marketplace; `compat` runtimes beyond that are format-portable but not yet listed in their native registries.

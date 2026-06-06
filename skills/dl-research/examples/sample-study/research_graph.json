@@ -1,0 +1,45 @@
+{
+  "study_id": "sample-batch-noise",
+  "generated_utc": "2026-06-01T12:00:00Z",
+  "winning_route": null,
+  "nodes": [
+    {
+      "id": "study",
+      "kind": "study",
+      "label": "sample-batch-noise",
+      "status": "inconclusive",
+      "uri": null,
+      "summary": "Does larger batch size reduce gradient noise and improve convergence on CIFAR-10?"
+    },
+    {
+      "id": "H1",
+      "kind": "track",
+      "label": "H1: Larger Batch",
+      "status": "inconclusive",
+      "uri": null,
+      "summary": "Batch size increases reduce gradient noise and speed convergence."
+    },
+    {
+      "id": "H1.E1",
+      "kind": "experiment",
+      "label": "H1.E1: Baseline (batch=64)",
+      "status": "pass",
+      "uri": "artifacts/H1E1-baseline/",
+      "summary": "val_acc=0.8821. Baseline gate passed; used as reference for H1.E2."
+    },
+    {
+      "id": "H1.E2",
+      "kind": "experiment",
+      "label": "H1.E2: Large Batch (batch=512)",
+      "status": "inconclusive",
+      "uri": "artifacts/H1E2-large-batch/",
+      "summary": "val_acc=0.8754 (-0.7pp vs baseline). Underperforms; LR schedule sweep forked."
+    }
+  ],
+  "edges": [
+    {"source": "study", "target": "H1", "relation": "tests", "summary": null},
+    {"source": "H1", "target": "H1.E1", "relation": "tests", "summary": null},
+    {"source": "H1.E1", "target": "H1.E2", "relation": "depends-on", "summary": "H1.E1 is the baseline reference for H1.E2"},
+    {"source": "H1.E2", "target": "H1.E1", "relation": "forks-from", "summary": "Forks to LR schedule sweep"}
+  ]
+}

@@ -10,6 +10,7 @@ description: >-
   user wants to debug, root-cause, or systematically fix a non-trivial bug, a
   regression, a heisenbug, a "works locally but fails in prod" issue, or a
   post-incident root cause — even if they don't name this skill.
+metadata: {version: 1.2.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Meta-Debug
@@ -95,6 +96,38 @@ re-derives memory structure or the multi-agent contract.
   shared across repos). Override with `--state-dir` or `$META_DEBUG_STATE_DIR`.
   `lessons.jsonl` there is the fast journal; durable lessons still get promoted to
   project-meta canonical memory.
+
+## Shared Harness Delegation
+
+This skill reads repo memory (phase 1) and promotes lessons back to canonical
+memory (phase 9), so it touches project-meta's shared harness. Resolve the
+install path; delegate to project-meta's scripts rather than re-rolling the
+logic; fall back to the thin floor when project-meta is absent.
+
+```bash
+# canonical resolver (matches project-meta's verify-before-stop.sh pattern)
+pm_dir=""
+for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
+  [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
+done
+if [ -n "$pm_dir" ]; then
+  python3 "$pm_dir/scripts/repo_memory.py" --target-root . read
+else
+  # thin floor — project-meta absent; lesson promotion cannot use its CRUD CLI
+  echo "[memory] read CLAUDE.md or AGENTS.md before substantive work." >&2
+  # Phase 9 floor: manually update the canonical agents/*.md file for the lesson,
+  # mirror to AGENTS.md/CLAUDE.md only if structure changed, keep a provenance
+  # comment. Do NOT silently skip promotion — log it in the session close note.
+fi
+```
+
+Phase 9 lesson write-back delegates to
+`scripts/repo_memory.py` (project-meta CRUD); when project-meta is absent the
+floor requires: update the one canonical `agents/*.md` file by hand, keep
+provenance, and record in the session close note that automated promotion was
+skipped — so it is never a silent no-op.
 
 ## Quick Workflow
 

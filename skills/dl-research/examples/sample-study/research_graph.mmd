@@ -1,0 +1,10 @@
+flowchart TD
+    study["sample-batch-noise\n(inconclusive)"]
+    H1["H1: Larger Batch\n(inconclusive)"]
+    H1E1["H1.E1: Baseline batch=64\nval_acc=0.8821 ✓ pass"]
+    H1E2["H1.E2: Large Batch batch=512\nval_acc=0.8754 ~ inconclusive"]
+
+    study -->|tests| H1
+    H1 -->|tests| H1E1
+    H1E1 -->|depends-on| H1E2
+    H1E2 -.->|forks-from| H1E1
