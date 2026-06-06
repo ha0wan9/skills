@@ -20,6 +20,7 @@ Produce the pre-commit delivery for user review.
 Lazy-load:
 
 - [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — to verify the editing recipe's dispatch + review actually happened for a >1-file change (`deliver` verifies, never dispatches)
+- [`references/review-tier.md`](../references/review-tier.md) — the review level (L0–L3) the editing recipe's reviewer step should have used; `deliver` reports a WARN if the change was under-reviewed for its tier (`scripts/review_tier.py` derives the floor)
 - [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when mirrors are part of the change
 
 ## Workflow

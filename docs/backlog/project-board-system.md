@@ -15,7 +15,7 @@ A persistent, CLI-managed, repo-canonical project surface — **Backlog/Issues �
 
 > **Canonical source of truth.** This file is the only active design source for the Project Board System. Older flow/source proposals have been trimmed; downstream route docs and implementation plans should derive from this backlog, not from retired proposals.
 >
-> **Reviewed 2026-06-06 (independent adversarial critic) → RESCOPE + SPLIT applied.** See *Review status* below. Headlines: orchestration + review-tier are **split into their own skills**; DASH-22 forecast **downgraded to a non-predictive budget hint**; the async model fixed to **dry-run-first capture + append-only inbox + deferred dedup**; this seed file is a **prose proposal**, not the JSON store it specs.
+> **Reviewed 2026-06-06 (independent adversarial critic) → RESCOPE + SPLIT applied.** See *Review status* below. Headlines: orchestration is **split into its own skill**; review-tier ships as **shared infra inside `project-meta`** (operator decision 2026-06-06, superseding the earlier "review-tier skill" split — see *Skill split*); DASH-22 forecast **downgraded to a non-predictive budget hint**; the async model fixed to **dry-run-first capture + append-only inbox + deferred dedup**; this seed file is a **prose proposal**, not the JSON store it specs.
 
 ## Skill split (locked)
 
@@ -23,7 +23,9 @@ A persistent, CLI-managed, repo-canonical project surface — **Backlog/Issues �
 |---|---|---|
 | **Project Board** | `project-meta` capability | A Backlog/Issues · B Roadmap · D Dashboard · E cross-cutting |
 | **Orchestration** | new **`orchestration` skill** | C — DASH-09/10/11/22 (the `/workflows` contract layer) |
-| **Review-tier** | new **`review-tier` skill** (shared dependency) | F — DASH-19/20/21 (consumed by project-meta's roadmap review *and* the orchestration skill — root-skill-style dep) |
+| **Review-tier** | **shared infra in `project-meta`** (`references/review-tier.md` + `scripts/review_tier.py`) | F — DASH-19/20/21 (consumed by project-meta's roadmap review *and* — later — the orchestration skill via the root-skill pointer) |
+
+> **Design change (2026-06-06, operator-confirmed, shipped v0.2 wave 1):** review-tier was originally split into its own `review-tier` skill. It now ships as **shared infra inside `project-meta`** instead — no second top-level skill, no marketplace-install friction, consistent with the derived-design preference. The orchestration skill (still split out) consumes it via the root-skill pointer pattern. Prose below that still says "review-tier skill" predates this change; read it as "review-tier shared infra."
 
 ## Architecture
 
@@ -32,7 +34,7 @@ Four cross-cutting planes × a conductor-driven value spine × one engine bounda
 ```
           ┌─────────────────────────  CROSS-CUTTING PLANES  ─────────────────────────┐
           │  govern every stage; all policy, left of the engine boundary               │
-          │   · Review-tier   L0..L3   (→ review-tier SKILL, DASH-19–21; shared dep)    │
+          │   · Review-tier   L0..L3   (→ project-meta shared infra, DASH-19–21)       │
           │   · Exec-tier     CLI=no-model · Sonnet=worker · Opus=hard   (DASH-15)      │
           │   · Budget-hint   coarse, non-predictive estimate           (DASH-22)       │
           │   · Source-of-truth  store=canonical → dashboard=derived → Linear=mirror    │
@@ -213,9 +215,9 @@ Stale source proposals have been trimmed; their surviving project-board/autopilo
 
 ---
 
-## F. Review-tier  · **`review-tier` skill (split out; shared dependency)**
+## F. Review-tier  · **shared infra in `project-meta`** (`references/review-tier.md` + `scripts/review_tier.py`; SHIPPED v0.2 wave 1)
 
-> Right-sized review: every review **fast** + tokens **proportionate to stakes**. Between AP-COORD-2 (*must* review) and AP-COORD-4 (*don't* over-orchestrate). Consumed by project-meta's roadmap review (DASH-08) **and** the orchestration skill.
+> Right-sized review: every review **fast** + tokens **proportionate to stakes**. Between AP-COORD-2 (*must* review) and AP-COORD-4 (*don't* over-orchestrate). Consumed by project-meta's roadmap review (DASH-08) **and** — later — the orchestration skill via the root-skill pointer. (Originally split as its own skill; landed as shared infra — see *Skill split* design-change note.)
 
 ### DASH-19 — Review levels L0–L3
 `feat · target: v0.2 · varies`
@@ -243,9 +245,9 @@ Consumed by existing review surfaces, not a parallel system: `audit`/`deliver` p
 
 - **Linear creds in headless capture** (DASH-02/03): the Track Loop is agent-MCP-only; a `claude -p` subprocess can't easily reach Linear. Likely: capture writes the **repo only**; the Linear mirror runs in the interactive session. Confirm.
 - **Headless-hook promotion threshold** (DASH-02): dry-run is the first shipped mode; define the observed false-positive and approval criteria before enabling automatic append.
-- **In-flight items on version-cut** (DASH-08): what happens to `status:scheduled`/`status:in_progress` items when a version closes — auto-defer to next, or carry-over?
-- **review-tier packaging details** (F): skill split is locked; decide the exact root-skill resolver/import helper shape before implementation.
+- **In-flight items on version-cut** (DASH-08): what happens to `status:scheduled`/`status:in_progress` items when a version closes. *Pre-decided default (v0.2 plan): **carry-over** to the next open version, never silent-drop, logged as a co-review note. Confirm at DASH-08 build.*
+- **review-tier packaging** (F): *resolved — ships as **shared infra in `project-meta`** (not a skill).* Remaining: the exact cross-skill pointer shape the orchestration skill uses to consume it (decide when the orchestration skill is built, v0.3).
 
 ---
 
-_23 distinct items (DASH-07→08, DASH-14→04 folded). Split: A/B/D/E = `project-meta` · C = `orchestration` skill · F = `review-tier` skill. Tentative `target`s; real version assignment + stale-trim in `roadmap` grooming (DASH-08)._
+_23 distinct items (DASH-07→08, DASH-14→04 folded). Split: A/B/D/E/F = `project-meta` (F = review-tier shared infra) · C = `orchestration` skill. Tentative `target`s; real version assignment + stale-trim in `roadmap` grooming (DASH-08)._

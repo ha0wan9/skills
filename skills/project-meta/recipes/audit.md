@@ -24,6 +24,7 @@ Load only the references relevant to the audit target:
 - [`references/writing-skills.md`](../references/writing-skills.md) — when auditing a skill (not a project)
 - [`references/skill-critics.md`](../references/skill-critics.md) — when auditing a skill/marketplace; the critic suite that feeds the authoring + enforcement dimensions
 - [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when host manifests are in scope
+- [`references/review-tier.md`](../references/review-tier.md) — pick the right review level (L0–L3) for the reviewer step; `scripts/review_tier.py` suggests a floor, the conductor escalates on judgment
 - [`templates/building-plan.md`](../templates/building-plan.md) — when the audit target is a build plan (the Goal-readiness dimension below)
 
 ## Audit dimensions

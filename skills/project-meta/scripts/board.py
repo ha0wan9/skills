@@ -574,6 +574,10 @@ def cmd_inbox_add(args: argparse.Namespace) -> int:
         "created_at": now,
         "updated_at": now,
     }
+    # Append-only, lock-free, multi-instance-safe (DASH-24): mode "a" opens with O_APPEND,
+    # under which a single write of one short JSON line (< PIPE_BUF) is atomic on POSIX —
+    # concurrent captures cannot interleave or clobber. No board_lock here on purpose;
+    # all dedup/mutation of existing rows happens later at the single-writer refine gate.
     with p["inbox"].open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
     print(f"captured {row['id']}: {row['title']}")

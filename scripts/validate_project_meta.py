@@ -36,6 +36,7 @@ REQUIRED_REFERENCES = {
     "references/mirrors-and-updates.md",
     "references/harness-engineering.md",
     "references/multi-agent-protocols.md",
+    "references/review-tier.md",
 }
 
 REQUIRED_TEMPLATES = {
@@ -375,6 +376,7 @@ def check_required_files() -> None:
         "agents/openai.yaml",
         "scripts/extract_doc_context.py",
         "scripts/board.py",
+        "scripts/review_tier.py",
         "scripts/render_user_preferences.py",
         "scripts/validate_target_harness.py",
         "templates/board.dashboard.html",
@@ -1166,6 +1168,59 @@ def check_board_cli() -> None:
             )
 
 
+def check_review_tier() -> None:
+    ref = read("references/review-tier.md")
+    for token in ("L0", "L1", "L2", "L3", "review_tier.py", "escalate", "floor", "HARNESS_PROFILE"):
+        require(token in ref, f"review-tier reference missing: {token}")
+    script = read("scripts/review_tier.py")
+    for token in ("suggest_level", "HARNESS_PROFILE", "must_rule", "new_skill"):
+        require(token in script, f"review_tier.py missing: {token}")
+    # Functional: the heuristic floor ladder + the high-stakes no-de-escalate rule.
+    cases = (
+        (("--files", "1", "--lines", "5"), "L0"),
+        (("--files", "3", "--lines", "60"), "L1"),
+        (("--files", "8", "--lines", "200"), "L2"),
+        (("--harness-hit",), "L2"),
+        (("--new-skill", "--profile", "strict"), "L3"),
+        (("--new-skill", "--profile", "minimal"), "L3"),  # high stakes must not de-escalate
+    )
+    for cli_args, expected in cases:
+        out = run_python_script("scripts/review_tier.py", *cli_args)
+        require(
+            f"suggested floor: {expected}" in out,
+            f"review_tier.py {cli_args} expected {expected}; got: {out.splitlines()[0] if out else '<none>'}",
+        )
+        # The escalation caveat must print for EVERY level, not just the last case.
+        require("ESCALATE on judgment" in out, f"review_tier.py {cli_args} must print the escalation caveat")
+
+
+def check_inbox_concurrency() -> None:
+    """DASH-24: capture is append-only and multi-instance-safe. Concurrent
+    inbox-add calls must all land with no lost, duplicated, or corrupted lines."""
+    import concurrent.futures
+
+    with tempfile.TemporaryDirectory() as td:
+        target_root = Path(td) / "repo"
+        init = run_python_script_result("scripts/board.py", "init", "--root", str(target_root))
+        require(init.returncode == 0, f"board init failed: {init.stderr}")
+        n = 12
+
+        def add(i: int) -> int:
+            return run_python_script_result(
+                "scripts/board.py", "inbox-add", "--root", str(target_root),
+                "--id", f"CAP-{i:03d}", "--title", f"cap {i}",
+            ).returncode
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=n) as ex:
+            codes = list(ex.map(add, range(n)))
+        require(all(c == 0 for c in codes), "concurrent inbox-add calls must all succeed")
+
+        inbox = target_root / "docs" / "backlog" / "inbox.jsonl"
+        rows = [json.loads(line) for line in inbox.read_text(encoding="utf-8").splitlines() if line.strip()]
+        require(len(rows) == n, f"inbox must contain all {n} concurrent appends, got {len(rows)}")
+        require(len({r['id'] for r in rows}) == n, "concurrent appends must not lose or duplicate rows")
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1183,6 +1238,8 @@ CHECKS = (
     check_doc_context_extractor,
     check_user_preference_renderer,
     check_board_cli,
+    check_review_tier,
+    check_inbox_concurrency,
 )
 
 
