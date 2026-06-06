@@ -5,13 +5,13 @@
     "email": "haoran.wang@stereolabs.com"
   },
   "metadata": {
-    "description": "Agent harness skills: project-meta (repo memory + execution governance), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (multi-Claude config profiles), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
-    "version": "1.3.0"
+    "description": "Agent harness skills: project-meta (repo memory + execution governance), global-meta (user/global Claude+Codex config root \u2014 dual-runtime profiles now, audit/evolve lifecycle proposed; supersedes profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), profile-creator (DEPRECATED \u2014 folded into global-meta), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
+    "version": "1.4.0"
   },
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -26,6 +26,25 @@
       "strict": false,
       "skills": [
         "./skills/project-meta"
+      ]
+    },
+    {
+      "name": "global-meta",
+      "version": "0.1.0",
+      "metadata": {
+        "compat": [
+          "claude-code",
+          "codex"
+        ],
+        "published": [
+          "claude-marketplace"
+        ]
+      },
+      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Supersedes profile-creator. LIVE now — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/global-meta"
       ]
     },
     {
@@ -74,16 +93,18 @@
     },
     {
       "name": "profile-creator",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "metadata": {
         "compat": [
           "claude-code"
         ],
         "published": [
           "claude-marketplace"
-        ]
+        ],
+        "deprecated": true,
+        "superseded_by": "global-meta"
       },
-      "description": "Create a new Claude Code config profile in the user's multi-claude setup \u2014 a new ~/.claude-<name>/ dir with its own CLAUDE_CONFIG_DIR, a launcher script in ~/.local/bin, and a symlinked plugins/ dir so plugins stay shared across all profiles. Trigger when the user asks to \"add a new multi-claude profile\", \"create a claude-X profile\", \"spin up a new claude config\", or wants an isolated config directory for a different account/context.",
+      "description": "DEPRECATED \u2014 folded into global-meta. Creating a Claude Code (or Codex) config profile is now global-meta's `create` verb. This stub remains for one release so existing /profile-creator triggers keep working; it routes to global-meta. Triggers: add/create/spin up a new multi-claude profile, claude-X profile, isolated config dir.",
       "source": "./",
       "strict": false,
       "skills": [

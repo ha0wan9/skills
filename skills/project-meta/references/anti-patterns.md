@@ -231,6 +231,38 @@ task-type at the promoted tier; climb the cheap axis (effort) before the
 expensive one (model); cap at (Opus, max); record the *cause* so a stale
 promotion can be demoted. Evidence-gated always — never a precautionary promote.
 
+### AP-COORD-7 — Re-implementing orchestration the engine provides
+A skill hand-rolls subagent fan-out, parallelism, or cross-turn coordination
+that the runtime's scripted engine (Claude Code Workflow / "ultracode", Codex
+Agents-SDK) already supplies — duplicating a moving substrate the skill cannot
+turn on, version, or out-maintain. The integration-overreach mirror of
+AP-COORD-4: that one over-*launches* the engine; this one *rebuilds* it. The
+deeper error is treating a runtime mode (ultracode) and an external methodology
+plugin (e.g. `superpowers`) as parties that can be *bound* by a contract — only
+the skills we author (`project-meta`, `global-meta`) are bindable; the other two
+can only be *adapted to*.
+
+**Symptom**: a skill ships its own parallel worker pool or run-journal that
+drifts from the engine the moment it renames or changes (the trigger keyword
+`workflow` → `ultracode` churn is the live example); or a skill's prose claims it
+"dispatches via the workflow engine" when a skill *cannot enable it* — the engine
+is user-gated (effort setting / explicit opt-in; `effortLevel:"ultracode"` in
+settings.json silently no-ops), so the claim is unenforceable; or a skill asserts
+it is the sole writer of durable memory while CC auto-memory, methodology plan
+docs, and user `CLAUDE.md` write the same lanes.
+
+**Fix**: own the *policy* (when to coordinate, the review/verify topology, what
+becomes durable), delegate the *mechanism* to the engine. Reference it
+generically ("the workflow / scripted-engine tier"), not by its current name, so
+a rename can't rot the contract. A skill *recommends and prepares for* the engine;
+it does not invoke it unilaterally, and applies its safety invariants at
+**promotion time** — the engine runs background/cross-turn, so turn-scoped hooks
+(Stop, pre-commit) cannot gate it. Treat durable memory as a **known multi-writer
+set** (authored canonical memory + CC auto-memory + methodology plan docs + user
+`CLAUDE.md`), each in its lane; `project-meta`'s job is promotion + dedup across
+lanes via the Memory Contract, not exclusivity. See `multi-agent-protocols.md`
+"Mandatory Subagent Dispatch" (the two-bar rule) and AP-COORD-4.
+
 ## Validation & enforcement
 
 ### AP-VAL-1 — Advisory rules with no validator
