@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -40,7 +40,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Supersedes profile-creator. LIVE now — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
+      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Supersedes profile-creator. LIVE now \u2014 create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed) \u2014 status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
       "source": "./",
       "strict": false,
       "skills": [

@@ -8,6 +8,7 @@ fresh repos without installing PyYAML or a test framework.
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import subprocess
 import sys
@@ -373,8 +374,10 @@ def check_required_files() -> None:
         "USER.template.md",
         "agents/openai.yaml",
         "scripts/extract_doc_context.py",
+        "scripts/board.py",
         "scripts/render_user_preferences.py",
         "scripts/validate_target_harness.py",
+        "templates/board.dashboard.html",
         *sorted(REQUIRED_TEMPLATES),
         *sorted(REQUIRED_REFERENCES),
     ):
@@ -1085,6 +1088,84 @@ def check_user_preference_renderer() -> None:
         )
 
 
+def check_board_cli() -> None:
+    template = read("templates/board.dashboard.html")
+    require("__BOARD_DATA_JSON__" in template, "board dashboard template must expose data injection marker")
+    require("const BOARD_DATA" in template, "board dashboard template must render injected board data")
+
+    with tempfile.TemporaryDirectory() as td:
+        target_root = Path(td) / "repo"
+        init = run_python_script_result("scripts/board.py", "init", "--root", str(target_root))
+        require(init.returncode == 0, f"board init failed: {init.stderr}")
+
+        no_render = run_python_script_result("scripts/board.py", "init", "--root", str(target_root), "--no-render")
+        require(no_render.returncode != 0, "board init must not allow --no-render")
+
+        add = run_python_script_result(
+            "scripts/board.py",
+            "add",
+            "--root",
+            str(target_root),
+            "--id",
+            "TEST-001",
+            "--kind",
+            "feat",
+            "--title",
+            "Smoke item",
+            "--maturity",
+            "refined",
+            "--status",
+            "scheduled",
+            "--version",
+            "v0.1",
+        )
+        require(add.returncode == 0, f"board add failed: {add.stderr}")
+
+        tx = run_python_script_result("scripts/board.py", "--root", str(target_root), "tx")
+        require(tx.returncode == 0 and "PASS (1 items" in tx.stdout, f"board tx failed: {tx.stderr}{tx.stdout}")
+
+        items = target_root / "docs" / "backlog" / "items.jsonl"
+        roadmap = json.loads((target_root / "docs" / "backlog" / "roadmap.json").read_text(encoding="utf-8"))
+        items_hash = hashlib.sha256(items.read_bytes()).hexdigest()
+        require(
+            roadmap.get("_meta", {}).get("items_sha256") == items_hash,
+            "roadmap _meta.items_sha256 must match current items.jsonl",
+        )
+
+        dashboard = target_root / "docs" / "dashboard.html"
+        require(dashboard.is_file(), "board render must write docs/dashboard.html")
+        html = dashboard.read_text(encoding="utf-8")
+        require("Smoke item" in html, "dashboard must include rendered item data")
+        require("docs/backlog/items.jsonl" in html, "dashboard must point to canonical item store")
+
+        # Regression: a value containing </script> must not break out of the dashboard's
+        # <script> block (would corrupt BOARD_DATA + enable stored XSS once DASH-02/DASH-25
+        # feed arbitrary content). The renderer must escape it to <.
+        inj = run_python_script_result(
+            "scripts/board.py", "add", "--root", str(target_root),
+            "--id", "XSS-1", "--title", "inj",
+            "--body", "x</script><img src=y onerror=alert(1)>",
+        )
+        require(inj.returncode == 0, f"board add (injection case) failed: {inj.stderr}")
+        html_xss = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        require(
+            "</script><img src=y onerror=alert(1)>" not in html_xss,
+            "dashboard must escape </script> in item content (script-break / XSS guard)",
+        )
+        require("\\u003c/script" in html_xss, "dashboard must emit escaped \\u003c for <")
+
+        # Regression: every disposition verb must map to a value in DISPOSITION_VALUES
+        # (the `defer`->`deferred` mapping was previously wrong, failing validation).
+        for verb, expected in (("defer", "deferred"), ("trim", "trimmed"), ("wontfix", "wontfix")):
+            d = run_python_script_result("scripts/board.py", verb, "TEST-001", "--root", str(target_root))
+            require(d.returncode == 0, f"board {verb} failed: {d.stderr}")
+            listing = run_python_script("scripts/board.py", "list", "--root", str(target_root), "--json")
+            require(
+                f'"disposition": "{expected}"' in listing,
+                f"board {verb} must persist disposition={expected}",
+            )
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1101,6 +1182,7 @@ CHECKS = (
     check_template_surface_contract,
     check_doc_context_extractor,
     check_user_preference_renderer,
+    check_board_cli,
 )
 
 

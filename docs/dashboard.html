@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Board</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --ink: #1f2933;
+      --muted: #65717d;
+      --line: #d7d9d2;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-soft: #d9f1ed;
+      --warn: #a15c00;
+      --done: #2f6f46;
+      --shadow: 0 1px 2px rgba(20, 28, 35, 0.08);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--bg); }
+    header { padding: 24px clamp(16px, 4vw, 44px) 16px; border-bottom: 1px solid var(--line); background: #fbfbf8; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); line-height: 1.12; letter-spacing: 0; }
+    h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 0; }
+    p { margin: 0; }
+    .meta { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; max-width: 780px; }
+    .count { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); min-height: 76px; }
+    .count strong { display: block; font-size: 24px; line-height: 1.1; }
+    .count span { color: var(--muted); font-size: 13px; }
+    main { padding: 22px clamp(16px, 4vw, 44px) 36px; display: grid; gap: 22px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 8px 10px; font: inherit; cursor: pointer; }
+    button.active { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
+    section { min-width: 0; }
+    .roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .milestone, .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+    .milestone { padding: 14px; }
+    .milestone .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 12px; background: #eef0ea; color: var(--muted); white-space: nowrap; }
+    .badge.now { background: var(--accent-soft); color: #0b4d48; }
+    .badge.done { background: #ddf0e2; color: var(--done); }
+    .badge.todo { background: #f1eee5; color: var(--warn); }
+    .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; }
+    .column { min-width: 0; }
+    .column h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stack { display: grid; gap: 10px; }
+    .card { padding: 12px; min-width: 0; }
+    .card header { padding: 0; border: 0; background: transparent; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .card h4 { margin: 0 0 8px; font-size: 15px; line-height: 1.25; letter-spacing: 0; overflow-wrap: anywhere; }
+    .card .body { color: var(--muted); font-size: 13px; line-height: 1.42; margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; font-size: 12px; color: var(--muted); background: #fbfbf8; }
+    .empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; font-size: 13px; }
+    footer { color: var(--muted); font-size: 12px; padding: 0 clamp(16px, 4vw, 44px) 30px; }
+    @media (max-width: 820px) {
+      .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Project Board</h1>
+    <p class="meta" id="meta"></p>
+    <div class="counts" id="counts"></div>
+  </header>
+  <main>
+    <section>
+      <h2>Roadmap</h2>
+      <div class="roadmap" id="roadmap"></div>
+    </section>
+    <section>
+      <div class="toolbar" id="filters"></div>
+    </section>
+    <section>
+      <h2>Backlog</h2>
+      <div class="board" id="board"></div>
+    </section>
+  </main>
+  <footer id="footer"></footer>
+  <script>
+    const BOARD_DATA = {"counts": {"active": 23, "done": 6, "items": 23, "refined": 23}, "generated_at": "2026-06-06T19:18:15Z", "items": [{"acceptance_shape": "Store layout exists under docs/backlog with parseable JSONL/JSON, no comment headers, and separate maturity/status/disposition/version fields.", "body": "Repo-canonical backlog/issue/bug store for Project Board v0.1.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-01", "kind": "infra", "labels": ["project-board", "v0.1", "store"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Repo-canonical backlog/issue/bug store", "updated_at": "2026-06-06T17:52:38Z", "version": "v0.1"}, {"acceptance_shape": "Capture hook starts audit-only/dry-run and only later opt-in appends to inbox.jsonl without dedup.", "body": "Autonomous out-of-scope capture via headless Sonnet agent.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-02", "kind": "feat", "labels": ["project-board", "v0.2", "capture"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "L", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Autonomous out-of-scope capture via headless Sonnet agent", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Interactive agent Track Loop mirrors repo-canonical items to Linear push-only and records linear_id.", "body": "Optional Linear mirror, never from the headless capture subprocess.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-03", "kind": "feat", "labels": ["project-board", "v0.3", "linear"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Optional Linear mirror (push-only)", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "A stdlib board.py supports add/refine/move/defer/trim/wontfix/edit/list/render/tx and auto-renders after mutations.", "body": "Backlog CLI CRUD and render surface.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-04", "kind": "infra", "labels": ["project-board", "v0.1", "cli"], "linear_id": null, "links": ["skills/project-meta/scripts/board.py"], "maturity": "refined", "rough_size": "L", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Backlog CLI (CRUD + render)", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.1"}, {"acceptance_shape": "A roadmap recipe exists, is distinct from plan, and runs as an interactive collaborative mode after reserved-command promotion.", "body": "Collaborative roadmap mode.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-05", "kind": "feat", "labels": ["project-board", "v0.2", "roadmap"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "/project-meta roadmap collaborative mode", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Roadmap milestones carry version ids and render as done/now/todo timeline entries.", "body": "Version milestone model for roadmap timeline.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-06", "kind": "feat", "labels": ["project-board", "v0.2", "roadmap"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Version-milestone model", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "A single roadmap grooming transaction reads backlog and roadmap, dedups, schedules, trims, writes both through lock/rev/hash protocol, and emits guidance.", "body": "Joint backlog-roadmap co-review transaction.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-08", "kind": "feat", "labels": ["project-board", "v0.2", "transaction"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "L", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Joint backlog-roadmap co-review", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "A separate orchestration skill produces an orchestration plan from a shipped build plan for a chosen milestone.", "body": "Orchestrate mode split out of project-meta.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-09", "kind": "feat", "labels": ["orchestration", "v0.3"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "orchestrate mode", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "Contract artifact schema owns model tier, parallelization, effort, human checkpoints, review level, and budget hint per task.", "body": "Reviewable orchestration contract.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-10", "kind": "feat", "labels": ["orchestration", "v0.3", "contract"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "The orchestration contract artifact", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "User-invoked orchestration can emit to Workflow/Agents SDK when opt-in rules are met and otherwise degrades to Agent/Task loop.", "body": "Contract to engine handoff without reimplementing the engine.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-11", "kind": "infra", "labels": ["orchestration", "v0.3", "engine"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "L", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Contract to engine handoff", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "docs/dashboard.html renders roadmap timeline and backlog kanban from store data with no runtime dependencies.", "body": "Self-contained static dashboard.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-12", "kind": "feat", "labels": ["project-board", "v0.1", "dashboard"], "linear_id": null, "links": ["docs/dashboard.html", "skills/project-meta/templates/board.dashboard.html"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Self-contained interactive dashboard.html", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.1"}, {"acceptance_shape": "Browser edit-back is explicitly experimental and not part of the v0.1/v0.2 canonical write path.", "body": "In-place edit via File System Access API.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-13", "kind": "feat", "labels": ["project-board", "v0.3", "browser-edit"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "In-place edit via File System Access API", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "Conductor/worker doctrine is represented in the canonical backlog and rendered as part of the v0.1 board surface.", "body": "Execution-tier policy: CLI deterministic, Sonnet judgment, Opus/main hard milestone.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-15", "kind": "infra", "labels": ["project-board", "v0.1", "policy"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Conductor / worker tiering doctrine", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.1"}, {"acceptance_shape": "Dashboard is positioned as iterated user-facing documentation and generated as docs/dashboard.html from canonical store.", "body": "Dashboard as iterated user-facing documentation.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-16", "kind": "docs", "labels": ["project-board", "v0.1", "docs"], "linear_id": null, "links": ["docs/dashboard.html"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Positioned as iterated user-facing documentation", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.1"}, {"acceptance_shape": "New artifacts gain validation coverage; roadmap remains reserved until route shape is stable.", "body": "Harness integration and verb policy.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-17", "kind": "infra", "labels": ["project-board", "v0.2", "validation"], "linear_id": null, "links": ["skills/project-meta/references/cli-command-patterns.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Harness integration + validate coverage + verb policy", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Stale source proposals are removed and this backlog remains the single source of truth.", "body": "Supersede piecemeal proposals into the unified backlog proposal.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-18", "kind": "chore", "labels": ["project-board", "v0.1", "trim"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "done", "title": "Supersede piecemeal proposals into unified proposal", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.1"}, {"acceptance_shape": "Review-tier skill defines L0-L3 levels with clear usage, mode, and cost guidance.", "body": "Review levels L0-L3.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-19", "kind": "feat", "labels": ["review-tier", "v0.2"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Review levels L0-L3", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "review_tier.py suggests a floor from mechanical signals and requires visible conductor escalation for judgment inputs.", "body": "Heuristic review level scorer.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-20", "kind": "infra", "labels": ["review-tier", "v0.2", "cli"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Level scorer (heuristic + escalation gate)", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Existing review surfaces consume review-tier rather than creating parallel systems.", "body": "Review-tier integration and reuse.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-21", "kind": "infra", "labels": ["review-tier", "v0.2", "integration"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Integration and reuse", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Budget hint is labeled non-predictive and uses only wide heuristic ranges until actual token/runtime corpus exists.", "body": "Non-predictive budget hint for orchestration contracts.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-22", "kind": "feat", "labels": ["orchestration", "v0.3", "budget"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "S", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Budget hint (non-predictive)", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.3"}, {"acceptance_shape": "Fuzzy captures are refined into operator-confirmed scope, acceptance shape, and rough size before roadmap eligibility.", "body": "Requirement refinement ladder.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-23", "kind": "feat", "labels": ["project-board", "v0.2", "refinement"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Requirement refinement (fuzzy to concrete)", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "Async capture and deliberate roadmap promotion are coupled only through the DASH-08 single-writer transaction.", "body": "Backlog-roadmap async coupling contract.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-24", "kind": "infra", "labels": ["project-board", "v0.2", "transaction"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "M", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Backlog-roadmap async coupling contract", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}, {"acceptance_shape": "v0.2 provides read-only docs index; v0.3+ may add wiki links and experimental edit-back.", "body": "Fuse user-facing docs into dashboard as a wiki.", "created_at": "2026-06-06T00:00:00Z", "disposition": "active", "id": "DASH-25", "kind": "feat", "labels": ["project-board", "v0.2", "docs"], "linear_id": null, "links": ["docs/backlog/project-board-system.md"], "maturity": "refined", "rough_size": "L", "source": "docs/backlog/project-board-system.md", "status": "scheduled", "title": "Fuse project docs into dashboard as wiki", "updated_at": "2026-06-06T00:00:00Z", "version": "v0.2"}], "roadmap": {"_meta": {"created_at": "2026-06-06T00:00:00Z", "items_sha256": "500e41b80a542db3965bbef08673422eb6b8255f252e5893cba508398fa62e9d", "rev": 2, "source_reference": "docs/backlog/project-board-system.md", "updated_at": "2026-06-06T17:52:38Z"}, "milestones": [{"detail": "Ship the repo-canonical store, stdlib board CLI, derived static dashboard, conductor doctrine surface, and stale proposal trim.", "items": ["DASH-01", "DASH-04", "DASH-12", "DASH-15", "DASH-16", "DASH-18"], "status": "done", "title": "Project Board foundation", "version": "v0.1"}, {"detail": "Add dry-run capture, roadmap grooming, transaction-backed scheduling, review-tier, refinement, async coupling, and read-only docs index.", "items": ["DASH-02", "DASH-05", "DASH-06", "DASH-08", "DASH-17", "DASH-19", "DASH-20", "DASH-21", "DASH-23", "DASH-24", "DASH-25"], "status": "todo", "title": "Roadmap and review layer", "version": "v0.2"}, {"detail": "Add Linear mirror, orchestration contract and engine handoff, experimental browser edit-back, and budget hints.", "items": ["DASH-03", "DASH-09", "DASH-10", "DASH-11", "DASH-13", "DASH-22"], "status": "todo", "title": "Mirrors and orchestration", "version": "v0.3"}]}, "source_reference": "docs/backlog/project-board-system.md", "store": {"dashboard": "docs/dashboard.html", "inbox": "docs/backlog/inbox.jsonl", "items": "docs/backlog/items.jsonl", "roadmap": "docs/backlog/roadmap.json"}};
+    const STATUSES = ["unscheduled", "scheduled", "in_progress", "done"];
+    let activeDisposition = "active";
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    }
+
+    function renderCounts() {
+      const labels = [
+        ["items", "All items"],
+        ["active", "Active"],
+        ["refined", "Refined"],
+        ["done", "Done"]
+      ];
+      document.getElementById("counts").innerHTML = labels.map(([key, label]) => `
+        <div class="count"><strong>${esc(BOARD_DATA.counts[key] || 0)}</strong><span>${esc(label)}</span></div>
+      `).join("");
+    }
+
+    function renderRoadmap() {
+      const milestones = BOARD_DATA.roadmap.milestones || [];
+      const byId = new Map(BOARD_DATA.items.map(item => [item.id, item]));
+      document.getElementById("roadmap").innerHTML = milestones.length ? milestones.map(m => {
+        const itemTitles = (m.items || []).map(id => byId.get(id)).filter(Boolean).map(item => `<span class="chip">${esc(item.id)}</span>`).join("");
+        return `<article class="milestone">
+          <div class="top"><strong>${esc(m.version || m.id || "")}</strong><span class="badge ${esc(m.status || "todo")}">${esc(m.status || "todo")}</span></div>
+          <h3>${esc(m.title || "")}</h3>
+          <p class="meta">${esc(m.detail || "")}</p>
+          <div class="chips">${itemTitles}</div>
+        </article>`;
+      }).join("") : `<div class="empty">No roadmap milestones yet.</div>`;
+    }
+
+    function renderFilters() {
+      const filters = ["active", "deferred", "trimmed", "wontfix", "all"];
+      document.getElementById("filters").innerHTML = filters.map(value => `
+        <button type="button" class="${activeDisposition === value ? "active" : ""}" data-filter="${value}">${esc(value)}</button>
+      `).join("");
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeDisposition = button.dataset.filter;
+          render();
+        });
+      });
+    }
+
+    function visibleItems() {
+      if (activeDisposition === "all") return BOARD_DATA.items;
+      return BOARD_DATA.items.filter(item => item.disposition === activeDisposition);
+    }
+
+    function renderBoard() {
+      const items = visibleItems();
+      document.getElementById("board").innerHTML = STATUSES.map(status => {
+        const cards = items.filter(item => item.status === status);
+        return `<div class="column">
+          <h3>${esc(status)} (${cards.length})</h3>
+          <div class="stack">${cards.length ? cards.map(renderCard).join("") : `<div class="empty">No items.</div>`}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderCard(item) {
+      const labels = [...(item.labels || []), item.kind, item.maturity, item.version].filter(Boolean);
+      return `<article class="card">
+        <header><h4>${esc(item.id)} · ${esc(item.title)}</h4><span class="badge">${esc(item.disposition)}</span></header>
+        ${item.acceptance_shape ? `<p class="body">${esc(item.acceptance_shape)}</p>` : ""}
+        ${item.body ? `<p class="body">${esc(item.body)}</p>` : ""}
+        <div class="chips">${labels.map(label => `<span class="chip">${esc(label)}</span>`).join("")}</div>
+      </article>`;
+    }
+
+    function render() {
+      document.getElementById("meta").textContent = `Generated ${BOARD_DATA.generated_at} from ${BOARD_DATA.source_reference}`;
+      document.getElementById("footer").textContent = `Store: ${BOARD_DATA.store.items} · ${BOARD_DATA.store.roadmap}`;
+      renderCounts();
+      renderRoadmap();
+      renderFilters();
+      renderBoard();
+    }
+
+    render();
+  </script>
+</body>
+</html>

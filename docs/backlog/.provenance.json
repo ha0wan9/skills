@@ -1,0 +1,7 @@
+{
+  "artifact_name": "project-board-store",
+  "last_reviewed": "2026-06-06",
+  "owner": "shared-user-facing",
+  "review_policy": "groom + version-assign during /project-meta roadmap (DASH-08)",
+  "source_reference": "docs/backlog/project-board-system.md"
+}

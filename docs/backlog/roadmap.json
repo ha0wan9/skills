@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "created_at": "2026-06-06T00:00:00Z",
+    "items_sha256": "500e41b80a542db3965bbef08673422eb6b8255f252e5893cba508398fa62e9d",
+    "rev": 2,
+    "source_reference": "docs/backlog/project-board-system.md",
+    "updated_at": "2026-06-06T17:52:38Z"
+  },
+  "milestones": [
+    {
+      "detail": "Ship the repo-canonical store, stdlib board CLI, derived static dashboard, conductor doctrine surface, and stale proposal trim.",
+      "items": [
+        "DASH-01",
+        "DASH-04",
+        "DASH-12",
+        "DASH-15",
+        "DASH-16",
+        "DASH-18"
+      ],
+      "status": "done",
+      "title": "Project Board foundation",
+      "version": "v0.1"
+    },
+    {
+      "detail": "Add dry-run capture, roadmap grooming, transaction-backed scheduling, review-tier, refinement, async coupling, and read-only docs index.",
+      "items": [
+        "DASH-02",
+        "DASH-05",
+        "DASH-06",
+        "DASH-08",
+        "DASH-17",
+        "DASH-19",
+        "DASH-20",
+        "DASH-21",
+        "DASH-23",
+        "DASH-24",
+        "DASH-25"
+      ],
+      "status": "todo",
+      "title": "Roadmap and review layer",
+      "version": "v0.2"
+    },
+    {
+      "detail": "Add Linear mirror, orchestration contract and engine handoff, experimental browser edit-back, and budget hints.",
+      "items": [
+        "DASH-03",
+        "DASH-09",
+        "DASH-10",
+        "DASH-11",
+        "DASH-13",
+        "DASH-22"
+      ],
+      "status": "todo",
+      "title": "Mirrors and orchestration",
+      "version": "v0.3"
+    }
+  ]
+}
