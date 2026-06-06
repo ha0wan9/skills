@@ -505,6 +505,18 @@ def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-") or "page"
 
 
+def _safe_url(url: str) -> str:
+    """Neutralize a Markdown link target before it goes into an href="..." that the
+    dashboard renders via innerHTML. The doc source is HTML-escaped before this runs
+    (so < > & are already entities), but `"` is not — and an active-content scheme is
+    still dangerous. Block javascript:/data:/vbscript: (-> '#') and escape the quote so
+    it cannot break out of the attribute."""
+    scheme = re.sub(r"[\x00-\x20]", "", url).lower()
+    if scheme.startswith(("javascript:", "data:", "vbscript:")):
+        return "#"
+    return url.replace('"', "&quot;")
+
+
 def _md_inline(text: str) -> str:
     """Inline Markdown on already-HTML-escaped text. Code spans are protected first so
     formatting inside them is left literal."""
@@ -516,7 +528,7 @@ def _md_inline(text: str) -> str:
 
     text = _INLINE_CODE.sub(stash, text)
     text = _WIKILINK.sub(lambda m: f'<a href="#doc-{_slug(m.group(1))}" data-wikilink="{_slug(m.group(1))}">{m.group(1)}</a>', text)
-    text = _LINK.sub(lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>', text)
+    text = _LINK.sub(lambda m: f'<a href="{_safe_url(m.group(2))}">{m.group(1)}</a>', text)
     text = _BOLD.sub(r"<strong>\1</strong>", text)
     text = _ITALIC.sub(r"<em>\1</em>", text)
     for i, span in enumerate(spans):
@@ -532,6 +544,7 @@ def md_to_html(md: str) -> tuple[str, list[dict[str, Any]]]:
     lines = _esc_html(md).split("\n")
     out: list[str] = []
     headings: list[dict[str, Any]] = []
+    seen_slugs: set[str] = set()
     para: list[str] = []
     list_type: str | None = None
     in_code = False
@@ -573,8 +586,16 @@ def md_to_html(md: str) -> tuple[str, list[dict[str, Any]]]:
             close_list()
             level = len(m.group(1))
             text = m.group(2).strip()
-            slug = _slug(text)
-            headings.append({"level": level, "text": text, "slug": slug})
+            # The index text is consumed by the dashboard nav, which HTML-escapes it again
+            # (esc()); store the un-escaped form so it is not double-escaped. Slug from it too.
+            plain = text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+            slug = base = _slug(plain)
+            n = 2
+            while slug in seen_slugs:  # keep ids/anchors unique so nav jumps to the right heading
+                slug = f"{base}-{n}"
+                n += 1
+            seen_slugs.add(slug)
+            headings.append({"level": level, "text": plain, "slug": slug})
             out.append(f'<h{level} id="h-{slug}">{_md_inline(text)}</h{level}>')
             continue
         if re.match(r"(-{3,}|\*{3,}|_{3,})$", stripped):

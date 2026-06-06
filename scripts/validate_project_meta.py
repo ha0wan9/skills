@@ -1275,7 +1275,13 @@ def check_dashboard_wiki() -> None:
         run_python_script_result("scripts/board.py", "init", "--root", str(target_root))
         (target_root / "README.md").write_text("# Proj\n\nSee [[Guide]].\n\n## Setup\n- a\n", encoding="utf-8")
         (target_root / "docs").mkdir(exist_ok=True)
-        (target_root / "docs" / "guide.md").write_text("# Guide\n\nUse `x`, beware `</script>`.\n", encoding="utf-8")
+        # guide.md exercises the renderer's XSS surface: </script>, a javascript: link, and an
+        # attribute-breakout attempt via a quote in the link target.
+        (target_root / "docs" / "guide.md").write_text(
+            "# Guide\n\nUse `x`, beware `</script>`.\n\n"
+            "[evil](javascript:document.cookie) and [q](\"onmouseover=alert(1)x)\n",
+            encoding="utf-8",
+        )
         r = run_python_script_result("scripts/board.py", "render", "--root", str(target_root))
         require(r.returncode == 0, f"render with docs failed: {r.stderr}")
         html = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
@@ -1286,7 +1292,11 @@ def check_dashboard_wiki() -> None:
         require("readme" in docs and "guide" in docs, "wiki must collect README + docs/*.md")
         require("<li>a</li>" in docs["readme"]["html"], "wiki must render markdown lists")
         require('data-wikilink="guide"' in docs["readme"]["html"], "wiki must render [[wikilinks]]")
-        require("&lt;/script&gt;" in docs["guide"]["html"], "wiki must HTML-escape </script> in doc content")
+        guide = docs["guide"]["html"]
+        require("&lt;/script&gt;" in guide, "wiki must HTML-escape </script> in doc content")
+        require("javascript:" not in guide, "wiki must neutralize javascript: link hrefs (XSS)")
+        require('href="#"' in guide, "blocked-scheme links must fall back to href=\"#\"")
+        require('"onmouseover' not in guide, "link href must escape quotes (no attribute breakout)")
 
 
 def check_capture_hook() -> None:

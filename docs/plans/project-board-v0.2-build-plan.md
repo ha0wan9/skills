@@ -56,7 +56,7 @@ last_reviewed: 2026-06-06
 |---|---|---|
 | **DASH-02** | `Stop`/`SessionEnd` command hook → shell prefilter → `claude -p --model sonnet` → **dry-run log**; interactive promote via `board.py inbox-add`; profile-gated | hook writes a candidate log, never auto-writes the store; `minimal` profile off |
 | **DASH-17** | `validate_target_harness.py` coverage for board artifacts; `init` scaffolds the board; `status`/`deliver` surface it | validator covers board files; init creates the store; status shows it |
-| **DASH-25** | MD→HTML at CLI render time (std-lib) embedded as a Docs/Wiki dashboard section; bidirectional cross-links; reuse `extract_doc_context.py` for the index | `board render` embeds README + docs/*.md as navigable HTML; wikilinks resolve in-panel; zero client-side deps |
+| **DASH-25** | MD→HTML at CLI render time (std-lib `md_to_html`+`collect_docs` in `board.py` — **not** `extract_doc_context.py`, which does bounded extraction, not rendering; keeping `board.py` self-contained) embedded as a Docs/Wiki dashboard section | `board render` embeds README + docs/*.md as navigable HTML; `[[wikilinks]]` resolve in-panel; zero client-side deps. **Shipped:** render + heading index + wikilink nav. **Deferred to v0.3:** deep item↔wiki↔version cross-links + edit-back (DASH-13) |
 
 ---
 
