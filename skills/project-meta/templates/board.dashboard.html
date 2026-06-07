@@ -31,6 +31,22 @@
     .count span { color: var(--muted); font-size: 13px; }
     main { padding: 22px clamp(16px, 4vw, 44px) 36px; display: grid; gap: 22px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .edit-banner { border: 1px solid #e7c36a; background: #fff7df; color: #6b4600; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.4; }
+    .edit-banner strong { display: block; margin-bottom: 2px; }
+    .edit-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .edit-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); display: none; }
+    .edit-panel.open { display: block; }
+    .edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+    .card-fields label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+    input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px; font: inherit; color: var(--ink); background: #fff; }
+    textarea { min-height: 72px; resize: vertical; }
+    button.small { padding: 5px 7px; font-size: 12px; }
+    button.primary { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
+    .dirty { color: var(--warn); font-size: 12px; }
+    .card-tools { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .card-fields { display: grid; gap: 6px; margin-top: 8px; }
+    .card-fields select, .card-fields input { font-size: 12px; padding: 5px 6px; }
+    .card-fields .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
     button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 8px 10px; font: inherit; cursor: pointer; }
     button.active { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
     section { min-width: 0; }
@@ -86,6 +102,16 @@
       <div class="toolbar" id="filters"></div>
     </section>
     <section>
+      <div class="edit-banner">
+        <strong>Experimental browser edit-back</strong>
+        CLI remains canonical. Browser edits patch the embedded store data, then save patched `items.jsonl` and `roadmap.json` via the File System Access API (`showSaveFilePicker`) when supported or download patched-store fallbacks elsewhere. Review both files before replacing `docs/backlog/`, then run `board.py tx` and `board.py render`.
+        <div class="edit-actions">
+          <button type="button" class="primary" id="save-items">Save patched store files</button>
+          <span class="dirty" id="dirty-state">No browser edits yet.</span>
+        </div>
+      </div>
+    </section>
+    <section>
       <h2>Backlog</h2>
       <div class="board" id="board"></div>
     </section>
@@ -101,7 +127,135 @@
   <script>
     const BOARD_DATA = __BOARD_DATA_JSON__;
     const STATUSES = ["unscheduled", "scheduled", "in_progress", "done"];
+    const KINDS = ["bug", "feat", "infra", "docs", "chore", "spike"];
+    const MATURITIES = ["fuzzy", "refined"];
+    const DISPOSITIONS = ["active", "deferred", "trimmed", "wontfix"];
     let activeDisposition = "active";
+    let browserEditDirty = false;
+
+    function markDirty() {
+      browserEditDirty = true;
+      const el = document.getElementById("dirty-state");
+      if (el) el.textContent = "Unsaved browser edits: save/download patched items.jsonl, then review and re-render.";
+    }
+
+    function setItemField(itemId, key, value) {
+      const item = BOARD_DATA.items.find(row => row.id === itemId);
+      if (!item) return;
+      item[key] = value === "" && key === "version" ? null : value;
+      item.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      markDirty();
+      render();
+    }
+
+    function itemJsonl() {
+      return BOARD_DATA.items.map(item => JSON.stringify(item)).join("\n") + "\n";
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], {type: "application/jsonl;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function textHash(text) {
+      const bytes = new TextEncoder().encode(text);
+      const hash = sha256(bytes);
+      return Array.from(hash, byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+
+    function sha256(bytes) {
+      const K = [
+        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+      ];
+      const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+      const bitLen = bytes.length * 8;
+      const msg = Array.from(bytes);
+      msg.push(0x80);
+      while ((msg.length % 64) !== 56) msg.push(0);
+      const high = Math.floor(bitLen / 0x100000000);
+      const low = bitLen >>> 0;
+      for (const word of [high, low]) {
+        msg.push((word >>> 24) & 255, (word >>> 16) & 255, (word >>> 8) & 255, word & 255);
+      }
+      const W = new Array(64);
+      for (let i = 0; i < msg.length; i += 64) {
+        for (let t = 0; t < 16; t++) {
+          W[t] = ((msg[i + t*4] << 24) | (msg[i + t*4 + 1] << 16) | (msg[i + t*4 + 2] << 8) | msg[i + t*4 + 3]) >>> 0;
+        }
+        for (let t = 16; t < 64; t++) {
+          const s0 = (rotr(W[t-15], 7) ^ rotr(W[t-15], 18) ^ (W[t-15] >>> 3)) >>> 0;
+          const s1 = (rotr(W[t-2], 17) ^ rotr(W[t-2], 19) ^ (W[t-2] >>> 10)) >>> 0;
+          W[t] = (W[t-16] + s0 + W[t-7] + s1) >>> 0;
+        }
+        let [a,b,c,d,e,f,g,h] = H;
+        for (let t = 0; t < 64; t++) {
+          const S1 = (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) >>> 0;
+          const ch = ((e & f) ^ (~e & g)) >>> 0;
+          const temp1 = (h + S1 + ch + K[t] + W[t]) >>> 0;
+          const S0 = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) >>> 0;
+          const maj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;
+          const temp2 = (S0 + maj) >>> 0;
+          h = g; g = f; f = e; e = (d + temp1) >>> 0; d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+        }
+        H[0]=(H[0]+a)>>>0; H[1]=(H[1]+b)>>>0; H[2]=(H[2]+c)>>>0; H[3]=(H[3]+d)>>>0;
+        H[4]=(H[4]+e)>>>0; H[5]=(H[5]+f)>>>0; H[6]=(H[6]+g)>>>0; H[7]=(H[7]+h)>>>0;
+      }
+      return H.flatMap(word => [(word >>> 24) & 255, (word >>> 16) & 255, (word >>> 8) & 255, word & 255]);
+    }
+
+    function roadmapJson(itemsText) {
+      const roadmap = JSON.parse(JSON.stringify(BOARD_DATA.roadmap));
+      roadmap._meta = roadmap._meta || {};
+      roadmap._meta.items_sha256 = textHash(itemsText);
+      roadmap._meta.rev = Number(roadmap._meta.rev || 0) + 1;
+      roadmap._meta.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      return JSON.stringify(roadmap, null, 2) + "\n";
+    }
+
+    async function saveTextWithPicker(filename, description, accept, text) {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{description, accept}]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+    }
+
+    function saveFallbackFiles(itemsText, roadmapText) {
+      downloadText("items.patched.jsonl", itemsText);
+      downloadText("roadmap.patched.json", roadmapText);
+    }
+
+    async function savePatchedItems() {
+      const itemsText = itemJsonl();
+      const roadmapText = roadmapJson(itemsText);
+      if (window.showSaveFilePicker) {
+        await saveTextWithPicker("items.jsonl", "Project Board items JSONL", {"application/jsonl": [".jsonl"]}, itemsText);
+        await saveTextWithPicker("roadmap.json", "Project Board roadmap JSON", {"application/json": [".json"]}, roadmapText);
+        document.getElementById("dirty-state").textContent = "Saved patched items.jsonl and roadmap.json. Review both, replace the canonical store if intended, then run board.py tx and board.py render.";
+        browserEditDirty = false;
+        return;
+      }
+      saveFallbackFiles(itemsText, roadmapText);
+      document.getElementById("dirty-state").textContent = "Downloaded items.patched.jsonl and roadmap.patched.json fallbacks. Review both before replacing docs/backlog/.";
+    }
 
     function esc(value) {
       return String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -166,12 +320,40 @@
 
     function renderCard(item) {
       const labels = [...(item.labels || []), item.kind, item.maturity, item.version].filter(Boolean);
+      const select = (key, values) => `<select data-edit-id="${esc(item.id)}" data-edit-key="${esc(key)}">${values.map(value => `<option value="${esc(value)}" ${item[key] === value ? "selected" : ""}>${esc(value)}</option>`).join("")}</select>`;
       return `<article class="card">
-        <header><h4>${esc(item.id)} · ${esc(item.title)}</h4><span class="badge">${esc(item.disposition)}</span></header>
+        <header>
+          <h4>${esc(item.id)} · ${esc(item.title)}</h4>
+          <div class="card-tools"><span class="badge">${esc(item.disposition)}</span></div>
+        </header>
         ${item.acceptance_shape ? `<p class="body">${esc(item.acceptance_shape)}</p>` : ""}
         ${item.body ? `<p class="body">${esc(item.body)}</p>` : ""}
+        <div class="card-fields" aria-label="Experimental browser edit controls for ${esc(item.id)}">
+          <label>Title <input data-edit-id="${esc(item.id)}" data-edit-key="title" value="${esc(item.title || "")}"></label>
+          <div class="row">
+            <label>Status ${select("status", STATUSES)}</label>
+            <label>Disposition ${select("disposition", DISPOSITIONS)}</label>
+          </div>
+          <div class="row">
+            <label>Kind ${select("kind", KINDS)}</label>
+            <label>Maturity ${select("maturity", MATURITIES)}</label>
+          </div>
+          <div class="row">
+            <label>Version <input data-edit-id="${esc(item.id)}" data-edit-key="version" value="${esc(item.version || "")}"></label>
+            <label>Linear ID <input data-edit-id="${esc(item.id)}" data-edit-key="linear_id" value="${esc(item.linear_id || "")}"></label>
+          </div>
+          <label>Acceptance <textarea data-edit-id="${esc(item.id)}" data-edit-key="acceptance_shape">${esc(item.acceptance_shape || "")}</textarea></label>
+          <label>Body <textarea data-edit-id="${esc(item.id)}" data-edit-key="body">${esc(item.body || "")}</textarea></label>
+        </div>
         <div class="chips">${labels.map(label => `<span class="chip">${esc(label)}</span>`).join("")}</div>
       </article>`;
+    }
+
+    function bindEditControls() {
+      document.querySelectorAll("[data-edit-id][data-edit-key]").forEach(control => {
+        const eventName = "change";
+        control.addEventListener(eventName, () => setItemField(control.dataset.editId, control.dataset.editKey, control.value));
+      });
     }
 
     let activeDoc = null;
@@ -208,8 +390,15 @@
       renderRoadmap();
       renderFilters();
       renderBoard();
+      bindEditControls();
       renderDocs();
     }
+
+    document.getElementById("save-items").addEventListener("click", () => {
+      savePatchedItems().catch(err => {
+        document.getElementById("dirty-state").textContent = `Save failed: ${err.message || err}`;
+      });
+    });
 
     render();
   </script>
