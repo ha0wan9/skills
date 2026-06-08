@@ -1265,6 +1265,73 @@ def check_board_cli() -> None:
         sep_item = next(r for r in json.loads(listing) if r["id"] == "SEP-1")
         require(sep_item["title"] == sep_title, "U+2028/U+2029 must round-trip intact in the stored title")
 
+        # Harness settings tab: a derived view of the enforcement profile + optional capabilities.
+        # State is derived from real artifacts — there is no .harness/settings.json (AP-VAL-2) — and
+        # the /project-meta settings CLI stays the canonical writer.
+        require('data-tab="settings"' in template, "template must expose the Harness settings tab")
+        require("renderSettings" in template, "template must render the harness settings panel")
+        require("Enforcement profile" in template, "template must include the enforcement profile selector")
+        # Direct profile write-back (File System Access) + the capability command planner.
+        require("showOpenFilePicker" in template, "settings page must offer direct profile write-back")
+        require("writeProfile" in template, "settings page must write HARNESS_PROFILE into .claude/settings.json")
+        require("data-cap-toggle" in template, "settings page must stage capability changes via toggles")
+        require("Pending changes" in template, "settings page must surface a staged command plan")
+        # Per-capability drill-down (e.g. "which hooks, wired to what").
+        require("data-cap-detail" in template, "capability cards must expose a detail drill-down")
+        require("renderCapDetail" in template, "settings page must render per-capability detail")
+        require("Wired hooks" in template, "hooks detail must list the wired hooks")
+
+        bare_render = run_python_script_result("scripts/board.py", "render", "--root", str(target_root))
+        require(bare_render.returncode == 0, f"bare harness render failed: {bare_render.stderr}")
+        bare_html = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        require("/project-meta settings" in bare_html, "settings page must route to the canonical settings CLI")
+        mb = re.search(r"const BOARD_DATA = (\{.*?\});", bare_html, re.DOTALL)
+        require(mb is not None, "dashboard must embed BOARD_DATA harness state")
+        bare = json.loads(mb.group(1)).get("harness", {})
+        require(bare.get("profile") == "unset", "bare repo must derive HARNESS_PROFILE=unset")
+        bare_caps = {c["key"]: c["state"] for c in bare.get("capabilities", [])}
+        require(
+            set(bare_caps) == {"hooks", "phase-lock", "multi-host", "issue-tracker"},
+            "harness must report the four optional capabilities",
+        )
+        require(all(s == "off" for s in bare_caps.values()), "capabilities must read 'off' with no artifacts")
+
+        # Detection + drill-down: a wired hook reads 'on' and its detail maps each event->script
+        # (flagging a dangling wiring + an orphan script); a present-but-unrouted doc reads 'half'.
+        hooks_dir = target_root / ".claude" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        (target_root / ".claude" / "settings.json").write_text(
+            '{"env": {"HARNESS_PROFILE": "standard"}, "hooks": {'
+            '"SessionStart": [{"hooks": [{"type": "command", "command": ".claude/hooks/load.sh"}]}], '
+            '"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": ".claude/hooks/missing.sh"}]}]}}',
+            encoding="utf-8",
+        )
+        (hooks_dir / "load.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+        (hooks_dir / "extra.sh").write_text("#!/bin/sh\n", encoding="utf-8")   # on disk, unwired -> orphan
+        (target_root / "agents").mkdir(exist_ok=True)
+        (target_root / "agents" / "issue-tracking.md").write_text("# tracker\nUses Linear.\n", encoding="utf-8")
+        det = run_python_script_result("scripts/board.py", "render", "--root", str(target_root))
+        require(det.returncode == 0, f"render with harness artifacts failed: {det.stderr}")
+        det_html = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        md = re.search(r"const BOARD_DATA = (\{.*?\});", det_html, re.DOTALL)
+        require(md is not None, "dashboard must embed BOARD_DATA harness state (detection case)")
+        det_h = json.loads(md.group(1))["harness"]
+        require(det_h.get("profile") == "standard", "must derive HARNESS_PROFILE from .claude/settings.json")
+        det_caps = {c["key"]: c for c in det_h["capabilities"]}
+        require(det_caps["hooks"]["state"] == "on", "hooks present + wired must read 'on'")
+        require(det_caps["issue-tracker"]["state"] == "half", "present-but-unrouted issue-tracker must read 'half-installed'")
+        hd = det_caps["hooks"]["detail"]
+        wired_by_event = {w["event"]: w for w in hd.get("wired", [])}
+        require(
+            wired_by_event.get("SessionStart", {}).get("script") == ".claude/hooks/load.sh",
+            "hooks detail must map each event to its resolved script",
+        )
+        require(wired_by_event.get("SessionStart", {}).get("present") is True, "an existing hook script must read present=true")
+        require(wired_by_event.get("PreToolUse", {}).get("present") is False, "a wired-but-missing hook script must read present=false")
+        require(".claude/hooks/extra.sh" in (hd.get("orphans") or []), "a script on disk with no wiring must be flagged as an orphan")
+        require(det_caps["issue-tracker"]["detail"]["routed_in"] == [], "unrouted issue-tracker detail must report no routing files")
+        require("mirrors" in det_caps["multi-host"]["detail"], "multi-host detail must enumerate mirror targets")
+
 
 def check_review_tier() -> None:
     ref = read("references/review-tier.md")
