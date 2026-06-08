@@ -1,0 +1,94 @@
+name: ci
+
+# Marketplace-wide critic floor. Runs the deterministic critics that already
+# ship with project-meta (references/skill-critics.md, "the validate floor")
+# so they actually gate every change instead of relying on a human to remember
+# to run them. Closing this hole is the repo-level instance of AP-VAL-2
+# ("validator not in the gate"). See skills/project-meta/proposals/fleet-hygiene-ci.md.
+#
+# Tiered by design:
+#   - BLOCKING  : structural lint + dev validator + manifest sanity (green today).
+#   - ADVISORY  : heuristic / estimate / arbitration critics (their opt-in --strict
+#                 flag is the tell that they are not meant to always-block). They
+#                 print findings but never fail CI until their backlog is burned
+#                 down, at which point they graduate into the blocking tier.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  critic-floor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ---- BLOCKING: marketplace manifest sanity (AGENTS.md "Working On The Marketplace") ----
+      - name: Manifest sanity (blocking)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          manifest = Path(".claude-plugin/marketplace.json")
+          data = json.loads(manifest.read_text())  # fails loudly if JSON is broken
+
+          errors, names = [], set()
+          for plugin in data.get("plugins", []):
+              name = plugin.get("name", "<unnamed>")
+              if name in names:
+                  errors.append(f"duplicate plugin name: {name}")
+              names.add(name)
+              for rel in plugin.get("skills", []):
+                  skill_md = (Path(plugin.get("source", "./")) / rel / "SKILL.md").resolve()
+                  if not skill_md.is_file():
+                      errors.append(f"{name}: skills path does not resolve to a SKILL.md: {rel}")
+
+          if errors:
+              print("Manifest sanity FAILED:")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+          print(f"Manifest sanity OK — {len(names)} plugin(s), all skill paths resolve.")
+          PY
+
+      # ---- BLOCKING: structural floor + dev validator (both exit 0 today) ----
+      - name: Skill architecture lint (blocking)
+        run: python3 skills/project-meta/scripts/skill_architecture_lint.py .
+
+      - name: project-meta dev validator (blocking)
+        run: python3 scripts/validate_project_meta.py
+
+      # ---- ADVISORY: heuristic / estimate / arbitration critics (report-only) ----
+      # These surface real findings today (a missing reciprocal arbitration row,
+      # an over-ceiling description, unenforced backing scripts). They are wired
+      # in non-blocking so the gate is green on arrival; promote each into the
+      # blocking tier above once its findings are resolved.
+      - name: Advisory critics (non-blocking)
+        run: |
+          set +e
+          echo "::group::trigger_collision_check (AP-SKL-3)"
+          python3 skills/project-meta/scripts/trigger_collision_check.py . || true
+          echo "::endgroup::"
+          echo "::group::context_cost_estimate (always-on budget)"
+          python3 skills/project-meta/scripts/context_cost_estimate.py . || true
+          echo "::endgroup::"
+          echo "::group::determinism_gap_scan (AP-VAL-1/2)"
+          python3 skills/project-meta/scripts/determinism_gap_scan.py . || true
+          echo "::endgroup::"
+          echo "::group::cross_skill_redundancy (one source of truth)"
+          python3 skills/project-meta/scripts/cross_skill_redundancy.py . || true
+          echo "::endgroup::"
+          echo "advisory critics complete (informational; never fails the build)"

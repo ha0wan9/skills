@@ -1,10 +1,10 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "869edb13373f5e60e6444a938f5d02c133fadd45c5cd394f4982a665290b615c",
-    "rev": 23,
+    "items_sha256": "237860c4a62a750300e088fe68ad89947e44d4175b6a249a79c943774865e4ee",
+    "rev": 34,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-06-06T23:23:14Z"
+    "updated_at": "2026-06-07T02:24:08Z"
   },
   "milestones": [
     {
@@ -53,6 +53,19 @@
       "status": "done",
       "title": "Mirrors and orchestration",
       "version": "v0.3"
+    },
+    {
+      "detail": "Front-load plan and roadmap with an assumption-classification gate and a blocking-decision ledger, a risk rubric that derives the review tier and sequencing, a plan-time codebase discovery sweep, and a proposal-to-approved diff feedback loop. Mechanics adapted from fullstack-dev-skills (common-ground, approve-synthesis, create-epic-plan).",
+      "items": [
+        "DASH-026",
+        "DASH-027",
+        "DASH-028",
+        "DASH-029",
+        "DASH-030"
+      ],
+      "status": "todo",
+      "title": "Plan/roadmap intake hardening",
+      "version": "v0.4"
     }
   ]
 }
