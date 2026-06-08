@@ -750,6 +750,191 @@ def collect_docs(root: Path) -> list[dict[str, Any]]:
     return docs
 
 
+HARNESS_PROFILES = ("minimal", "standard", "strict")
+
+
+def _read_settings_json(root: Path) -> dict[str, Any]:
+    """Best-effort read of .claude/settings.json. A malformed/absent file is not fatal
+    for a dashboard render — harness state is derived, not authoritative here — so swallow
+    parse errors and return {}."""
+    path = root / ".claude" / "settings.json"
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _routed_in(root: Path, needle: str) -> list[str]:
+    """Canonical memory files that reference `needle` (an artifact path) — the 'present AND
+    wired' integrity rule recipes/settings.md and the validator use. Empty list = unrouted."""
+    hits: list[str] = []
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        f = root / name
+        if f.is_file():
+            try:
+                if needle in f.read_text(encoding="utf-8"):
+                    hits.append(name)
+            except OSError:
+                continue
+    return hits
+
+
+_HOOK_SH = re.compile(r"\.claude/hooks/[\w.\-/]+\.sh")
+_ANY_SH = re.compile(r"[\w.\-/]+\.sh")
+
+
+def _resolve_hook_script(root: Path, command: str) -> tuple[str | None, bool | None]:
+    """Best-effort: pull a hook script path out of a hook command string and report whether the
+    file exists on disk. Returns (relpath, exists) — or (None, None) for an inline/non-script
+    command. Lets the dashboard flag a wiring whose script is missing (a dangling hook)."""
+    m = _HOOK_SH.search(command)
+    cand = m.group(0) if m else None
+    if cand is None:
+        m2 = _ANY_SH.search(command)
+        if not m2:
+            return None, None
+        cand = m2.group(0).lstrip("./")
+    return cand, (root / cand).exists()
+
+
+def _parse_hooks(root: Path, settings: dict[str, Any]) -> list[dict[str, Any]]:
+    """Flatten .claude/settings.json `hooks` into one row per wired command —
+    {event, matcher, command, script, present} — tolerant of partial/legacy shapes."""
+    out: list[dict[str, Any]] = []
+    hooks = settings.get("hooks")
+    if not isinstance(hooks, dict):
+        return out
+    for event, blocks in hooks.items():
+        if not isinstance(blocks, list):
+            continue
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            matcher = block.get("matcher")
+            entries = block.get("hooks")
+            if not isinstance(entries, list):
+                continue
+            for hk in entries:
+                if not isinstance(hk, dict):
+                    continue
+                command = str(hk.get("command") or "")
+                script, present = _resolve_hook_script(root, command) if command else (None, None)
+                out.append({
+                    "event": str(event),
+                    "matcher": matcher if isinstance(matcher, str) else None,
+                    "command": command,
+                    "script": script,
+                    "present": present,
+                })
+    return out
+
+
+def _cap_state(present: bool, wired: bool) -> str:
+    """on iff present AND wired; off iff neither; half-installed iff exactly one — a doc
+    without routing (or a hook without its wiring) is a FAIL, never reported as 'on'."""
+    if present and wired:
+        return "on"
+    if present or wired:
+        return "half"
+    return "off"
+
+
+def collect_harness(root: Path) -> dict[str, Any]:
+    """Derive the harness settings matrix from where each fact already lives (recipes/settings.md):
+    HARNESS_PROFILE from .claude/settings.json, and each optional capability's on/off/half-installed
+    state from its real artifacts + routing. There is deliberately NO .harness/settings.json — that
+    would drift against the real artifacts (AP-VAL-2). The dashboard renders this read-only; the
+    canonical writer stays the `/project-meta settings` CLI."""
+    settings = _read_settings_json(root)
+    env = settings.get("env") if isinstance(settings.get("env"), dict) else {}
+    profile_value = env.get("HARNESS_PROFILE") if isinstance(env, dict) else None
+    profile = profile_value if profile_value in HARNESS_PROFILES else ("unset" if not profile_value else profile_value)
+
+    def rel(p: Path) -> str:
+        try:
+            return str(p.relative_to(root))
+        except ValueError:
+            return str(p)
+
+    # hooks — scripts on disk + the wiring parsed from settings.json (present AND wired)
+    hooks_dir = root / ".claude" / "hooks"
+    hook_scripts = sorted(hooks_dir.glob("*.sh")) if hooks_dir.is_dir() else []
+    hooks_wired = bool(settings.get("hooks"))
+    hook_script_paths = [rel(s) for s in hook_scripts]
+    wired_hooks = _parse_hooks(root, settings)
+    referenced = {w["script"] for w in wired_hooks if w.get("script")}
+    hook_orphans = [s for s in hook_script_paths if s not in referenced]
+    hooks_sources = list(hook_script_paths)
+    if hooks_wired:
+        hooks_sources.append(".claude/settings.json (hooks)")
+    hooks_detail = {"wired": wired_hooks, "scripts": hook_script_paths, "orphans": hook_orphans}
+
+    # phase-lock — contract doc + live phase-state + gate scripts
+    pl_contract = root / "agents" / "phase-lock-contract.md"
+    pl_state = root / ".harness" / "phase-state.json"
+    pl_sources = [rel(p) for p in (pl_contract, pl_state) if p.exists()]
+    pl_state_data: dict[str, Any] = {}
+    if pl_state.is_file():
+        try:
+            loaded = json.loads(pl_state.read_text(encoding="utf-8"))
+            pl_state_data = loaded if isinstance(loaded, dict) else {}
+        except (json.JSONDecodeError, OSError):
+            pl_state_data = {}
+    gates_dir = root / ".harness" / "gates"
+    pl_gates = [rel(g) for g in sorted(gates_dir.glob("*.sh"))] if gates_dir.is_dir() else []
+    phase_detail = {
+        "contract": rel(pl_contract) if pl_contract.is_file() else None,
+        "state_file": rel(pl_state) if pl_state.is_file() else None,
+        "current_phase": pl_state_data.get("current_phase") or pl_state_data.get("phase"),
+        "gates": pl_gates,
+    }
+
+    # multi-host — each generated mirror artifact, present or not
+    mirror_candidates = [
+        ".cursor/rules/agents.md",
+        ".opencode/instructions.md",
+        "gemini-extension.json",
+        ".codex/AGENTS.md",
+        ".codex/config.toml",
+    ]
+    mirrors_detail = [{"path": m, "present": (root / m).exists()} for m in mirror_candidates]
+    mirror_present = [m["path"] for m in mirrors_detail if m["present"]]
+
+    # issue-tracker — doc present AND routed from canonical memory
+    it_doc = root / "agents" / "issue-tracking.md"
+    it_present = it_doc.is_file()
+    it_routed_in = _routed_in(root, "agents/issue-tracking.md")
+    it_sources = [rel(it_doc)] if it_present else []
+    it_tracker = None
+    if it_present:
+        try:
+            low = it_doc.read_text(encoding="utf-8").lower()
+            for name in ("linear", "github", "jira"):
+                if name in low:
+                    it_tracker = name
+                    break
+        except OSError:
+            it_tracker = None
+    issue_detail = {"doc": rel(it_doc) if it_present else None, "routed_in": it_routed_in, "tracker": it_tracker}
+
+    capabilities = [
+        {"key": "hooks", "state": _cap_state(bool(hook_scripts), hooks_wired), "sources": hooks_sources, "detail": hooks_detail},
+        {"key": "phase-lock", "state": _cap_state(pl_contract.is_file(), pl_state.is_file()), "sources": pl_sources, "detail": phase_detail},
+        {"key": "multi-host", "state": "on" if mirror_present else "off", "sources": mirror_present, "detail": {"mirrors": mirrors_detail}},
+        {"key": "issue-tracker", "state": _cap_state(it_present, bool(it_routed_in)), "sources": it_sources, "detail": issue_detail},
+    ]
+
+    return {
+        "profile": profile,
+        "profile_source": ".claude/settings.json" if profile != "unset" else None,
+        "profiles": list(HARNESS_PROFILES),
+        "capabilities": capabilities,
+    }
+
+
 def dashboard_data(root: Path) -> dict[str, Any]:
     p = paths(root)
     rows, roadmap, errors = validate_store(root)
@@ -774,6 +959,7 @@ def dashboard_data(root: Path) -> dict[str, Any]:
         "items": rows,
         "roadmap": roadmap,
         "docs": collect_docs(root),
+        "harness": collect_harness(root),
     }
 
 

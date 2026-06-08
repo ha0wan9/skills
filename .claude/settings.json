@@ -1,0 +1,5 @@
+{
+  "env": {
+    "HARNESS_PROFILE": "standard"
+  }
+}

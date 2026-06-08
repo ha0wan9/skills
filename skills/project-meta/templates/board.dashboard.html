@@ -4,124 +4,522 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Project Board</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
   <style>
+    /* Ark Initiative design system — fonts (Fontsource mirror of Google Fonts) */
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/oxanium@5/600.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/oxanium@5/700.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/oxanium@5/800.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/instrument-sans@5/400.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/instrument-sans@5/500.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/instrument-sans@5/600.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/400.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/500.css");
+    @import url("https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/600.css");
+
     :root {
-      --bg: #f7f7f4;
-      --ink: #1f2933;
-      --muted: #65717d;
-      --line: #d7d9d2;
-      --panel: #ffffff;
-      --accent: #0f766e;
-      --accent-soft: #d9f1ed;
-      --warn: #a15c00;
-      --done: #2f6f46;
-      --shadow: 0 1px 2px rgba(20, 28, 35, 0.08);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      /* shadcn semantic tokens (light) */
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.147 0.004 49.3);
+      --card: oklch(1 0 0);
+      --primary: oklch(0.518 0.253 323.949);
+      --primary-foreground: oklch(0.977 0.017 320.058);
+      --primary-700: oklch(0.452 0.211 324.591);
+      --secondary: oklch(0.967 0.001 286.375);
+      --secondary-foreground: oklch(0.21 0.006 285.885);
+      --muted: oklch(0.96 0.002 17.2);
+      --muted-foreground: oklch(0.547 0.021 43.1);
+      --accent: oklch(0.96 0.002 17.2);
+      --border: oklch(0.922 0.005 34.3);
+      --input: oklch(0.922 0.005 34.3);
+      --ring: oklch(0.714 0.014 41.2);
+      --destructive: oklch(0.577 0.245 27.325);
+      /* Ark brand-indigo world (logo lockup, hero panels) */
+      --brand-indigo: oklch(0.30 0.16 277);
+      --brand-indigo-deep: oklch(0.22 0.13 278);
+      --brand-indigo-hi: oklch(0.42 0.21 295);
+      /* foreground / background scale */
+      --fg-1: var(--foreground);
+      --fg-2: var(--muted-foreground);
+      --fg-3: oklch(0.708 0.013 41.2);
+      --bg-1: var(--background);
+      --bg-2: oklch(0.985 0.001 67.8);
+      /* status tints */
+      --success-bg: oklch(0.94 0.05 150);
+      --success-fg: oklch(0.45 0.12 150);
+      --warn-bg: oklch(0.965 0.045 85);
+      --warn-fg: oklch(0.5 0.11 70);
+      --warn-border: oklch(0.86 0.085 85);
+      /* radii (10px base; Luma pill buttons/badges) */
+      --radius-sm: 6px; --radius-md: 8px; --radius-card: 14px; --radius-full: 9999px;
+      /* elevation — low + crisp */
+      --shadow-xs: 0 1px 2px 0 oklch(0.147 0.004 49.3 / 0.05);
+      --shadow-sm: 0 1px 3px 0 oklch(0.147 0.004 49.3 / 0.08), 0 1px 2px -1px oklch(0.147 0.004 49.3 / 0.08);
+      --shadow-md: 0 4px 6px -1px oklch(0.147 0.004 49.3 / 0.08), 0 2px 4px -2px oklch(0.147 0.004 49.3 / 0.06);
+      /* type families */
+      --font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-heading: "Oxanium", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-family: var(--font-sans);
     }
     * { box-sizing: border-box; }
-    body { margin: 0; color: var(--ink); background: var(--bg); }
-    header { padding: 24px clamp(16px, 4vw, 44px) 16px; border-bottom: 1px solid var(--line); background: #fbfbf8; }
-    h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); line-height: 1.12; letter-spacing: 0; }
-    h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 0; }
+    body { margin: 0; color: var(--fg-1); background: var(--bg-2); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    ::selection { background: oklch(0.518 0.253 323.949 / .18); }
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; border: 3px solid var(--bg-2); }
+    *::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+
+    /* ---- Header: brand-indigo lockup ---- */
+    header { padding: 30px clamp(16px, 4vw, 44px) 28px; color: #fff;
+      background: radial-gradient(135% 150% at 10% -20%, var(--brand-indigo-hi) 0%, var(--brand-indigo) 44%, var(--brand-indigo-deep) 100%);
+      border-bottom: 1px solid var(--border); }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .brand img { width: 36px; height: 36px; display: block; }
+    .brand .wordmark { font-family: var(--font-heading); font-weight: 800; font-size: 19px; letter-spacing: 0.06em; color: #fff; }
+    .brand .sep { width: 1px; height: 20px; background: rgba(255,255,255,.28); }
+    .brand .product { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.72); }
+    h1 { margin: 0 0 8px; font-family: var(--font-heading); font-weight: 700; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.05; letter-spacing: 0.005em; color: #fff; text-wrap: balance; }
+    h2 { margin: 0 0 14px; font-family: var(--font-heading); font-weight: 600; font-size: 20px; letter-spacing: 0.005em; color: var(--fg-1); }
     p { margin: 0; }
-    .meta { color: var(--muted); font-size: 14px; line-height: 1.5; }
-    .counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; max-width: 780px; }
-    .count { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); min-height: 76px; }
-    .count strong { display: block; font-size: 24px; line-height: 1.1; }
-    .count span { color: var(--muted); font-size: 13px; }
-    main { padding: 22px clamp(16px, 4vw, 44px) 36px; display: grid; gap: 22px; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .edit-banner { border: 1px solid #e7c36a; background: #fff7df; color: #6b4600; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.4; }
-    .edit-banner strong { display: block; margin-bottom: 2px; }
-    .edit-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .edit-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; box-shadow: var(--shadow); display: none; }
-    .edit-panel.open { display: block; }
-    .edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-    .card-fields label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-    input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px; font: inherit; color: var(--ink); background: #fff; }
-    textarea { min-height: 72px; resize: vertical; }
-    button.small { padding: 5px 7px; font-size: 12px; }
-    button.primary { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
-    .dirty { color: var(--warn); font-size: 12px; }
-    .card-tools { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-    .card-fields { display: grid; gap: 6px; margin-top: 8px; }
-    .card-fields select, .card-fields input { font-size: 12px; padding: 5px 6px; }
-    .card-fields .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-    button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 7px; padding: 8px 10px; font: inherit; cursor: pointer; }
-    button.active { border-color: var(--accent); background: var(--accent-soft); color: #0b4d48; }
+    .meta { font-family: var(--font-mono); color: var(--fg-2); font-size: 13px; line-height: 1.5; }
+    header .meta { color: rgba(255,255,255,.72); }
+    .counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; max-width: 860px; }
+    .version-track { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .vchip { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16);
+      border-radius: var(--radius-full); padding: 6px 13px; font-size: 12px; color: rgba(255,255,255,.78); }
+    .vchip i { font-size: 14px; color: rgba(255,255,255,.78); }
+    .vchip b { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: #fff; letter-spacing: .02em; }
+    .vchip .dot { width: 7px; height: 7px; border-radius: 99px; background: oklch(0.78 0.16 150); box-shadow: 0 0 0 3px oklch(0.78 0.16 150 / .22); }
+    .count { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: var(--radius-card); padding: 15px 16px; }
+    .count strong { display: block; font-family: var(--font-heading); font-weight: 700; font-size: 32px; line-height: 1; color: #fff; }
+    .count span { display: block; margin-top: 7px; color: rgba(255,255,255,.72); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    main { padding: 28px clamp(16px, 4vw, 44px) 40px; display: grid; gap: 30px; }
     section { min-width: 0; }
-    .roadmap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-    .milestone, .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
-    .milestone { padding: 14px; }
-    .milestone .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 12px; background: #eef0ea; color: var(--muted); white-space: nowrap; }
-    .badge.now { background: var(--accent-soft); color: #0b4d48; }
-    .badge.done { background: #ddf0e2; color: var(--done); }
-    .badge.todo { background: #f1eee5; color: var(--warn); }
-    .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; }
+
+    /* ---- Buttons (Luma pills) ---- */
+    button { font-family: var(--font-sans); border: 1px solid var(--border); background: var(--card); color: var(--fg-1);
+      border-radius: var(--radius-full); padding: 8px 15px; font-size: 13px; font-weight: 500; line-height: 1; cursor: pointer; transition: .14s ease; white-space: nowrap; }
+    button:hover { background: var(--accent); }
+    button:active { transform: scale(.98); }
+    button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    button.active { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+    button.active:hover { background: var(--primary-700); }
+    button.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; display: inline-flex; align-items: center; gap: 7px; }
+    button.primary:hover { background: var(--primary-700); }
+    button.primary i { font-size: 16px; }
+    button.small { padding: 6px 10px; font-size: 12px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    /* ---- Tab bar (page nav) ---- */
+    .tabs { display: flex; gap: 6px; padding: 10px clamp(16px, 4vw, 44px); background: var(--bg-2);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+    .tab { border: 1px solid transparent; background: transparent; border-radius: var(--radius-full); padding: 9px 15px; font-family: var(--font-sans);
+      font-size: 14px; font-weight: 500; color: var(--fg-2); transition: color .14s ease, background .14s ease, border-color .14s ease;
+      display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .tab i { font-size: 17px; }
+    .tab:hover { background: var(--accent); color: var(--fg-1); }
+    .tab.active { background: transparent; color: var(--primary); border-color: var(--primary); font-weight: 600; }
+    .tab.active:hover { background: oklch(0.518 0.253 323.949 / .07); color: var(--primary); border-color: var(--primary); }
+    .tab:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .tab-panel { display: grid; gap: 30px; }
+
+    /* ---- Inputs ---- */
+    input, select, textarea { width: 100%; border: 1px solid var(--input); border-radius: var(--radius-md); padding: 8px 10px;
+      font-family: var(--font-sans); font-size: 13px; color: var(--fg-1); background: var(--background); transition: .14s ease; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.714 0.014 41.2 / .25); }
+    textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+
+    /* ---- Experimental edit banner ---- */
+    .edit-banner { border: 1px solid var(--warn-border); background: var(--warn-bg); color: var(--warn-fg); border-radius: var(--radius-card); padding: 14px 16px; font-size: 13px; line-height: 1.5; }
+    .edit-banner strong { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 600; color: var(--fg-1); }
+    .edit-banner strong i { color: var(--warn-fg); font-size: 16px; }
+    .edit-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+    .dirty { font-family: var(--font-mono); color: var(--warn-fg); font-size: 12px; }
+    .edit-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-xs); display: none; }
+    .edit-panel.open { display: block; }
+    .edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+
+    /* ---- Roadmap: vertical timeline + detail ---- */
+    .roadmap { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 28px; align-items: start; }
+    .rm-timeline { display: flex; flex-direction: column; }
+    .tl-item { display: grid; grid-template-columns: 26px 1fr; column-gap: 16px; align-items: stretch;
+      width: 100%; background: transparent; border: 0; border-radius: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; }
+    .tl-item:hover { background: transparent; }
+    .tl-item:focus-visible { outline: none; box-shadow: none; }
+    .tl-item:focus-visible .tl-card { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .tl-rail { position: relative; }
+    .tl-rail::before { content: ""; position: absolute; left: 13px; transform: translateX(-50%); top: 14px; bottom: 0; width: 2px; background: var(--border); z-index: 1; }
+    .tl-item.path-done .tl-rail::before { background: var(--primary); }
+    .tl-item.path-active .tl-rail::before { background: linear-gradient(var(--primary), var(--border)); animation: pathPulse 1.8s ease-in-out infinite; }
+    .tl-item:last-child .tl-rail::before { display: none; }
+    .tl-node { position: absolute; left: 13px; transform: translateX(-50%); top: 6px; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--bg-2); border: 2px solid var(--border); z-index: 2; }
+    .tl-item.done .tl-node { border-color: var(--primary); background: var(--primary); box-shadow: 0 0 0 3px oklch(0.518 0.253 323.949 / .18); }
+    .tl-item.in_progress .tl-node { border-color: var(--primary); background: var(--background); animation: nodePulse 1.8s ease-in-out infinite; }
+    .tl-card { margin-bottom: 18px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px 16px; transition: box-shadow .14s ease, border-color .14s ease; }
+    .tl-item.done .tl-card, .tl-item.in_progress .tl-card { border-color: var(--primary); }
+    .tl-item:hover .tl-card { box-shadow: var(--shadow-sm); }
+    .tl-item.selected .tl-card { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .tl-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .tl-ver { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--fg-2); letter-spacing: 0.02em; }
+    .tl-title { font-family: var(--font-sans); font-weight: 600; font-size: 15px; line-height: 1.3; color: var(--fg-1); }
+    .tl-count { margin-top: 6px; font-size: 12px; color: var(--fg-3); }
+    @keyframes nodePulse { 0%, 100% { box-shadow: 0 0 0 0 oklch(0.518 0.253 323.949 / .45); } 50% { box-shadow: 0 0 0 6px oklch(0.518 0.253 323.949 / 0); } }
+    @keyframes pathPulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+    @media (prefers-reduced-motion: reduce) { .tl-item.in_progress .tl-node, .tl-item.path-active .tl-rail::before { animation: none; } }
+
+    /* roadmap detail panel */
+    .rm-detail { position: sticky; top: 72px; align-self: start; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-card); box-shadow: var(--shadow-xs); padding: 24px 26px; }
+    .rm-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    .rm-detail-ver { font-family: var(--font-mono); font-weight: 600; font-size: 15px; color: var(--fg-2); letter-spacing: 0.02em; }
+    .rm-detail-title { font-family: var(--font-heading); font-weight: 600; font-size: 23px; line-height: 1.2; color: var(--fg-1); margin: 0 0 12px; letter-spacing: 0.005em; }
+    .rm-detail-text { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); margin: 0 0 20px; max-width: 62ch; }
+    .rm-detail-meta { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-3); font-weight: 600; margin-bottom: 12px; }
+    .rm-items { display: grid; gap: 8px; }
+    .rm-item-wrap { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-2); overflow: hidden; }
+    .rm-item { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; width: 100%;
+      padding: 11px 13px; background: transparent; border: 0; border-radius: 0; text-align: left; cursor: pointer; font: inherit; transition: background .14s ease; }
+    .rm-item:hover { background: var(--accent); }
+    .rm-item[aria-expanded="true"] { background: var(--accent); }
+    .rm-item-id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+    .rm-item-title { font-size: 13px; line-height: 1.4; color: var(--fg-1); }
+    .rm-chev { font-size: 17px; color: var(--fg-3); transition: transform .16s ease; }
+    .rm-item[aria-expanded="true"] .rm-chev { transform: rotate(180deg); color: var(--primary); }
+    .rm-item-detail { padding: 4px 14px 14px; display: grid; gap: 12px; border-top: 1px solid var(--border); background: var(--card); }
+    .rm-item-detail[hidden] { display: none; }
+    .rm-meta-k { display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-3); margin-right: 7px; }
+    .rm-acc { font-size: 13px; line-height: 1.6; color: var(--fg-1); margin: 12px 0 0; }
+    .rm-body { font-size: 13px; line-height: 1.6; color: var(--fg-2); margin: 0; }
+    .rm-meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .rm-meta-chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--fg-1);
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 3px 11px; }
+    .rm-meta-chip .rm-meta-k { margin-right: 5px; }
+    .rm-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rm-tag { font-size: 11px; color: var(--fg-2); background: var(--muted); border-radius: var(--radius-full); padding: 3px 9px; }
+    .rm-links { display: grid; gap: 5px; }
+    .rm-link { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-2); background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; word-break: break-all; }
+
+    /* ---- Badges (pill) ---- */
+    .badge { display: inline-flex; align-items: center; gap: 5px; border: 1px solid transparent; border-radius: var(--radius-full);
+      padding: 4px 10px; font-size: 12px; font-weight: 500; line-height: 1; background: var(--secondary); color: var(--secondary-foreground); white-space: nowrap; }
+    .badge.done { background: var(--success-bg); color: var(--success-fg); }
+    .badge.now, .badge.in_progress { background: var(--primary); color: var(--primary-foreground); }
+    .badge.todo, .badge.scheduled, .badge.unscheduled { background: var(--muted); color: var(--muted-foreground); }
+
+    /* ---- Backlog board ---- */
+    .board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
     .column { min-width: 0; }
-    .column h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .stack { display: grid; gap: 10px; }
-    .card { padding: 12px; min-width: 0; }
-    .card header { padding: 0; border: 0; background: transparent; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
-    .card h4 { margin: 0 0 8px; font-size: 15px; line-height: 1.25; letter-spacing: 0; overflow-wrap: anywhere; }
-    .card .body { color: var(--muted); font-size: 13px; line-height: 1.42; margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; font-size: 12px; color: var(--muted); background: #fbfbf8; }
-    .empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; padding: 14px; font-size: 13px; }
-    footer { color: var(--muted); font-size: 12px; padding: 0 clamp(16px, 4vw, 44px) 30px; }
-    .wiki { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 16px; align-items: start; }
-    .wiki-nav { display: grid; gap: 4px; position: sticky; top: 12px; }
-    .wiki-nav button { text-align: left; width: 100%; }
-    .wiki-nav .sub { font-size: 12px; color: var(--muted); padding-left: 14px; border: 0; background: transparent; }
-    .wiki-page { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 16px 20px; min-width: 0; overflow-wrap: anywhere; }
-    .wiki-page h1, .wiki-page h2, .wiki-page h3 { line-height: 1.2; }
-    .wiki-page pre { background: #f3f4ee; border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; }
-    .wiki-page code { background: #f3f4ee; border-radius: 4px; padding: 1px 4px; font-size: 13px; }
-    .wiki-page pre code { background: transparent; padding: 0; }
-    .wiki-page blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--line); color: var(--muted); }
+    .column-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .column h3 { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--fg-1); text-transform: uppercase; letter-spacing: 0.05em; }
+    .col-add { width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      border: 1px solid var(--border); border-radius: var(--radius-full); background: var(--card); color: var(--fg-2); cursor: pointer; transition: .14s ease; }
+    .col-add i { font-size: 17px; }
+    .col-add:hover { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+    .col-add:active { transform: scale(.95); }
+    .col-add:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .stack { display: grid; gap: 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-xs); padding: 14px; min-width: 0; transition: box-shadow .14s ease; }
+    .card:hover { box-shadow: var(--shadow-sm); }
+    .card.editing { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .card-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .card-head-left { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+    .card-id { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); letter-spacing: 0.02em; flex-shrink: 0; }
+    .card-actions { display: flex; gap: 2px; opacity: 0; pointer-events: none; transition: opacity .14s ease; }
+    .card:hover .card-actions, .card.editing .card-actions { opacity: 1; pointer-events: auto; }
+    .card-act { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; border-radius: var(--radius-full); background: transparent; color: var(--fg-2); cursor: pointer;
+      transition: background .14s ease, color .14s ease; }
+    .card-act i { font-size: 16px; }
+    .card-act:hover { background: var(--accent); color: var(--fg-1); }
+    .card-act:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .card-act.delete:hover { background: oklch(0.94 0.06 25); color: var(--destructive); }
+    .card-act.edit.on { background: var(--primary); color: var(--primary-foreground); }
+    .card-act.edit.on:hover { background: var(--primary-700); color: var(--primary-foreground); }
+    .card-title { margin: 8px 0 0; font-family: var(--font-sans); font-weight: 600; font-size: 14px; line-height: 1.3; color: var(--fg-1); overflow-wrap: anywhere; }
+    .card-desc { color: var(--fg-2); font-size: 13px; line-height: 1.55; margin: 8px 0 0; overflow-wrap: anywhere;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    /* inline edit affordances */
+    .card.editing .card-desc { -webkit-line-clamp: unset; display: block; overflow: visible; }
+    [contenteditable="true"].card-title, [contenteditable="true"].card-desc { outline: none; cursor: text; border-radius: var(--radius-sm); box-shadow: 0 0 0 4px transparent; transition: box-shadow .14s ease, background .14s ease; }
+    [contenteditable="true"][data-placeholder]:empty::before { content: attr(data-placeholder); color: var(--fg-3); pointer-events: none; }
+    [contenteditable="true"].card-title:hover, [contenteditable="true"].card-desc:hover { background: var(--bg-2); box-shadow: 0 0 0 4px var(--bg-2); }
+    [contenteditable="true"].card-title:focus, [contenteditable="true"].card-desc:focus { background: var(--bg-2); box-shadow: 0 0 0 4px var(--bg-2), inset 0 -1px 0 var(--primary); }
+    .tag-edit { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); background: var(--bg-2); border: 1px dashed var(--border);
+      border-radius: var(--radius-full); padding: 3px 9px; cursor: pointer; transition: .14s ease; }
+    .tag-edit:hover { border-color: var(--primary); color: var(--primary); border-style: solid; }
+    .tag-edit.empty { color: var(--fg-3); }
+    .badge.chip { cursor: pointer; border: 0; font: inherit; font-size: 12px; font-weight: 500; }
+    .badge.chip:hover { filter: brightness(0.97); }
+    /* floating editor popover */
+    .pop { position: absolute; z-index: 60; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md); padding: 5px; min-width: 150px; display: grid; gap: 2px; }
+    .pop-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-3); padding: 6px 8px 4px; }
+    .pop-opt { display: block; width: 100%; text-align: left; border: 0; background: transparent; border-radius: var(--radius-sm);
+      padding: 7px 10px; font-size: 13px; color: var(--fg-1); cursor: pointer; }
+    .pop-opt:hover { background: var(--accent); }
+    .pop-opt.on { color: var(--primary); font-weight: 600; }
+    .pop-input { width: 100%; border: 1px solid var(--input); border-radius: var(--radius-sm); padding: 7px 9px; font-size: 13px; font-family: var(--font-sans); outline: none; }
+    .pop-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.714 0.014 41.2 / .25); }
+    .pop-hint { font-size: 11px; color: var(--fg-3); padding: 5px 5px 2px; }
+    .card-fields { display: grid; gap: 9px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .card-eid { display: flex; align-items: center; gap: 8px; }
+    .card-eid-k { font-size: 11px; font-weight: 500; color: var(--fg-2); text-transform: uppercase; letter-spacing: 0.03em; }
+    .card-eid code { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 8px; }
+    .card-fields label { display: grid; gap: 4px; font-size: 11px; font-weight: 500; color: var(--fg-2); text-transform: uppercase; letter-spacing: 0.03em; }
+    .card-fields select, .card-fields input { font-size: 12px; padding: 6px 8px; text-transform: none; letter-spacing: 0; }
+    .card-fields .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .chip { font-family: var(--font-mono); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 3px 9px; font-size: 11px; color: var(--fg-2); background: var(--bg-2); }
+    .empty { color: var(--fg-2); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: 16px; font-size: 13px; }
+    footer { font-family: var(--font-mono); color: var(--fg-3); font-size: 12px; padding: 0 clamp(16px, 4vw, 44px) 36px; }
+
+    /* ---- Docs / wiki ---- */
+    .wiki { display: grid; grid-template-columns: minmax(180px, 240px) 1fr; gap: 24px; align-items: start; }
+    .wiki-nav { display: grid; gap: 2px; position: sticky; top: 72px; max-height: calc(100vh - 92px); overflow-y: auto; padding-right: 4px; }
+    .wiki-nav button { text-align: left; width: 100%; border: 0; background: transparent; border-radius: var(--radius-md); padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--fg-1); white-space: normal; line-height: 1.35; }
+    .wiki-nav button:hover { background: var(--accent); }
+    .wiki-nav button.active { background: var(--secondary); color: var(--fg-1); }
+    .wiki-nav .sub { font-size: 12px; font-weight: 400; color: var(--fg-2); padding-left: 22px; }
+    .wiki-page { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-xs); padding: 32px 36px; min-width: 0; overflow-wrap: anywhere; }
+    .wiki-page > *:first-child { margin-top: 0; }
+    .wiki-page h1, .wiki-page h2, .wiki-page h3 { font-family: var(--font-heading); line-height: 1.25; letter-spacing: 0.005em; color: var(--fg-1); text-wrap: balance; }
+    .wiki-page h1 { font-size: 27px; margin: 0 0 16px; }
+    .wiki-page h2 { font-size: 20px; margin: 32px 0 12px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+    .wiki-page h3 { font-size: 16px; margin: 24px 0 8px; }
+    .wiki-page p { font-size: 14.5px; line-height: 1.7; color: var(--fg-1); margin: 0 0 14px; max-width: 74ch; }
+    .wiki-page ul, .wiki-page ol { margin: 0 0 16px; padding-left: 22px; max-width: 74ch; }
+    .wiki-page li { font-size: 14.5px; line-height: 1.7; color: var(--fg-1); margin-bottom: 6px; }
+    .wiki-page li::marker { color: var(--fg-3); }
+    .wiki-page a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .wiki-page a:hover { text-decoration: underline; }
+    .wiki-page pre { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; line-height: 1.55; }
+    .wiki-page code { font-family: var(--font-mono); background: var(--muted); border-radius: var(--radius-sm); padding: 1.5px 5px; font-size: 12.5px; }
+    .wiki-page pre code { background: transparent; padding: 0; font-size: 12.5px; }
+    .wiki-page blockquote { margin: 0 0 16px; padding: 8px 16px; border-left: 3px solid var(--primary); background: var(--bg-2); border-radius: 0 var(--radius-md) var(--radius-md) 0; color: var(--fg-2); }
+    .wiki-page blockquote p { margin: 0; }
+    .wiki-page hr { border: 0; border-top: 1px solid var(--border); margin: 28px 0; }
+    .wiki-table { margin: 0 0 18px; overflow-x: auto; }
+    .wiki-page table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    .wiki-page th, .wiki-page td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top; line-height: 1.5; }
+    .wiki-page th { background: var(--bg-2); font-weight: 600; color: var(--fg-1); white-space: nowrap; }
+    .wiki-page tbody tr:nth-child(even) { background: oklch(0.985 0.001 67.8 / 0.6); }
+    .wiki-table td, .wiki-table th { overflow-wrap: break-word; word-break: normal; }
+    .wiki-table td:first-child { white-space: nowrap; }
+    .wiki-table td:first-child code { white-space: nowrap; }
+
+    /* ---- Harness settings ---- */
+    #tab-settings { max-width: 920px; }
+    .set-head { margin-bottom: 2px; }
+    .set-lede { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); max-width: 72ch; margin-top: 10px; }
+    .set-lede strong { color: var(--fg-1); font-weight: 600; }
+    .set-lede code, .set-banner code { font-family: var(--font-mono); font-size: 12.5px; background: var(--muted); border-radius: var(--radius-sm); padding: 1.5px 5px; color: var(--fg-1); }
+    .set-banner { border: 1px solid var(--border); background: var(--bg-2); border-radius: var(--radius-card); padding: 14px 16px; font-size: 13px; line-height: 1.55; color: var(--fg-2); }
+    .set-banner strong { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 600; color: var(--fg-1); }
+    .set-banner strong i { color: var(--primary); font-size: 16px; }
+    .set-group { display: grid; gap: 14px; }
+    .set-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .set-group-head h2 { margin: 0; }
+    .set-now { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); }
+    .set-now b { color: var(--fg-1); font-weight: 600; }
+
+    /* profile selector — three enforcement tiers */
+    .profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .profile-card { position: relative; text-align: left; display: block; width: 100%; white-space: normal; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius-card); padding: 16px; cursor: pointer; transition: border-color .14s ease, box-shadow .14s ease, background .14s ease; }
+    .profile-card:hover { box-shadow: var(--shadow-sm); }
+    .profile-card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .profile-card.selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .profile-card.current { background: oklch(0.518 0.253 323.949 / .035); }
+    .profile-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .profile-name { font-family: var(--font-heading); font-weight: 600; font-size: 16px; color: var(--fg-1); text-transform: capitalize; }
+    .profile-tick { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .profile-card.selected .profile-tick { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+    .profile-tick i { font-size: 12px; opacity: 0; }
+    .profile-card.selected .profile-tick i { opacity: 1; }
+    .profile-pill { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--success-fg); background: var(--success-bg); border-radius: var(--radius-full); padding: 3px 8px; }
+    .profile-desc { font-size: 12.5px; line-height: 1.55; color: var(--fg-2); }
+
+    /* command bar — the copyable canonical CLI call */
+    .cmd-bar { display: flex; align-items: center; gap: 8px; margin-top: 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px 8px 8px 12px; }
+    .cmd-bar.muted { opacity: .85; }
+    .cmd-prompt { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
+    .cmd-text { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-1); overflow-x: auto; white-space: nowrap; flex: 1; padding: 1px 0; }
+    .cmd-copy { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--card); color: var(--fg-2); cursor: pointer; transition: .14s ease; }
+    .cmd-copy i { font-size: 15px; }
+    .cmd-copy:hover { background: var(--accent); color: var(--fg-1); }
+    .cmd-copy.done { color: var(--success-fg); border-color: var(--success-fg); }
+    .cmd-copy:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .set-warn { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5;
+      color: var(--warn-fg); background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: var(--radius-md); }
+    .set-warn i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* capability cards */
+    .cap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .cap-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-xs); padding: 16px; display: flex; flex-direction: column; }
+    .cap-card.on { border-color: var(--primary); }
+    .cap-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .cap-icon { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--secondary); color: var(--fg-1); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cap-icon i { font-size: 18px; }
+    .cap-card.on .cap-icon { background: var(--primary); color: var(--primary-foreground); }
+    .cap-name { font-family: var(--font-sans); font-weight: 600; font-size: 15px; color: var(--fg-1); }
+    .cap-state { margin-left: auto; }
+    .badge.half { background: var(--warn-bg); color: var(--warn-fg); border-color: var(--warn-border); }
+    .badge.off { background: var(--muted); color: var(--muted-foreground); }
+    .cap-desc { font-size: 13px; line-height: 1.55; color: var(--fg-2); margin: 0 0 12px; }
+    .cap-src { display: grid; gap: 6px; margin-bottom: 4px; }
+    .cap-src-k { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-3); }
+    .cap-src-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cap-src-none { font-size: 12px; color: var(--fg-3); font-style: italic; }
+    .cap-foot { margin-top: auto; padding-top: 12px; }
+    .linkbtn { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-size: inherit; color: var(--warn-fg); text-decoration: underline; cursor: pointer; }
+
+    /* capability detail drill-down */
+    .cap-detail-toggle { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 6px 2px; background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 500; color: var(--fg-2); }
+    .cap-detail-toggle:hover { color: var(--fg-1); }
+    .cap-detail-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .cap-chev { font-size: 16px; color: var(--fg-3); transition: transform .16s ease; }
+    .cap-detail-toggle[aria-expanded="true"] .cap-chev { transform: rotate(180deg); color: var(--primary); }
+    .cap-detail-sum { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); }
+    .cap-detail { margin-top: 8px; padding: 12px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 12px; }
+    .cap-detail[hidden] { display: none; }
+    .dl-row { display: grid; gap: 5px; }
+    .dl-k { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-3); }
+    .dl-v { font-size: 12.5px; line-height: 1.5; color: var(--fg-1); }
+    .dl-muted { color: var(--fg-3); font-style: italic; }
+    .dl-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .dl-chip { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--border); border-radius: var(--radius-full); padding: 2px 9px; color: var(--fg-2); background: var(--card); display: inline-flex; align-items: center; gap: 6px; }
+    .dl-chip.absent { color: var(--fg-3); }
+    .dl-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success-fg); flex-shrink: 0; }
+    .dl-chip.absent .dl-dot { background: var(--fg-3); }
+    .hk-list { display: grid; gap: 6px; }
+    .hk-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 7px 9px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .hk-row.missing { border-color: var(--warn-border); background: var(--warn-bg); }
+    .hk-event { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--primary); background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px 7px; white-space: nowrap; }
+    .hk-cmd { font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); overflow-wrap: anywhere; flex: 1; min-width: 150px; }
+    .hk-matcher { font-family: var(--font-mono); font-size: 10.5px; color: var(--fg-2); background: var(--muted); border-radius: var(--radius-sm); padding: 2px 6px; white-space: nowrap; }
+    .hk-flag { font-size: 10px; font-weight: 600; border-radius: var(--radius-full); padding: 2px 8px; white-space: nowrap; }
+    .hk-flag.miss { background: oklch(0.94 0.06 25); color: var(--destructive); }
+    .hk-flag.orphan { background: var(--warn-bg); color: var(--warn-fg); }
+    .linkbtn:hover { color: var(--destructive); }
+
+    /* profile apply row + direct write */
+    .apply-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+    .apply-hint { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); }
+    .apply-ok { color: var(--success-fg); }
+    .apply-err { color: var(--destructive); }
+
+    /* capability toggle switch */
+    .cap-toggle-row { display: flex; align-items: center; gap: 10px; }
+    .cap-toggle { display: inline-flex; align-items: center; gap: 9px; padding: 4px; padding-right: 12px; border: 1px solid var(--border); border-radius: var(--radius-full); background: var(--card); cursor: pointer; transition: .14s ease; }
+    .cap-toggle:hover { background: var(--accent); }
+    .cap-toggle:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring); }
+    .switch { position: relative; width: 38px; height: 22px; border-radius: var(--radius-full); background: var(--border); transition: background .14s ease; flex-shrink: 0; }
+    .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-xs); transition: transform .16s ease; }
+    .cap-toggle.on .switch { background: var(--primary); }
+    .cap-toggle.on .switch::after { transform: translateX(16px); }
+    .cap-toggle.staged .switch { box-shadow: 0 0 0 3px oklch(0.518 0.253 323.949 / .2); }
+    .cap-toggle-label { font-size: 12px; font-weight: 500; color: var(--fg-2); }
+    .cap-toggle.on .cap-toggle-label { color: var(--fg-1); }
+    .staged-pill { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-radius: var(--radius-full); padding: 3px 9px; }
+    .staged-pill.enable { background: var(--success-bg); color: var(--success-fg); }
+    .staged-pill.disable { background: oklch(0.94 0.06 25); color: var(--destructive); }
+
+    /* pending-changes plan panel */
+    .plan-panel { margin-top: 28px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+    .plan-panel.empty { background: var(--bg-2); box-shadow: none; border-style: dashed; }
+    .plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .plan-head h3 { margin: 0; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--fg-1); }
+    .plan-list { display: grid; gap: 8px; margin-bottom: 4px; }
+    .plan-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .plan-tag { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; border-radius: var(--radius-sm); padding: 3px 8px; flex-shrink: 0; }
+    .plan-tag.profile { background: var(--secondary); color: var(--secondary-foreground); }
+    .plan-tag.enable { background: var(--success-bg); color: var(--success-fg); }
+    .plan-tag.disable { background: oklch(0.94 0.06 25); color: var(--destructive); }
+    .plan-row code { font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-1); }
+    .plan-cmds .cmd-bar { margin-top: 8px; }
+    .plan-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .plan-empty { font-size: 13px; color: var(--fg-2); }
     @media (max-width: 820px) {
       .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .board { grid-template-columns: 1fr; }
       .wiki { grid-template-columns: 1fr; }
+      .roadmap { grid-template-columns: 1fr; }
+      .rm-detail { position: static; }
+      .profile-grid { grid-template-columns: 1fr; }
+      .cap-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Project Board</h1>
+  <header data-screen-label="Header">
+    <h1>Project board</h1>
     <p class="meta" id="meta"></p>
+    <div class="version-track" id="version-track"></div>
     <div class="counts" id="counts"></div>
   </header>
+  <nav class="tabs" id="tabs">
+    <button type="button" class="tab" data-tab="roadmap"><i class="ri-flag-line"></i>Roadmap</button>
+    <button type="button" class="tab" data-tab="backlog"><i class="ri-stack-line"></i>Backlog</button>
+    <button type="button" class="tab" data-tab="wiki"><i class="ri-book-2-line"></i>Docs / wiki</button>
+    <button type="button" class="tab" data-tab="settings"><i class="ri-settings-3-line"></i>Harness</button>
+  </nav>
   <main>
-    <section>
-      <h2>Roadmap</h2>
-      <div class="roadmap" id="roadmap"></div>
-    </section>
-    <section>
-      <div class="toolbar" id="filters"></div>
-    </section>
-    <section>
-      <div class="edit-banner">
-        <strong>Experimental browser edit-back</strong>
-        CLI remains canonical. Browser edits patch the embedded store data, then save patched `items.jsonl` and `roadmap.json` via the File System Access API (`showSaveFilePicker`) when supported or download patched-store fallbacks elsewhere. Review both files before replacing `docs/backlog/`, then run `board.py tx` and `board.py render`.
-        <div class="edit-actions">
-          <button type="button" class="primary" id="save-items">Save patched store files</button>
-          <span class="dirty" id="dirty-state">No browser edits yet.</span>
+    <div class="tab-panel" id="tab-roadmap" data-screen-label="Roadmap">
+      <section>
+        <div class="roadmap" id="roadmap"></div>
+      </section>
+    </div>
+    <div class="tab-panel" id="tab-backlog" data-screen-label="Backlog">
+      <section>
+        <div class="toolbar" id="filters"></div>
+      </section>
+      <section>
+        <div class="edit-banner">
+          <strong><i class="ri-flask-line"></i>Experimental browser edit-back</strong>
+          CLI remains canonical. Browser edits patch the embedded store data, then save patched `items.jsonl` and `roadmap.json` via the File System Access API (`showSaveFilePicker`) when supported or download patched-store fallbacks elsewhere. Review both files before replacing `docs/backlog/`, then run `board.py tx` and `board.py render`.
+          <div class="edit-actions">
+            <button type="button" class="primary" id="save-items"><i class="ri-save-3-line"></i>Save patched store files</button>
+            <span class="dirty" id="dirty-state">No browser edits yet.</span>
+          </div>
         </div>
-      </div>
-    </section>
-    <section>
-      <h2>Backlog</h2>
-      <div class="board" id="board"></div>
-    </section>
-    <section id="wiki-section">
-      <h2>Docs / Wiki</h2>
-      <div class="wiki">
-        <nav class="wiki-nav" id="wiki-nav"></nav>
-        <article class="wiki-page" id="wiki-page"></article>
-      </div>
-    </section>
+      </section>
+      <section>
+        <div class="board" id="board"></div>
+      </section>
+    </div>
+    <div class="tab-panel" id="tab-wiki" data-screen-label="Docs / wiki">
+      <section id="wiki-section">
+        <div class="wiki">
+          <nav class="wiki-nav" id="wiki-nav"></nav>
+          <article class="wiki-page" id="wiki-page"></article>
+        </div>
+      </section>
+    </div>
+    <div class="tab-panel" id="tab-settings" data-screen-label="Harness">
+      <section id="settings-section">
+        <div class="set-head">
+          <h2>Harness settings</h2>
+          <p class="set-lede">The enforcement profile and which optional capabilities are installed for
+            this repo's agent-work harness. State is <strong>derived</strong> from the real artifacts —
+            there is no <code>.harness/settings.json</code> to drift (AP-VAL-2).</p>
+        </div>
+        <div class="set-banner">
+          <strong><i class="ri-terminal-box-line"></i>Direct control — the CLI stays canonical</strong>
+          The <b>enforcement profile</b> writes straight into <code>.claude/settings.json</code> from this
+          page (experimental, via the File System Access API — Chromium-only, asks permission each time,
+          like the Backlog edit-back). <b>Capability</b> changes are staged into a copy-to-run command
+          plan, because installing one wires several files and re-runs the validator — the job of
+          <code>/project-meta settings</code>, which stays the source of truth. After any change, re-run
+          <code>board.py render</code> to refresh the derived state shown here.
+        </div>
+        <div id="settings"></div>
+      </section>
+    </div>
   </main>
   <footer id="footer"></footer>
   <script>
@@ -275,18 +673,89 @@
       `).join("");
     }
 
+    let activeMilestone = null;
+
+    function renderRoadmapDetail(m, byId) {
+      const el = document.getElementById("rm-detail");
+      if (!el) return;
+      if (!m) { el.innerHTML = `<div class="empty">Select a version to see its details.</div>`; return; }
+      const items = (m.items || []).map(id => byId.get(id)).filter(Boolean);
+      const metaChip = (label, val) => val ? `<span class="rm-meta-chip"><span class="rm-meta-k">${esc(label)}</span>${esc(val)}</span>` : "";
+      const rows = items.length ? items.map(it => {
+        const labels = (it.labels || []).map(l => `<span class="rm-tag">${esc(l)}</span>`).join("");
+        const links = (it.links || []).map(l => `<code class="rm-link">${esc(l)}</code>`).join("");
+        return `
+        <div class="rm-item-wrap">
+          <button type="button" class="rm-item" data-item="${esc(it.id)}" aria-expanded="false">
+            <span class="rm-item-id">${esc(it.id)}</span>
+            <span class="rm-item-title">${esc(it.title || "")}</span>
+            <span class="badge ${esc(it.status || "")}">${esc(it.status || "")}</span>
+            <i class="ri-arrow-down-s-line rm-chev"></i>
+          </button>
+          <div class="rm-item-detail" hidden>
+            ${it.acceptance_shape ? `<p class="rm-acc"><span class="rm-meta-k">Acceptance</span>${esc(it.acceptance_shape)}</p>` : ""}
+            ${it.body ? `<p class="rm-body">${esc(it.body)}</p>` : ""}
+            <div class="rm-meta-row">
+              ${metaChip("kind", it.kind)}${metaChip("maturity", it.maturity)}${metaChip("size", it.rough_size)}${metaChip("disposition", it.disposition)}
+            </div>
+            ${labels ? `<div class="rm-tags">${labels}</div>` : ""}
+            ${links ? `<div class="rm-links">${links}</div>` : ""}
+          </div>
+        </div>`;
+      }).join("") : `<div class="empty">No items in this version.</div>`;
+      el.innerHTML = `
+        <div class="rm-detail-head">
+          <span class="rm-detail-ver">${esc(m.version || m.id || "")}</span>
+          <span class="badge ${esc(m.status || "todo")}">${esc(m.status || "todo")}</span>
+        </div>
+        <h3 class="rm-detail-title">${esc(m.title || "")}</h3>
+        <p class="rm-detail-text">${esc(m.detail || "")}</p>
+        <div class="rm-detail-meta">${items.length} item${items.length === 1 ? "" : "s"} in this version</div>
+        <div class="rm-items">${rows}</div>`;
+      el.querySelectorAll(".rm-item").forEach(btn => btn.addEventListener("click", () => {
+        const detail = btn.nextElementSibling;
+        const open = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        if (detail) detail.hidden = open;
+      }));
+    }
+
     function renderRoadmap() {
-      const milestones = BOARD_DATA.roadmap.milestones || [];
+      const root = document.getElementById("roadmap");
       const byId = new Map(BOARD_DATA.items.map(item => [item.id, item]));
-      document.getElementById("roadmap").innerHTML = milestones.length ? milestones.map(m => {
-        const itemTitles = (m.items || []).map(id => byId.get(id)).filter(Boolean).map(item => `<span class="chip">${esc(item.id)}</span>`).join("");
-        return `<article class="milestone">
-          <div class="top"><strong>${esc(m.version || m.id || "")}</strong><span class="badge ${esc(m.status || "todo")}">${esc(m.status || "todo")}</span></div>
-          <h3>${esc(m.title || "")}</h3>
-          <p class="meta">${esc(m.detail || "")}</p>
-          <div class="chips">${itemTitles}</div>
-        </article>`;
-      }).join("") : `<div class="empty">No roadmap milestones yet.</div>`;
+      const milestones = BOARD_DATA.roadmap.milestones || [];
+      if (!milestones.length) { root.innerHTML = `<div class="empty">No roadmap milestones yet.</div>`; return; }
+      const ordered = milestones.slice().reverse(); // newest at top
+      const verOf = m => m.version || m.id || "";
+      if (!activeMilestone || !ordered.some(m => verOf(m) === activeMilestone)) activeMilestone = verOf(ordered[0]);
+
+      const timeline = ordered.map((m, i) => {
+        const ver = verOf(m);
+        const status = m.status || "todo";
+        const below = ordered[i + 1];
+        let pathClass = "";
+        if (below) {
+          if (status === "done" && below.status === "done") pathClass = " path-done";
+          else if (status === "in_progress" || below.status === "in_progress") pathClass = " path-active";
+        }
+        const count = (m.items || []).length;
+        const cls = ["tl-item", status, ver === activeMilestone ? "selected" : "", pathClass.trim()].filter(Boolean).join(" ");
+        return `<button type="button" class="${cls}" data-ver="${esc(ver)}">
+          <div class="tl-rail"><span class="tl-node"></span></div>
+          <div class="tl-card">
+            <div class="tl-top"><span class="tl-ver">${esc(ver)}</span><span class="badge ${esc(status)}">${esc(status)}</span></div>
+            <div class="tl-title">${esc(m.title || "")}</div>
+            <div class="tl-count">${count} item${count === 1 ? "" : "s"}</div>
+          </div>
+        </button>`;
+      }).join("");
+
+      root.innerHTML = `<div class="rm-timeline">${timeline}</div><div class="rm-detail" id="rm-detail"></div>`;
+      root.querySelectorAll(".tl-item").forEach(b => b.addEventListener("click", () => {
+        activeMilestone = b.dataset.ver;
+        renderRoadmap();
+      }));
+      renderRoadmapDetail(ordered.find(m => verOf(m) === activeMilestone) || ordered[0], byId);
     }
 
     function renderFilters() {
@@ -307,46 +776,157 @@
       return BOARD_DATA.items.filter(item => item.disposition === activeDisposition);
     }
 
+    let editingCard = null;
+
+    function archiveItem(id) {
+      const item = BOARD_DATA.items.find(r => r.id === id);
+      if (!item) return;
+      item.disposition = "deferred";
+      item.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      if (editingCard === id) editingCard = null;
+      markDirty();
+      render();
+    }
+
+    function deleteItem(id) {
+      const idx = BOARD_DATA.items.findIndex(r => r.id === id);
+      if (idx < 0) return;
+      if (!window.confirm(`Delete ${id}? This removes it from the store.`)) return;
+      BOARD_DATA.items.splice(idx, 1);
+      if (editingCard === id) editingCard = null;
+      markDirty();
+      render();
+    }
+
+    function addItem(status) {
+      const nums = BOARD_DATA.items.map(it => { const m = /^DASH-(\d+)$/.exec(it.id || ""); return m ? +m[1] : 0; });
+      const id = "DASH-" + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(2, "0");
+      const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      BOARD_DATA.items.push({ id, title: "New item", status, disposition: "active", kind: "feat",
+        maturity: "fuzzy", version: null, rough_size: "M", labels: [], acceptance_shape: "", body: "",
+        linear_id: null, links: [], created_at: now, updated_at: now });
+      editingCard = id;                 // open the new card straight into edit mode
+      if (activeDisposition !== "active" && activeDisposition !== "all") activeDisposition = "active";
+      markDirty();
+      render();
+    }
+
     function renderBoard() {
       const items = visibleItems();
       document.getElementById("board").innerHTML = STATUSES.map(status => {
         const cards = items.filter(item => item.status === status);
         return `<div class="column">
-          <h3>${esc(status)} (${cards.length})</h3>
+          <div class="column-head">
+            <h3>${esc(status)} (${cards.length})</h3>
+            <button type="button" class="col-add" data-add-status="${esc(status)}" title="Add item to ${esc(status)}" aria-label="Add item to ${esc(status)}"><i class="ri-add-line"></i></button>
+          </div>
           <div class="stack">${cards.length ? cards.map(renderCard).join("") : `<div class="empty">No items.</div>`}</div>
         </div>`;
       }).join("");
+      document.querySelectorAll("[data-edit-card]").forEach(btn => btn.addEventListener("click", () => {
+        const id = btn.dataset.editCard;
+        editingCard = editingCard === id ? null : id; // single card editable at a time
+        render();
+      }));
+      document.querySelectorAll("[data-archive-card]").forEach(btn => btn.addEventListener("click", () => archiveItem(btn.dataset.archiveCard)));
+      document.querySelectorAll("[data-delete-card]").forEach(btn => btn.addEventListener("click", () => deleteItem(btn.dataset.deleteCard)));
+      document.querySelectorAll("[data-add-status]").forEach(btn => btn.addEventListener("click", () => addItem(btn.dataset.addStatus)));
+      document.querySelectorAll("[data-chip]").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); openPopover(el); }));
+      document.querySelectorAll("[data-ce-id]").forEach(el => {
+        el.addEventListener("blur", () => {
+          const item = BOARD_DATA.items.find(i => i.id === el.dataset.ceId);
+          const cur = item ? (item[el.dataset.ceKey] || "") : "";
+          const next = el.textContent.trim();
+          if (next !== cur) setItemField(el.dataset.ceId, el.dataset.ceKey, next);
+        });
+        if (el.dataset.ceSingle) el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); el.blur(); } });
+      });
     }
 
     function renderCard(item) {
-      const labels = [...(item.labels || []), item.kind, item.maturity, item.version].filter(Boolean);
-      const select = (key, values) => `<select data-edit-id="${esc(item.id)}" data-edit-key="${esc(key)}">${values.map(value => `<option value="${esc(value)}" ${item[key] === value ? "selected" : ""}>${esc(value)}</option>`).join("")}</select>`;
-      return `<article class="card">
-        <header>
-          <h4>${esc(item.id)} · ${esc(item.title)}</h4>
-          <div class="card-tools"><span class="badge">${esc(item.disposition)}</span></div>
-        </header>
-        ${item.acceptance_shape ? `<p class="body">${esc(item.acceptance_shape)}</p>` : ""}
-        ${item.body ? `<p class="body">${esc(item.body)}</p>` : ""}
-        <div class="card-fields" aria-label="Experimental browser edit controls for ${esc(item.id)}">
-          <label>Title <input data-edit-id="${esc(item.id)}" data-edit-key="title" value="${esc(item.title || "")}"></label>
-          <div class="row">
-            <label>Status ${select("status", STATUSES)}</label>
-            <label>Disposition ${select("disposition", DISPOSITIONS)}</label>
+      const editing = editingCard === item.id;
+      const descKey = item.body && !item.acceptance_shape ? "body" : "acceptance_shape";
+      const desc = item[descKey] || item.acceptance_shape || item.body || "";
+      const head = `<div class="card-head">
+          <div class="card-head-left">
+            <span class="card-id">${esc(item.id)}</span>
+            <div class="card-actions">
+              <button type="button" class="card-act edit${editing ? " on" : ""}" data-edit-card="${esc(item.id)}" title="${editing ? "Done editing" : "Edit item"}" aria-label="${editing ? "Done editing" : "Edit item"}"><i class="${editing ? "ri-check-line" : "ri-pencil-line"}"></i></button>
+              <button type="button" class="card-act archive" data-archive-card="${esc(item.id)}" title="Archive item" aria-label="Archive item"><i class="ri-archive-line"></i></button>
+              <button type="button" class="card-act delete" data-delete-card="${esc(item.id)}" title="Delete item" aria-label="Delete item"><i class="ri-close-line"></i></button>
+            </div>
           </div>
-          <div class="row">
-            <label>Kind ${select("kind", KINDS)}</label>
-            <label>Maturity ${select("maturity", MATURITIES)}</label>
-          </div>
-          <div class="row">
-            <label>Version <input data-edit-id="${esc(item.id)}" data-edit-key="version" value="${esc(item.version || "")}"></label>
-            <label>Linear ID <input data-edit-id="${esc(item.id)}" data-edit-key="linear_id" value="${esc(item.linear_id || "")}"></label>
-          </div>
-          <label>Acceptance <textarea data-edit-id="${esc(item.id)}" data-edit-key="acceptance_shape">${esc(item.acceptance_shape || "")}</textarea></label>
-          <label>Body <textarea data-edit-id="${esc(item.id)}" data-edit-key="body">${esc(item.body || "")}</textarea></label>
-        </div>
-        <div class="chips">${labels.map(label => `<span class="chip">${esc(label)}</span>`).join("")}</div>
+          ${editing
+            ? `<button type="button" class="badge ${esc(item.status || "")} chip" data-chip data-field="status" data-type="enum" title="Change status">${esc(item.status || "")}</button>`
+            : `<span class="badge ${esc(item.status || "")}">${esc(item.status || "")}</span>`}
+        </div>`;
+      const titleAttrs = editing ? ` contenteditable="true" data-ce-id="${esc(item.id)}" data-ce-key="title" data-ce-single="1" data-placeholder="Item title"` : "";
+      const descAttrs = editing ? ` contenteditable="true" data-ce-id="${esc(item.id)}" data-ce-key="${descKey}" data-placeholder="${descKey === "body" ? "Description" : "Acceptance criteria"}"` : "";
+      let tagsHTML;
+      if (editing) {
+        const chip = (field, type, label, placeholder) => `<button type="button" class="tag-edit${label ? "" : " empty"}" data-chip data-field="${field}" data-type="${type}">${esc(label || placeholder)}</button>`;
+        tagsHTML = [
+          chip("kind", "enum", item.kind, "kind"),
+          chip("maturity", "enum", item.maturity, "maturity"),
+          chip("disposition", "enum", item.disposition, "disposition"),
+          chip("version", "text", item.version, "+ version"),
+          chip("labels", "text", (item.labels || []).join(", "), "+ labels"),
+        ].join("");
+      } else {
+        const tags = [...(item.labels || []), item.kind, item.maturity, item.version].filter(Boolean);
+        tagsHTML = tags.map(t => `<span class="rm-tag">${esc(t)}</span>`).join("");
+      }
+      return `<article class="card${editing ? " editing" : ""}" data-card-id="${esc(item.id)}">
+        ${head}
+        <h4 class="card-title"${titleAttrs}>${esc(item.title || "")}</h4>
+        ${(editing || desc) ? `<p class="card-desc"${descAttrs}>${esc(desc)}</p>` : ""}
+        ${(editing || tagsHTML) ? `<div class="card-tags">${tagsHTML}</div>` : ""}
       </article>`;
+    }
+
+    // ---- inline-edit popover (enum picker / free-text) ----
+    let openPop = null;
+    function closePop() {
+      if (!openPop) return;
+      openPop.remove(); openPop = null;
+      document.removeEventListener("mousedown", onDocDown, true);
+    }
+    function onDocDown(e) {
+      if (openPop && !openPop.contains(e.target) && !e.target.closest("[data-chip]")) closePop();
+    }
+    function commitLabels(item, value) {
+      item.labels = value.split(",").map(s => s.trim()).filter(Boolean);
+      item.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      markDirty(); closePop(); render();
+    }
+    function openPopover(anchor) {
+      const id = anchor.closest("[data-card-id]").dataset.cardId;
+      const item = BOARD_DATA.items.find(i => i.id === id);
+      if (!item) return;
+      closePop();
+      const field = anchor.dataset.field, type = anchor.dataset.type;
+      const title = field.charAt(0).toUpperCase() + field.slice(1);
+      const pop = document.createElement("div");
+      pop.className = "pop";
+      if (type === "enum") {
+        const opts = { status: STATUSES, kind: KINDS, maturity: MATURITIES, disposition: DISPOSITIONS }[field] || [];
+        pop.innerHTML = `<div class="pop-title">${esc(title)}</div>` + opts.map(o => `<button type="button" class="pop-opt${item[field] === o ? " on" : ""}" data-val="${esc(o)}">${esc(o)}</button>`).join("");
+        pop.querySelectorAll(".pop-opt").forEach(b => b.addEventListener("click", () => { setItemField(item.id, field, b.dataset.val); closePop(); }));
+      } else {
+        const val = field === "labels" ? (item.labels || []).join(", ") : (item[field] || "");
+        pop.innerHTML = `<div class="pop-title">${esc(title)}</div><input class="pop-input" value="${esc(val)}" placeholder="${esc(field)}">${field === "labels" ? `<div class="pop-hint">comma-separated</div>` : ""}`;
+        const inp = pop.querySelector(".pop-input");
+        const commit = () => { if (field === "labels") { commitLabels(item, inp.value); } else { setItemField(item.id, field, inp.value); closePop(); } };
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); commit(); } else if (e.key === "Escape") closePop(); });
+        inp.addEventListener("blur", commit);
+        setTimeout(() => { inp.focus(); inp.select(); }, 0);
+      }
+      document.body.appendChild(pop);
+      const r = anchor.getBoundingClientRect();
+      pop.style.top = (window.scrollY + r.bottom + 6) + "px";
+      pop.style.left = Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 12) + "px";
+      openPop = pop;
+      setTimeout(() => document.addEventListener("mousedown", onDocDown, true), 0);
     }
 
     function bindEditControls() {
@@ -357,6 +937,31 @@
     }
 
     let activeDoc = null;
+
+    // GFM pipe-tables arrive from the renderer as a single <p> of literal pipes
+    // (with inline <code>/<a> already converted). Rebuild them as real tables.
+    function convertWikiTables(root) {
+      const sepRe = /^:?-{2,}:?$/;
+      root.querySelectorAll("p").forEach(p => {
+        const text = p.textContent.trim();
+        if (!text.startsWith("|") || !/\|\s*:?-{2,}/.test(text)) return;
+        const tokens = p.innerHTML.split("|").map(s => s.trim()).filter(s => s.length);
+        const ncol = tokens.filter(s => sepRe.test(s)).length;
+        if (ncol < 1) return;
+        const cells = tokens.filter(s => !sepRe.test(s));
+        const header = cells.slice(0, ncol);
+        const body = cells.slice(ncol);
+        if (header.length < ncol) return;
+        let rows = "";
+        for (let i = 0; i + ncol <= body.length; i += ncol) {
+          rows += "<tr>" + body.slice(i, i + ncol).map(c => `<td>${c}</td>`).join("") + "</tr>";
+        }
+        const wrap = document.createElement("div");
+        wrap.className = "wiki-table";
+        wrap.innerHTML = `<table><thead><tr>${header.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+        p.replaceWith(wrap);
+      });
+    }
 
     function renderDocs() {
       const docs = BOARD_DATA.docs || [];
@@ -372,7 +977,9 @@
       }).join("");
       // current.html is renderer-produced, pre-escaped HTML (board.py md_to_html escapes the
       // source first), so innerHTML is the intended sink here — do NOT esc() it.
-      document.getElementById("wiki-page").innerHTML = current.html;
+      const wikiPage = document.getElementById("wiki-page");
+      wikiPage.innerHTML = current.html;
+      convertWikiTables(wikiPage);
       document.querySelectorAll("#wiki-nav [data-doc]").forEach(b => b.addEventListener("click", () => {
         activeDoc = b.dataset.doc; renderDocs();
         if (b.dataset.anchor) { const el = document.getElementById(b.dataset.anchor); if (el) el.scrollIntoView(); }
@@ -383,15 +990,353 @@
       }));
     }
 
+    function renderVersionTrack() {
+      const el = document.getElementById("version-track");
+      if (!el) return;
+      const milestones = (BOARD_DATA.roadmap && BOARD_DATA.roadmap.milestones) || [];
+      const done = milestones.filter(m => m.status === "done");
+      const lastDone = done.length ? done[done.length - 1] : null;
+      const planned = milestones.length ? milestones[milestones.length - 1] : null;
+      const chips = [];
+      if (lastDone) chips.push(`<span class="vchip"><span class="dot"></span>Last shipped <b>${esc(lastDone.version || lastDone.title || "")}</b></span>`);
+      if (planned) chips.push(`<span class="vchip"><i class="ri-flag-line"></i>Planned through <b>${esc(planned.version || planned.title || "")}</b></span>`);
+      el.innerHTML = chips.join("");
+    }
+
+    // ---- Harness settings (derived view; the /project-meta settings CLI is canonical) ----
+    // Descriptive prose lives here (presentation); board.py emits only the detected facts
+    // (profile + per-capability on/off/half-installed state + source paths).
+    const HARNESS_PROFILE_DESC = {
+      minimal: "Lightest touch. Optional enforcement is off (e.g. autonomous out-of-scope capture disabled). Good for a fresh or low-ceremony repo.",
+      standard: "The default. Hooks and guardrails enforce the behavior protocol; no phase-lock gates. Run here cleanly before considering strict.",
+      strict: "Maximal enforcement: phase-lock gates plus the full guardrail set. Adopt only after a clean run on standard.",
+    };
+    const HARNESS_CAP_META = {
+      "hooks": { label: "Hooks", icon: "ri-plug-line", summary: "Session + tool-call hooks that load canonical memory, capture out-of-scope work, and verify before stop." },
+      "phase-lock": { label: "Phase-lock", icon: "ri-lock-2-line", summary: "A gate contract plus live phase-state that block progressing past a phase until its checks pass." },
+      "multi-host": { label: "Multi-host mirrors", icon: "ri-git-branch-line", summary: "Generated instruction mirrors so Cursor, OpenCode, Gemini, and Codex all read the same harness." },
+      "issue-tracker": { label: "Issue tracker", icon: "ri-links-line", summary: "A routed issue-tracking doc that mirrors the backlog out to Linear (push-only)." },
+    };
+    const CAP_STATE_BADGE = { on: ["done", "on"], half: ["half", "half-installed"], off: ["off", "off"] };
+    let selectedProfile = null;          // tier chosen in the UI (null until picked)
+    const capDesired = {};               // capKey -> true (installed) | false (off) | "remove" (clean up a half-install)
+    const capDetailOpen = {};            // capKey -> bool: detail drill-down expanded (persists across re-renders)
+
+    function fallbackCopy(text, done) {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand("copy"); done && done(); } catch (e) {}
+      ta.remove();
+    }
+    function copyText(text, btn) {
+      const done = () => {
+        if (!btn) return;
+        const i = btn.querySelector("i"); const prev = i.className;
+        btn.classList.add("done"); i.className = "ri-check-line";
+        setTimeout(() => { btn.classList.remove("done"); i.className = prev; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+      } else { fallbackCopy(text, done); }
+    }
+    function cmdBar(cmd, muted) {
+      return `<div class="cmd-bar${muted ? " muted" : ""}"><span class="cmd-prompt">$</span><code class="cmd-text">${esc(cmd)}</code>` +
+        `<button type="button" class="cmd-copy" title="Copy command" aria-label="Copy command"><i class="ri-file-copy-line"></i></button></div>`;
+    }
+
+    // ---- staged-change model: the planner emits commands; only the profile is written directly ----
+    function stagedProfile() {
+      const cur = BOARD_DATA.harness.profile;
+      return (selectedProfile && selectedProfile !== cur) ? selectedProfile : null;
+    }
+    function capAction(cap) {
+      const d = capDesired[cap.key];
+      const isOn = cap.state === "on";
+      if (d === "remove") return isOn || cap.state === "half" ? "disable" : null;
+      if (d === true && !isOn) return "enable";
+      if (d === false && isOn) return "disable";
+      return null;
+    }
+    function planCommands() {
+      const out = [];
+      const sp = stagedProfile();
+      if (sp) out.push(`/project-meta settings profile ${sp}`);
+      (BOARD_DATA.harness.capabilities || []).forEach(cap => {
+        const a = capAction(cap);
+        if (a) out.push(`/project-meta settings ${a} ${cap.key}`);
+      });
+      return out;
+    }
+
+    // ---- per-capability detail drill-down (derived facts board.py emits) ----
+    function capDetailSummary(cap) {
+      const d = cap.detail || {};
+      if (cap.key === "hooks") {
+        const w = (d.wired || []).length, s = (d.scripts || []).length, o = (d.orphans || []).length;
+        return `${w} wired · ${s} on disk${o ? ` · ${o} unwired` : ""}`;
+      }
+      if (cap.key === "phase-lock") return `contract ${d.contract ? "✓" : "–"} · state ${d.state_file ? "✓" : "–"} · ${(d.gates || []).length} gates`;
+      if (cap.key === "multi-host") { const m = d.mirrors || []; return `${m.filter(x => x.present).length}/${m.length} mirrors present`; }
+      if (cap.key === "issue-tracker") return `doc ${d.doc ? "✓" : "–"} · ${(d.routed_in || []).length ? "routed" : "unrouted"}`;
+      return "";
+    }
+    function capHooksDetail(d) {
+      const wired = d.wired || [], scripts = d.scripts || [], orphans = d.orphans || [];
+      if (!wired.length && !scripts.length) return `<div class="dl-muted">No hooks installed.</div>`;
+      let out = "";
+      if (wired.length) {
+        out += `<div class="dl-row"><span class="dl-k">Wired hooks (${wired.length})</span><div class="hk-list">` +
+          wired.map(w => `<div class="hk-row${w.present === false ? " missing" : ""}">
+            <span class="hk-event">${esc(w.event)}</span>
+            <code class="hk-cmd">${esc(w.script || w.command || "—")}</code>
+            ${w.matcher ? `<span class="hk-matcher">${esc(w.matcher)}</span>` : ""}
+            ${w.present === false ? `<span class="hk-flag miss">missing file</span>` : ""}
+          </div>`).join("") + `</div></div>`;
+      }
+      if (scripts.length) {
+        out += `<div class="dl-row"><span class="dl-k">Scripts on disk (${scripts.length})</span><div class="dl-chips">` +
+          scripts.map(s => `<span class="dl-chip"><span class="dl-dot"></span>${esc(s)}${orphans.includes(s) ? ` <span class="hk-flag orphan">unwired</span>` : ""}</span>`).join("") + `</div></div>`;
+      }
+      return out;
+    }
+    function capPhaseDetail(d) {
+      return [
+        `<div class="dl-row"><span class="dl-k">Contract</span><span class="dl-v">${d.contract ? esc(d.contract) : `<span class="dl-muted">missing</span>`}</span></div>`,
+        `<div class="dl-row"><span class="dl-k">Phase state</span><span class="dl-v">${d.state_file ? `${esc(d.state_file)}${d.current_phase ? ` · current: <b>${esc(d.current_phase)}</b>` : ""}` : `<span class="dl-muted">no .harness/phase-state.json</span>`}</span></div>`,
+        `<div class="dl-row"><span class="dl-k">Gates (${(d.gates || []).length})</span>${(d.gates || []).length ? `<div class="dl-chips">${d.gates.map(g => `<span class="dl-chip">${esc(g)}</span>`).join("")}</div>` : `<span class="dl-muted">none</span>`}</div>`,
+      ].join("");
+    }
+    function capMirrorDetail(d) {
+      const mirrors = d.mirrors || [];
+      if (!mirrors.length) return `<div class="dl-muted">No mirror targets.</div>`;
+      return `<div class="dl-row"><span class="dl-k">Mirror targets</span><div class="dl-chips">` +
+        mirrors.map(m => `<span class="dl-chip${m.present ? "" : " absent"}"><span class="dl-dot"></span>${esc(m.path)}</span>`).join("") + `</div></div>`;
+    }
+    function capIssueDetail(d) {
+      return [
+        `<div class="dl-row"><span class="dl-k">Doc</span><span class="dl-v">${d.doc ? esc(d.doc) : `<span class="dl-muted">missing</span>`}</span></div>`,
+        `<div class="dl-row"><span class="dl-k">Routing</span><span class="dl-v">${(d.routed_in || []).length ? `routed in ${d.routed_in.map(esc).join(", ")}` : `<span class="dl-muted">not routed — half-installed</span>`}</span></div>`,
+        `<div class="dl-row"><span class="dl-k">Tracker</span><span class="dl-v">${d.tracker ? esc(d.tracker) : `<span class="dl-muted">unspecified</span>`}</span></div>`,
+      ].join("");
+    }
+    function renderCapDetail(cap) {
+      const d = cap.detail || {};
+      if (cap.key === "hooks") return capHooksDetail(d);
+      if (cap.key === "phase-lock") return capPhaseDetail(d);
+      if (cap.key === "multi-host") return capMirrorDetail(d);
+      if (cap.key === "issue-tracker") return capIssueDetail(d);
+      return "";
+    }
+
+    // Direct write of the enforcement profile into .claude/settings.json (experimental edit-back).
+    // We read the real file first and merge env.HARNESS_PROFILE so nothing else is clobbered.
+    async function writeProfile(profile) {
+      const setState = (msg, cls) => {
+        const el = document.getElementById("profile-write-state");
+        if (el) { el.textContent = msg; el.className = "apply-hint" + (cls ? " " + cls : ""); }
+      };
+      if (!window.showOpenFilePicker) { setState("Direct write needs a Chromium browser — copy the command instead.", "apply-err"); return; }
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          id: "claude-settings",
+          types: [{ description: "Claude Code settings.json", accept: { "application/json": [".json"] } }],
+        });
+        if (handle.requestPermission) {
+          const perm = await handle.requestPermission({ mode: "readwrite" });
+          if (perm !== "granted") throw new Error("write permission was not granted");
+        }
+        const file = await handle.getFile();
+        const raw = (await file.text()).trim();
+        let json;
+        try { json = raw ? JSON.parse(raw) : {}; }
+        catch (e) { throw new Error(`${handle.name} is not valid JSON — fix it by hand or use the CLI`); }
+        if (typeof json !== "object" || json === null || Array.isArray(json)) throw new Error("settings root must be a JSON object");
+        json.env = (json.env && typeof json.env === "object" && !Array.isArray(json.env)) ? json.env : {};
+        json.env.HARNESS_PROFILE = profile;
+        const writable = await handle.createWritable();
+        await writable.write(JSON.stringify(json, null, 2) + "\n");
+        await writable.close();
+        BOARD_DATA.harness.profile = profile;
+        BOARD_DATA.harness.profile_source = ".claude/settings.json";
+        selectedProfile = profile;
+        renderSettings();
+        setState(`Wrote HARNESS_PROFILE=${profile} to ${handle.name}. Re-run board.py render to refresh derived state.`, "apply-ok");
+      } catch (err) {
+        if (err && (err.name === "AbortError")) return;   // user dismissed the picker
+        setState(`Write failed: ${err.message || err}`, "apply-err");
+      }
+    }
+
+    function renderSettings() {
+      const root = document.getElementById("settings");
+      if (!root) return;
+      const h = BOARD_DATA.harness;
+      if (!h) { root.innerHTML = `<div class="empty">Harness settings are unavailable — re-render with an updated board.py.</div>`; return; }
+      const profiles = h.profiles || ["minimal", "standard", "strict"];
+      const current = h.profile || "unset";
+      const currentIsTier = profiles.includes(current);
+      if (selectedProfile === null && currentIsTier) selectedProfile = current;
+      (h.capabilities || []).forEach(cap => { if (capDesired[cap.key] === undefined) capDesired[cap.key] = (cap.state === "on"); });
+
+      // profile selector
+      const profileCards = profiles.map(p => {
+        const sel = p === selectedProfile, cur = p === current;
+        return `<button type="button" class="profile-card${sel ? " selected" : ""}${cur ? " current" : ""}" data-profile="${esc(p)}">
+          <div class="profile-top">
+            <span class="profile-name">${esc(p)}</span>
+            ${cur ? `<span class="profile-pill">current</span>` : `<span class="profile-tick"><i class="ri-check-line"></i></span>`}
+          </div>
+          <div class="profile-desc">${esc(HARNESS_PROFILE_DESC[p] || "")}</div>
+        </button>`;
+      }).join("");
+      const canWrite = !!window.showOpenFilePicker;
+      let profileApply;
+      if (selectedProfile === null) {
+        profileApply = `<div class="cmd-bar muted"><span class="cmd-prompt">!</span><code class="cmd-text">No profile set — pick a tier above to stage one</code></div>`;
+      } else if (selectedProfile === current) {
+        profileApply = `<div class="cmd-bar muted"><span class="cmd-prompt">✓</span><code class="cmd-text">${esc(current)} is the active profile</code></div>`;
+      } else {
+        const strictWarn = selectedProfile === "strict"
+          ? `<div class="set-warn"><i class="ri-alert-line"></i><span>Don't jump straight to <b>strict</b> — the harness should run cleanly on <b>standard</b> first, or the extra gates just invite work-arounds.</span></div>`
+          : "";
+        profileApply = `${strictWarn}
+          <div class="apply-row">
+            ${canWrite ? `<button type="button" class="primary" id="profile-write"><i class="ri-save-3-line"></i>Write .claude/settings.json</button>` : ""}
+            <span class="apply-hint" id="profile-write-state">${canWrite
+              ? `Sets HARNESS_PROFILE=${esc(selectedProfile)} directly (you'll pick the file + grant write).`
+              : `Direct write needs a Chromium browser — copy the command instead.`}</span>
+          </div>
+          ${cmdBar(`/project-meta settings profile ${selectedProfile}`)}`;
+      }
+      const profileNow = currentIsTier
+        ? `Current: <b>${esc(current)}</b>${h.profile_source ? ` · from ${esc(h.profile_source)}` : ""}`
+        : `Current: <b>unset</b> · no HARNESS_PROFILE in .claude/settings.json`;
+
+      // capability matrix (toggles stage enable/disable; nothing is written for capabilities)
+      const capCards = (h.capabilities || []).map(cap => {
+        const meta = HARNESS_CAP_META[cap.key] || { label: cap.key, icon: "ri-settings-3-line", summary: "" };
+        const [badgeCls, badgeText] = CAP_STATE_BADGE[cap.state] || CAP_STATE_BADGE.off;
+        const sources = (cap.sources || []);
+        const srcHTML = sources.length
+          ? `<div class="cap-src-list">${sources.map(s => `<span class="chip">${esc(s)}</span>`).join("")}</div>`
+          : `<span class="cap-src-none">Not installed in this repo.</span>`;
+        const desiredOn = capDesired[cap.key] === true;
+        const action = capAction(cap);
+        const toggleCls = `cap-toggle${desiredOn ? " on" : ""}${action ? " staged" : ""}`;
+        const stagedPill = action ? `<span class="staged-pill ${action}">will ${action}</span>` : "";
+        const halfNote = cap.state === "half"
+          ? `<div class="set-warn"><i class="ri-alert-line"></i><span>Half-installed: present but not fully wired. Toggle on to finish wiring, or <button type="button" class="linkbtn" data-cap-remove="${esc(cap.key)}">remove it</button>.</span></div>`
+          : "";
+        const detailOpen = capDetailOpen[cap.key] === true;
+        const detailBlock = `
+          <button type="button" class="cap-detail-toggle" data-cap-detail="${esc(cap.key)}" aria-expanded="${detailOpen}">
+            <i class="ri-arrow-down-s-line cap-chev"></i><span>Details</span><span class="cap-detail-sum">${esc(capDetailSummary(cap))}</span>
+          </button>
+          <div class="cap-detail"${detailOpen ? "" : " hidden"}>${renderCapDetail(cap)}</div>`;
+        return `<div class="cap-card ${cap.state}">
+          <div class="cap-head">
+            <span class="cap-icon"><i class="${meta.icon}"></i></span>
+            <span class="cap-name">${esc(meta.label)}</span>
+            <span class="cap-state badge ${badgeCls}">${esc(badgeText)}</span>
+          </div>
+          <p class="cap-desc">${esc(meta.summary)}</p>
+          <div class="cap-src"><span class="cap-src-k">Source of truth</span>${srcHTML}</div>
+          ${detailBlock}
+          <div class="cap-foot">
+            ${halfNote}
+            <div class="cap-toggle-row">
+              <button type="button" class="${toggleCls}" data-cap-toggle="${esc(cap.key)}" role="switch" aria-checked="${desiredOn}">
+                <span class="switch"></span>
+                <span class="cap-toggle-label">${desiredOn ? "Installed" : "Off"}</span>
+              </button>
+              ${stagedPill}
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+
+      // pending-changes plan
+      const cmds = planCommands();
+      let planPanel;
+      if (!cmds.length) {
+        planPanel = `<div class="plan-panel empty"><div class="plan-empty">No changes staged. Pick a different profile or flip a capability to build a command plan.</div></div>`;
+      } else {
+        const rows = [];
+        const sp = stagedProfile();
+        if (sp) rows.push(`<div class="plan-row"><span class="plan-tag profile">profile</span><code>${esc(current)} → ${esc(sp)}</code></div>`);
+        (h.capabilities || []).forEach(cap => { const a = capAction(cap); if (a) rows.push(`<div class="plan-row"><span class="plan-tag ${a}">${a}</span><code>${esc(cap.key)}</code></div>`); });
+        planPanel = `<div class="plan-panel">
+          <div class="plan-head"><h3>Pending changes (${cmds.length})</h3><button type="button" class="small" id="plan-clear">Clear</button></div>
+          <div class="plan-list">${rows.join("")}</div>
+          <div class="plan-cmds">${cmds.map(c => cmdBar(c)).join("")}</div>
+          <div class="plan-actions"><button type="button" class="primary small" id="plan-copy"><i class="ri-file-copy-line"></i>Copy all (${cmds.length})</button><span class="apply-hint">Run from the repo root, then <code>board.py render</code>.</span></div>
+        </div>`;
+      }
+
+      root.innerHTML = `
+        <div class="set-group" style="margin-bottom: 30px;">
+          <div class="set-group-head">
+            <h2>Enforcement profile</h2>
+            <span class="set-now">${profileNow}</span>
+          </div>
+          <div class="profile-grid">${profileCards}</div>
+          ${profileApply}
+        </div>
+        <div class="set-group">
+          <div class="set-group-head">
+            <h2>Capabilities</h2>
+            <span class="set-now">A capability is <b>on</b> only when present <b>and</b> wired</span>
+          </div>
+          <div class="cap-grid">${capCards}</div>
+        </div>
+        ${planPanel}`;
+
+      root.querySelectorAll(".profile-card").forEach(c => c.addEventListener("click", () => {
+        selectedProfile = c.dataset.profile; renderSettings();
+      }));
+      root.querySelectorAll("[data-cap-toggle]").forEach(btn => btn.addEventListener("click", () => {
+        const k = btn.dataset.capToggle;
+        capDesired[k] = capDesired[k] === true ? false : true;
+        renderSettings();
+      }));
+      root.querySelectorAll("[data-cap-remove]").forEach(btn => btn.addEventListener("click", () => {
+        capDesired[btn.dataset.capRemove] = "remove"; renderSettings();
+      }));
+      root.querySelectorAll("[data-cap-detail]").forEach(btn => btn.addEventListener("click", () => {
+        const body = btn.nextElementSibling;          // the .cap-detail div immediately after the toggle
+        const open = btn.getAttribute("aria-expanded") === "true";
+        capDetailOpen[btn.dataset.capDetail] = !open;  // persist across re-renders
+        btn.setAttribute("aria-expanded", open ? "false" : "true");
+        if (body) body.hidden = open;
+      }));
+      const writeBtn = document.getElementById("profile-write");
+      if (writeBtn) writeBtn.addEventListener("click", () => writeProfile(selectedProfile));
+      const planCopy = document.getElementById("plan-copy");
+      if (planCopy) planCopy.addEventListener("click", () => copyText(planCommands().join("\n"), planCopy));
+      const planClear = document.getElementById("plan-clear");
+      if (planClear) planClear.addEventListener("click", () => {
+        selectedProfile = currentIsTier ? current : null;
+        (h.capabilities || []).forEach(cap => { capDesired[cap.key] = (cap.state === "on"); });
+        renderSettings();
+      });
+      root.querySelectorAll(".cmd-copy").forEach(btn => btn.addEventListener("click", () => {
+        const code = btn.parentElement.querySelector(".cmd-text");
+        if (code) copyText(code.textContent, btn);
+      }));
+    }
+
     function render() {
       document.getElementById("meta").textContent = `Generated ${BOARD_DATA.generated_at} from ${BOARD_DATA.source_reference}`;
       document.getElementById("footer").textContent = `Store: ${BOARD_DATA.store.items} · ${BOARD_DATA.store.roadmap}`;
       renderCounts();
+      renderVersionTrack();
       renderRoadmap();
       renderFilters();
       renderBoard();
       bindEditControls();
       renderDocs();
+      renderSettings();
     }
 
     document.getElementById("save-items").addEventListener("click", () => {
@@ -401,6 +1346,23 @@
     });
 
     render();
+
+    // ---- Tab navigation (each section on its own page) ----
+    const TABS = ["roadmap", "backlog", "wiki", "settings"];
+    function showTab(name) {
+      if (!TABS.includes(name)) name = "roadmap";
+      TABS.forEach(t => {
+        const panel = document.getElementById("tab-" + t);
+        if (panel) panel.style.display = t === name ? "" : "none";
+      });
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+      try { localStorage.setItem("pb-tab", name); } catch (e) {}
+    }
+    document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+      showTab(b.dataset.tab);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }));
+    showTab((() => { try { return localStorage.getItem("pb-tab"); } catch (e) { return null; } })() || "roadmap");
   </script>
 </body>
 </html>
