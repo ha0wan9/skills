@@ -193,6 +193,24 @@ Always exits 0 — a capture hook must never fail a session. Wire under `Session
 ]
 ```
 
+### `board-guard.sh` — PreToolUse on Edit / Write / MultiEdit (optional, Project Board)
+
+Keeps board work **fixed and stable** by steering every write through `scripts/board.py` (the
+only sanctioned writer — see [`references/project-board-crud.md`](../../references/project-board-crud.md)).
+Installed with `/project-meta init --board`; in `settings.json.fragment` but **drop the
+`PreToolUse` block if the repo has no Project Board.**
+
+- `minimal`: disabled (exit 0).
+- `standard`: blocks hand-edits to the **derived** `docs/dashboard.html` (always regenerate via
+  `board.py render`). Returns the guidance to the agent (exit 2).
+- `strict`: also blocks hand-edits to the CLI-managed store
+  (`docs/backlog/items.jsonl | roadmap.json | inbox.jsonl`); use `board.py` verbs instead.
+
+Fails open — any payload it cannot parse → exit 0, never wedges the session. It guards the
+Edit/Write/MultiEdit *tools*; it does not parse `Bash` commands (a `>>`/`rm` against the store
+is out of scope by design). The matching Stop check is `verify-before-stop.sh` step 5, which
+runs `board.py tx` to catch a stale/corrupt store before the turn ends.
+
 ## Profile Selection Guidance
 
 | Profile | When to use |
