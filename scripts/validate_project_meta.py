@@ -1442,6 +1442,37 @@ def check_capture_hook() -> None:
         require(not (Path(td) / "docs" / "backlog" / ".capture-dryrun.log").exists(), "minimal profile must disable capture")
 
 
+def check_board_crud_contract() -> None:
+    """The Project Board CRUD rules are an agent-facing reference, routed from SKILL.md +
+    init, and enforced by the board-guard PreToolUse hook + the Stop board.py tx leg."""
+    import os
+
+    crud = read("references/project-board-crud.md")
+    for token in ("board.py", "only writer", "derived", "items_sha256", "board.py tx", "promote", "refine"):
+        require(token in crud, f"references/project-board-crud.md missing: {token}")
+    require("references/project-board-crud.md" in read("SKILL.md"), "SKILL.md must route the board CRUD contract")
+    require("references/project-board-crud.md" in read("recipes/init.md"), "init --board must route the board CRUD contract")
+
+    guard = ROOT / "templates" / "hooks" / "scripts" / "board-guard.sh"
+    require(guard.is_file(), "board-guard.sh must exist")
+    fragment = read("templates/hooks/settings.json.fragment")
+    require("board-guard.sh" in fragment and "PreToolUse" in fragment, "settings.json.fragment must wire board-guard under PreToolUse")
+    require("board.py tx" in read("templates/hooks/scripts/verify-before-stop.sh"), "verify-before-stop.sh must run board.py tx for store integrity")
+
+    # Functional: the profile ladder via PreToolUse exit codes (2 = block, 0 = allow).
+    def run(profile: str, file_path: str) -> int:
+        payload = json.dumps({"tool_name": "Edit", "tool_input": {"file_path": file_path}})
+        env = {**os.environ, "HARNESS_PROFILE": profile}
+        return subprocess.run(["bash", str(guard)], input=payload, capture_output=True, text=True, env=env).returncode
+
+    require(run("standard", "docs/dashboard.html") == 2, "standard must block hand-edits to the derived dashboard")
+    require(run("standard", "docs/backlog/items.jsonl") == 0, "standard must allow store edits (dashboard-only guard)")
+    require(run("strict", "docs/backlog/items.jsonl") == 2, "strict must block hand-edits to the CLI-managed store")
+    require(run("strict", "docs/dashboard.html") == 2, "strict must block dashboard hand-edits too")
+    require(run("standard", "src/app.py") == 0, "guard must not touch unrelated files")
+    require(run("minimal", "docs/dashboard.html") == 0, "minimal must disable the guard")
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1464,6 +1495,7 @@ CHECKS = (
     check_inbox_concurrency,
     check_dashboard_wiki,
     check_capture_hook,
+    check_board_crud_contract,
 )
 
 

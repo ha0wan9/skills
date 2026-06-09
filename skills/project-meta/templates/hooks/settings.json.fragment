@@ -19,6 +19,18 @@
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "_comment": "board-guard: only with --board. Blocks hand-edits to the derived docs/dashboard.html (standard+strict) and, at strict, to the CLI-managed docs/backlog store. Drop this block if the repo has no Project Board.",
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/board-guard.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",

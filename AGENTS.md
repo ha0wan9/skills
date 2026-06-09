@@ -57,6 +57,7 @@ Do not commit `USER.md`. The repo's top-level `.gitignore` and the project-meta 
 - `scripts/repo_memory.py` — runtime memory read leg, write-back gate, write, validate. The `SessionStart`/`Stop` hooks delegate to it; the Memory Contract it backs is in `references/repo-memory-crud.md#memory-contract`.
 - `scripts/dispatch_ledger.py` — multi-agent dispatch audit ledger (record/validate/query) + the mandatory-dispatch `gate` the `Stop` hook runs. Enforcement/audit backing for the Task Dispatch paradigm in `references/multi-agent-protocols.md#mechanical-enforcement` (not a dispatch engine).
 - `scripts/worktree_audit.py` — read-only gather+classify leg of the Worktree Trim Contract (`references/worktree-hygiene.md`). Backs the session-start worktree sweep below; never removes/merges/commits.
+- `scripts/board.py` — Project Board store CRUD + dashboard render (this repo's own `docs/backlog/` store + derived `docs/dashboard.html`, incl. the Harness tab). The **only** sanctioned writer — never hand-edit the store (`items.jsonl`/`roadmap.json`) or the derived `docs/dashboard.html`. CRUD verb map, integrity invariants, and the optional `board-guard`/`board.py tx` enforcement live in [`skills/project-meta/references/project-board-crud.md`](skills/project-meta/references/project-board-crud.md).
 
 ## Session Start: Worktree Trim Contract
 
