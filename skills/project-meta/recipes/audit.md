@@ -108,6 +108,19 @@ GO/NO-GO + blockers only (a score invites gaming, cf. "Auditing for show" below)
 5. **Group findings** by severity (BLOCKER / MAJOR / MINOR / NIT) and by owner (template, reference, script, instantiated artifact, mirror).
 6. **Cite anti-pattern IDs** for every finding that matches a named pattern. Findings without a matching AP-XXX-N are candidates for adding new entries to the catalog.
 7. **Recommend the next command**: typically `init` for missing artifacts, targeted edits for structural issues, or a follow-up `audit` after the user fixes findings.
+8. **Convergence loop — final audits are multi-round (MUST).** When the audit gates a
+   ship/release and fixes were applied for any BLOCKER or MAJOR finding (out of band, via
+   the appropriate editing verb with explicit user consent — never by this read-only
+   recipe), re-run the audit over the changed scope with **fresh reviewer context** —
+   fixes are themselves new changes and can introduce new findings; one pass over a
+   moving target is not a clean audit. Loop fix → re-audit until a round reports
+   **zero BLOCKER and zero MAJOR**, capped at **3 re-audit rounds** (Round 1 = initial
+   pass; re-audits are Rounds 2–4; the cap triggers at Round 4). At the cap with
+   BLOCKER/MAJOR still open: do **not** ship — hand the operator the residual findings
+   plus the round-by-round trail. MINOR/NIT findings never force another round.
+   Re-audit scope = the fix delta plus any file or section that references the changed
+   item; escalate to full-scope only when a fix moves content across recipe/reference
+   boundaries.
 
 ## Output contract
 
@@ -116,6 +129,7 @@ Structured findings report:
 ```
 ### Audit summary
 - Scope: <full harness | skill: <name> | mirrors only | ...>
+- Round: <n> (1 = initial pass; 2–4 = re-audit rounds after BLOCKER/MAJOR fixes; cap at Round 4 — Convergence loop, workflow step 8)
 - Score: <ENFORCED N / PARTIAL N / ABSENT N> across <total> dimensions
 - Validation: <PASS | WARN | FAIL>
 
@@ -144,11 +158,12 @@ The report is the artifact. The user reviews, decides what to fix, and invokes t
 - Audit-as-prose. Audit findings without AP-XXX-N citations and concrete repairs degrade to opinion.
 - Mixing audit + repair. Audit reports findings; repair runs in the appropriate editing recipe with explicit user consent.
 - Skipping the validation floor. An audit that doesn't first run `validate_target_harness.py` misses mechanical findings the human eye doesn't catch.
+- Single-pass final audit. Fixing BLOCKER/MAJOR findings and shipping on the strength of the original report means the fixes themselves were never audited. Final audits loop until clean (Convergence loop, workflow step 8).
 
 ## Cadence
 
 Recommended audit cadence:
 
 - Per-project: every quarter, or when recurring agent failures suggest harness drift
-- Per-skill: before each release; after any structural refactor; when a peer skill is added that could collide
+- Per-skill: before each release (multi-round per the Convergence loop, workflow step 8); after any structural refactor; when a peer skill is added that could collide
 - Across the marketplace: after adding/removing a plugin, or when multi-host parity drifts
