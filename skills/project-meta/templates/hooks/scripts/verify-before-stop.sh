@@ -103,4 +103,24 @@ if [[ -f "$pm_disp" ]]; then
   rm -f /tmp/_dg.out
 fi
 
+# 5) Project Board store integrity. When a board store exists, validate it (board.py tx:
+#    item schema + duplicate ids + roadmap references + items_sha256 freshness) so a
+#    hand-edited or stale store is caught before the turn ends. Resolve-don't-vendor;
+#    pm_dir was resolved above for repo_memory.py, re-resolve on the board sentinel if needed.
+if [[ -f docs/backlog/items.jsonl ]]; then
+  pm_board="$pm_dir/scripts/board.py"
+  if [[ ! -f "$pm_board" ]]; then
+    pm_bdir="$(resolve_project_meta scripts/board.py)" || pm_bdir=""
+    pm_board="$pm_bdir/scripts/board.py"
+  fi
+  if [[ -f "$pm_board" ]]; then
+    if ! python3 "$pm_board" tx --root . >/tmp/_bt.out 2>&1; then
+      cat /tmp/_bt.out >&2
+      rm -f /tmp/_bt.out
+      advisory_exit "project board store check (board.py tx) failed; see above."
+    fi
+    rm -f /tmp/_bt.out
+  fi
+fi
+
 exit 0
