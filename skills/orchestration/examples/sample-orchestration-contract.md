@@ -43,6 +43,8 @@ python3 skills/orchestration/scripts/budget_hint.py \
 fan-out — no Opus-heaviness to trim. The one Opus task (`land`) is mechanical, so its 2.5× factor is
 acceptable.
 
+**tier-mix:** ~89% fleet / 1×opus / 0×fable / 1×cli  ← fleet tokens ≈ 33,600 of 37,800 total (≥80% target met)
+
 ## Human checkpoints (🔴)
 
 - **`land` (before + after):** push + merge is a push checkpoint — stop, confirm the fresh review is
