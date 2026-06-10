@@ -107,6 +107,18 @@ project-meta is not installed. When both are present, **project-meta is canonica
 - **Installed alone?** Without project-meta, the Dependency & Canon floor above is the whole contract
   — roles, reviewer-between, model tiers, review levels. With project-meta present, it is canonical.
 
+## Skill Arbitration
+
+When the request could match `orchestration` **and** a peer skill, resolve as follows and state the resolution before acting.
+
+| Request shape | Owner | Notes |
+|---|---|---|
+| Orchestrate a milestone, draft/review/sign a contract, estimate run cost (`/orchestrate`, contract trigger, budget trigger) | **`orchestration`** | acts |
+| Dispatch-policy canon, review-tier levels (`multi-agent-protocols.md`, `review-tier.md`), ad-hoc multi-agent coordination inside a `/project-meta` verb, repo harness / memory work | **`project-meta`** | `project-meta`'s `references/multi-agent-protocols.md` stays canonical; this skill cites it, never duplicates it |
+| Actual engine execution (Workflow tool, "ultracode" session-mode, Codex Agents-SDK run loop) | **the runtime engine** — not a skill | user-gated; never re-implemented here — AP-COORD-7 |
+
+If the request is unclear, ask before acting. Never silently invoke both.
+
 ## Output
 
 `/orchestrate` produces a committed, **signed** `docs/plans/<milestone>-orchestration-contract.md`,
