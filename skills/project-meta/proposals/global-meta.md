@@ -1,6 +1,8 @@
 # Proposal: `global-meta` — a user/global-scope harness skill (superset of `profile-creator`, dual-runtime)
 
-> **Status:** Proposed (design only). Author handoff doc; supersede sections as it lands.
+> **Status:** Partially shipped — the `create` verb is **live** in `skills/global-meta/` 0.1.0
+> (profile creation for Claude + Codex); status/audit/drift/reconcile/settings/track remain
+> roadmap. Author handoff doc; supersede sections as they land.
 > **Scope:** a new top-level skill `skills/global-meta/` that **absorbs and deprecates `profile-creator`**, adds the
 > audit/drift/reconcile/track lifecycle for Claude *and* Codex config roots, and reuses `project-meta` as its root engine.
 > **Decisions locked (2026-06-06):** (1) absorb + deprecate `profile-creator`; (2) full Claude+Codex parity in v1;

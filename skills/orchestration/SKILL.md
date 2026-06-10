@@ -1,7 +1,7 @@
 ---
 name: orchestration
 description: "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing."
-metadata: {version: 0.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 0.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Orchestration
@@ -113,6 +113,7 @@ When the request could match `orchestration` **and** a peer skill, resolve as fo
 |---|---|---|
 | Orchestrate a milestone, draft/review/sign a contract, estimate run cost (`/orchestrate`, contract trigger, budget trigger) | **`orchestration`** | acts |
 | Dispatch-policy canon, review-tier levels (`multi-agent-protocols.md`, `review-tier.md`), ad-hoc multi-agent coordination inside a `/project-meta` verb, repo harness / memory work | **`project-meta`** | `project-meta`'s `references/multi-agent-protocols.md` stays canonical; this skill cites it, never duplicates it |
+| Create/manage a Claude or Codex config *profile*, or the user's global config root (`~/.claude*`, `~/.codex*`) | **`global-meta`** | defer; user-level config is out of scope here — `global-meta` owns it (and itself defers orchestration *policy* back to this skill + project-meta's canon) |
 | Actual engine execution (Workflow tool, "ultracode" session-mode, Codex Agents-SDK run loop) | **the runtime engine** — not a skill | user-gated; never re-implemented here — AP-COORD-7 |
 
 If the request is unclear, ask before acting. Never silently invoke both.

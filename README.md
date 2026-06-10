@@ -10,9 +10,10 @@ Each skill in `skills/` is independently installable by name. The plugin manifes
 |---|---|---|
 | `project-meta` | [`skills/project-meta/`](skills/project-meta/) | Bootstrap, audit, and evolve a repository agent-work harness — canonical memory, execution rules, multi-agent protocols, project-specific artifact instantiation, pre-commit delivery. Surface commands: `/project-meta init`, `/project-meta plan`, `/project-meta status`, `/project-meta validate`, `/project-meta deliver`, `/project-meta audit`, `/project-meta settings`. |
 | `orchestration` | [`skills/orchestration/`](skills/orchestration/) | Turn a chosen project-meta milestone into a committed, reviewable **orchestration contract** (per task: model tier, parallelization, orchestrator effort, human checkpoints, review level, a non-predictive budget hint), sign it, then hand it to the runtime's scripted engine (Claude Code Workflow / Codex Agents-SDK), degrading to an Agent/Task subagent loop. Owns orchestration *policy*, not the run engine (AP-COORD-7); depends on `project-meta`. Surface command: `/orchestrate`. |
+| `global-meta` | [`skills/global-meta/`](skills/global-meta/) | Bootstrap, audit, and evolve a user's **global** Claude Code / Codex config root (`~/.claude`, `~/.codex`, and `~/.claude-<name>` / `~/.codex-<name>` profiles). Supersedes `profile-creator`. Live: `create` a config profile for either runtime (config dir, plugins symlink, launcher, optional memory seed); roadmap: status/audit/drift/reconcile/settings/track (see `skills/project-meta/proposals/global-meta.md`). |
 | `dl-research` | [`skills/dl-research/`](skills/dl-research/) | Rigorous Deep Learning research workflows: frame, survey, design, prepare, launch, monitor, evaluate, synthesize, audit, plus a bounded autonomous ratchet loop. Project-agnostic; uses an adapter for backend integration. |
 | `deep-survey-bfs` | [`skills/deep-survey-bfs/`](skills/deep-survey-bfs/) | Breadth-first literature surveys with hard coverage gates: frame → Round 1 broad search → gap audit (sub-question × dimension matrix) → Round N gap-fill → synthesize multi-axis taxonomy + per-paper deep-dives + multi-tier reading list. Anti-hallucination via `claims.jsonl` contract. |
-| `profile-creator` | [`skills/profile-creator/`](skills/profile-creator/) | Create isolated Claude Code config profiles that share one plugin store through a centralized `ccplug` admin wrapper. |
+| `profile-creator` | [`skills/profile-creator/`](skills/profile-creator/) | **DEPRECATED — folded into `global-meta`** (its `create` verb). Stub kept for one release so existing `/profile-creator` triggers keep routing. |
 | `calendar-crud-workflow` | [`skills/calendar-crud-workflow/`](skills/calendar-crud-workflow/) | Standardize calendar event CRUD from fuzzy scheduling requests into stable calendars, title prefixes, searchable tags, source links, and safe batch operations. |
 | `sketch-asset-generator` | [`skills/sketch-asset-generator/`](skills/sketch-asset-generator/) | Turn sketches or existing UI source into reviewable design-system asset packs (tokens, SVG/component primitives, manifests, contact sheets, validation reports). Extraction-first: extract directly from user-owned resources by default, use GPT Image only as a fallback. Runs under Claude or Codex. |
 | `meta-debug` | [`skills/meta-debug/`](skills/meta-debug/) | A gated, rollbackable, looping debug pipeline: triage & mitigate → bounded clean-context case file → deterministic repro → red test (reuse existing CI/suite) → falsifiable hypotheses → constraint-scored solutions → top-k parallel sandbox fixes → adversarial-critic validation → canary with a predefined rollback trigger → recorded lesson. Phase gates enforced by a stdlib session tracker; composes with `project-meta` for context-collection, multi-agent dispatch, and lesson promotion. |
@@ -38,6 +39,7 @@ metadata:
 | `dl-research` | ✅ | ✅ | ❌ | Claude Marketplace |
 | `meta-debug` | ✅ | ✅ | ✅ | Claude Marketplace |
 | `openclaw-devops` | ✅ | ✅ | ✅ | Claude Marketplace |
+| `global-meta` | ✅ | ✅ | ❌ | Claude Marketplace |
 | `orchestration` | ✅ | ✅ | ⚠️ | Claude Marketplace |
 | `project-meta` | ✅ | ✅ | ⚠️ | Claude Marketplace |
 | `sketch-asset-generator` | ✅ | ✅ | ❌ | Claude Marketplace |
@@ -55,6 +57,7 @@ From a git repo URL (`git@github.com:ha0wan9/skills.git` or `https://github.com/
 /plugin marketplace add ha0wan9/skills
 /plugin install project-meta@ha0wan9-skills
 /plugin install orchestration@ha0wan9-skills
+/plugin install global-meta@ha0wan9-skills
 /plugin install dl-research@ha0wan9-skills
 /plugin install deep-survey-bfs@ha0wan9-skills
 /plugin install profile-creator@ha0wan9-skills
@@ -71,6 +74,7 @@ For users who do not use the plugin marketplace, manual install copies one skill
 ```bash
 cp -R /path/to/skills/skills/project-meta    ~/.claude/skills/project-meta
 cp -R /path/to/skills/skills/orchestration   ~/.claude/skills/orchestration
+cp -R /path/to/skills/skills/global-meta     ~/.claude/skills/global-meta
 cp -R /path/to/skills/skills/dl-research     ~/.claude/skills/dl-research
 cp -R /path/to/skills/skills/deep-survey-bfs ~/.claude/skills/deep-survey-bfs
 cp -R /path/to/skills/skills/profile-creator ~/.claude/skills/profile-creator
@@ -134,6 +138,12 @@ skills/
     │   ├── templates/orchestration-contract.md
     │   ├── examples/                   # a filled, signed sample contract
     │   └── scripts/budget_hint.py      # non-predictive budget hint
+    ├── global-meta/                    # user/global config root (supersedes profile-creator)
+    │   ├── SKILL.md
+    │   ├── references/create-profile.md
+    │   ├── templates/                  # launcher-simple.sh, launcher-isolated.sh
+    │   ├── examples/sample-profile/
+    │   └── scripts/create_profile.py
     ├── dl-research/
     │   ├── SKILL.md
     │   ├── agents/openai.yaml

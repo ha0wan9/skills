@@ -299,13 +299,20 @@ cmd_land() {
   info "merged PR #$prnum into $BASE_BRANCH"
 
   if [[ "$do_reload" == "1" ]]; then
-    cmd_reload $plugins
+    # $plugins is newline-separated; split explicitly instead of relying on IFS word-split.
+    local -a plugin_arr=()
+    mapfile -t plugin_arr <<< "$plugins"
+    cmd_reload "${plugin_arr[@]}"
   fi
 }
 
 cmd_reload() {
   info "updating marketplace: $MARKETPLACE"
-  claude plugin marketplace update "$MARKETPLACE" || info "marketplace update returned non-zero (continuing)"
+  # A failed marketplace update leaves a STALE cache: the install below would silently
+  # re-materialize the old version while still printing "reload done". Die instead —
+  # a reload from a stale cache is worse than no reload (memory: ship-reload-stale-cache-trap).
+  claude plugin marketplace update "$MARKETPLACE" \
+    || die "marketplace update failed — cache is stale; aborting reload (re-run after fixing connectivity/auth)"
   local n failed=0
   for n in "$@"; do
     [[ -n "$n" ]] || continue

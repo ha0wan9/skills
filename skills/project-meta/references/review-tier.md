@@ -1,6 +1,6 @@
 # Review Tier — right-sized review (L0–L3)
 
-Shared infra inside `project-meta` — **not** a separate skill. Consumed by `audit`/`deliver`, by the roadmap co-review transaction (DASH-08), and — later — by the orchestration skill (the exact cross-skill pointer shape is an open question in `docs/backlog/project-board-system.md`). It sits between **AP-COORD-2** (you MUST review) and **AP-COORD-4** (don't over-orchestrate): every review is fast, and tokens are proportionate to stakes.
+Shared infra inside `project-meta` — **not** a separate skill. Consumed by `audit`/`deliver`, by the roadmap co-review transaction (DASH-08), and by the **orchestration skill** (shipped — its SKILL.md cites this file as the L0–L3 canon; this file stays canonical). It sits between **AP-COORD-2** (you MUST review) and **AP-COORD-4** (don't over-orchestrate): every review is fast, and tokens are proportionate to stakes.
 
 ## Levels
 
@@ -37,6 +37,6 @@ It prints the suggested level, the signals it used, and the mandatory "floor —
 - **`audit` / `deliver`** pick a level for their review step (auto-derived by `review_tier.py`, overridable with `--level`).
 - **DASH-08 joint co-review is an L2 instance** — roadmap lenses + backlog lenses run as the parallel panel.
 - The **code-diff path reuses `/code-review`'s effort tiers** rather than re-implementing reviewer dispatch.
-- The orchestration contract (DASH-10, future skill) references these levels per task.
+- The orchestration contract (DASH-10 — shipped as the `orchestration` skill) references these levels per task; that skill cites this file as canon and never duplicates it.
 
 Surface as a `--level` override on review-bearing verbs; auto-derived by default.

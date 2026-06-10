@@ -97,7 +97,7 @@ conventions.
 
 ### `verify-before-stop.sh` — Stop
 
-Four responsibilities:
+Five responsibilities:
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
@@ -118,6 +118,13 @@ Four responsibilities:
    when <2 harness files changed or `.harness/dispatch-ack` exists
    (one-shot). The enforcement leg of the Task Dispatch paradigm
    (`references/multi-agent-protocols.md#mandatory-subagent-dispatch`).
+5. **Project Board store integrity** via `board.py tx` (same resolved
+   path) when `docs/backlog/items.jsonl` exists — item schema,
+   duplicate ids, roadmap references, `items_sha256` freshness — so a
+   hand-edited or stale store is caught before the turn ends. The
+   Stop-side enforcement leg of the board CRUD contract
+   (`references/project-board-crud.md`); `board-guard.sh` is the
+   PreToolUse leg.
 
 - `minimal`: hook disabled (the write-back and dispatch gates also
   self-disable on `HARNESS_PROFILE=minimal`)
