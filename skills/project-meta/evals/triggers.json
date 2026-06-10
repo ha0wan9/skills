@@ -1,0 +1,27 @@
+{
+  "_comment": "Token-coverage gate fixture for the project-meta skill (D6). CI runs a deterministic keyword-overlap check — NOT precision/recall. should_trigger phrases must share >=1 content token with the SKILL.md description; >=80% coverage required. should_not_trigger phrases that overlap heavily with the description+trigger-section token set emit warnings only.",
+  "should_trigger": [
+    "/project-meta init",
+    "set up this repo for agent work",
+    "audit my AGENTS.md harness",
+    "sync CLAUDE.md and AGENTS.md",
+    "create repo memory",
+    "turn this lesson into durable guidance",
+    "change my USER.md preferences",
+    "install the hooks pack",
+    "pressure-test this skill's MUST rules",
+    "make a build plan for this milestone"
+  ],
+  "should_not_trigger": [
+    "fix this null pointer bug",
+    "write a literature survey on diffusion models",
+    "schedule a calendar event",
+    "create a new claude profile",
+    "debug this flaky test",
+    "search the web for X",
+    "refactor this function",
+    "run the test suite",
+    "summarize this PDF",
+    "book a flight"
+  ]
+}

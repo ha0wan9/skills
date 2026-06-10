@@ -1442,6 +1442,152 @@ def check_capture_hook() -> None:
         require(not (Path(td) / "docs" / "backlog" / ".capture-dryrun.log").exists(), "minimal profile must disable capture")
 
 
+def check_skillmd_recipe_table_sync() -> None:
+    """D2 router repair: SKILL.md Recipes table must contain every verb in the
+    cli-command-patterns.md route table.
+
+    Allowlist: documented sub-workflows that intentionally appear only as recipe
+    files, not as top-level route-table rows in cli-command-patterns.md:
+      - refine: explicitly documented as a sub-workflow of roadmap (not a core verb)
+      - mirror-linear: a board.py sub-command exposed via board CLI, not a /project-meta verb
+    """
+    # Parse verb set from SKILL.md ## Recipes table (rows starting with "| `")
+    skill_md = read("SKILL.md")
+    recipes_heading = "## Recipes"
+    recipes_pos = skill_md.find(recipes_heading)
+    require(recipes_pos != -1, "SKILL.md must contain a ## Recipes section")
+    # Find the table within the Recipes section (stop at the next ## heading)
+    next_section = skill_md.find("\n## ", recipes_pos + 1)
+    recipes_section = skill_md[recipes_pos:next_section] if next_section != -1 else skill_md[recipes_pos:]
+    skillmd_verbs: set[str] = set()
+    for line in recipes_section.splitlines():
+        m = re.match(r"\|\s*`([^`]+)`\s*\|", line)
+        if m:
+            skillmd_verbs.add(m.group(1))
+
+    # Parse verb set from cli-command-patterns.md route table (rows starting with "| `/project-meta ")
+    cli = read("references/cli-command-patterns.md")
+    cli_verbs: set[str] = set()
+    for line in cli.splitlines():
+        m = re.match(r"\|\s*`/project-meta\s+([^`]+)`\s*\|", line)
+        if m:
+            cli_verbs.add(m.group(1).strip())
+
+    # Allowlist: verbs present in cli-command-patterns.md route table but intentionally
+    # absent from the SKILL.md table (documented sub-workflows / board sub-commands).
+    # After D2 repair, the only expected gaps are board-CLI sub-commands surfaced via
+    # mirror-linear (a board.py sub-command, not a /project-meta verb).
+    # `refine` appears in SKILL.md (added by D2) but not in the cli route table —
+    # it is a recipe-only sub-workflow; the allowlist direction here is cli->skillmd.
+    allowlist: set[str] = set()  # verbs in cli route table that need not be in SKILL.md
+
+    failures = []
+    for verb in sorted(cli_verbs - allowlist):
+        if verb not in skillmd_verbs:
+            failures.append(
+                f"verb '{verb}' is in cli-command-patterns.md route table but missing from SKILL.md Recipes table"
+            )
+    for failure in failures:
+        raise CheckError(failure)
+
+
+def check_trigger_coverage() -> None:
+    """D6 token-coverage gate (deterministic, stdlib only).
+
+    Loads evals/triggers.json with should_trigger and should_not_trigger phrase lists.
+    Tokenizes the SKILL.md description (frontmatter field) + the Trigger Decision section
+    into a content-token set (lowercased, stop-words removed).
+
+    A should_trigger phrase 'passes' if it shares at least one non-stopword content token
+    with the description token set (description is the auto-trigger surface).
+    Fails if fewer than 80% of should_trigger phrases hit the description token set.
+
+    For should_not_trigger phrases, emits warnings (not failures) when they overlap heavily
+    (≥3 content tokens in common with the description+trigger-section token set).
+
+    This is a token-coverage gate — it does NOT measure precision or recall.
+    """
+    import json as _json
+
+    evals_path = ROOT / "evals" / "triggers.json"
+    require(evals_path.is_file(), "evals/triggers.json must exist for the trigger coverage gate")
+    evals = _json.loads(evals_path.read_text(encoding="utf-8"))
+    should_trigger = evals.get("should_trigger", [])
+    should_not_trigger = evals.get("should_not_trigger", [])
+    require(len(should_trigger) >= 5, "evals/triggers.json must have at least 5 should_trigger phrases")
+    require(len(should_not_trigger) >= 5, "evals/triggers.json must have at least 5 should_not_trigger phrases")
+
+    # Stop-words: common English function words that add no signal
+    STOPWORDS = {
+        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+        "of", "with", "by", "from", "up", "about", "into", "through", "is",
+        "are", "was", "were", "be", "been", "being", "have", "has", "had",
+        "do", "does", "did", "will", "would", "could", "should", "may", "might",
+        "this", "that", "these", "those", "i", "my", "me", "we", "our", "you",
+        "your", "it", "its", "they", "their", "them", "he", "she", "his", "her",
+        "what", "which", "who", "how", "when", "where", "why", "set", "up",
+        "as", "if", "not", "no", "so", "than", "then", "there", "here",
+    }
+
+    def tokenize(text: str) -> set[str]:
+        tokens = re.findall(r"[a-z0-9][-a-z0-9]*", text.lower())
+        return {t for t in tokens if t not in STOPWORDS and len(t) >= 2}
+
+    skill_md = read("SKILL.md")
+
+    # Extract description from frontmatter
+    fm_end = skill_md.find("\n---", 4)
+    require(fm_end != -1, "SKILL.md frontmatter must close with ---")
+    frontmatter = skill_md[4:fm_end]
+    description = ""
+    for line in frontmatter.splitlines():
+        if line.startswith("description:"):
+            description = line.split(":", 1)[1].strip().strip('"')
+            break
+    require(description, "SKILL.md must have a description field in frontmatter")
+
+    # Extract Trigger Decision section
+    trigger_pos = skill_md.find("## Trigger Decision")
+    next_section_pos = skill_md.find("\n## ", trigger_pos + 1) if trigger_pos != -1 else -1
+    trigger_section = ""
+    if trigger_pos != -1:
+        trigger_section = skill_md[trigger_pos:next_section_pos] if next_section_pos != -1 else skill_md[trigger_pos:]
+
+    desc_tokens = tokenize(description)
+    full_tokens = desc_tokens | tokenize(trigger_section)
+
+    # Coverage gate: count how many should_trigger phrases share ≥1 token with the description
+    hits = 0
+    misses = []
+    for phrase in should_trigger:
+        phrase_tokens = tokenize(phrase)
+        if phrase_tokens & desc_tokens:
+            hits += 1
+        else:
+            misses.append(phrase)
+
+    coverage = hits / len(should_trigger) if should_trigger else 1.0
+    floor = 0.80
+    if coverage < floor:
+        raise CheckError(
+            f"trigger token-coverage gate: {hits}/{len(should_trigger)} should_trigger phrases "
+            f"({coverage:.0%}) share a content token with the description — below the {floor:.0%} floor. "
+            f"Misses: {misses}"
+        )
+
+    # Warn (not fail) for should_not_trigger phrases that overlap heavily with full token set
+    warnings = []
+    for phrase in should_not_trigger:
+        phrase_tokens = tokenize(phrase)
+        overlap = phrase_tokens & full_tokens
+        if len(overlap) >= 3:
+            warnings.append(f"  should_not_trigger '{phrase}' overlaps heavily: {sorted(overlap)}")
+    if warnings:
+        print(f"  WARN check_trigger_coverage: {len(warnings)} should_not phrases overlap heavily (not a failure):")
+        for w in warnings:
+            print(w)
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1464,6 +1610,8 @@ CHECKS = (
     check_inbox_concurrency,
     check_dashboard_wiki,
     check_capture_hook,
+    check_skillmd_recipe_table_sync,
+    check_trigger_coverage,
 )
 
 

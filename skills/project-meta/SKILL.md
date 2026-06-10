@@ -123,6 +123,8 @@ When the user invokes `/project-meta <command>`, route via the recipes directory
 | `deliver` | read-only | [`recipes/deliver.md`](recipes/deliver.md) |
 | `audit` | read-only by default | [`recipes/audit.md`](recipes/audit.md) |
 | `settings` | editing (read-only view by default) | [`recipes/settings.md`](recipes/settings.md) |
+| `roadmap` | editing | [`recipes/roadmap.md`](recipes/roadmap.md) |
+| `refine` | editing (sub-workflow of `roadmap`; load from roadmap or run standalone) | [`recipes/refine.md`](recipes/refine.md) |
 
 Cross-cutting policy (route contract, reserved verbs, shared rules, implementation risks) lives in [`references/cli-command-patterns.md`](references/cli-command-patterns.md). Recipes own *how each verb works*; that reference owns *what's true across all verbs*.
 
