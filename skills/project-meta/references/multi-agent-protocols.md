@@ -12,6 +12,7 @@
 - [Context Package](#context-package) — fields every delegation must include
 - [Delegation Template](#delegation-template) — copyable shape
 - [Ownership Rules](#ownership-rules) — write-set boundaries, ordering barriers
+- [Fleet Delivery Workflow](#fleet-delivery-workflow) — worktree fan-out → Lead review → optional re-review → auto-merge on green gates
 - [Review Mechanism](#review-mechanism) — consistency, drift, routing, enforcement passes
 - [Reviewer-Between-Subtasks Protocol](#reviewer-between-subtasks-protocol) — the enforcement loop
 - [Synchronous Gates Under Orchestration](#synchronous-gates-under-orchestration) — hard STOP-and-return boundaries
@@ -210,6 +211,17 @@ Parallelism is safe only across **disjoint write-sets**. Some write-sets have a 
 
 - **Canonical → barrier → mirror.** Mirror files (`CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/agents.md`, etc.) are *generated from integrated canonical state* (`scripts/render_host_manifests.py`). A mirror render MUST NOT run in the same unbarriered stage as canonical edits. Phase it: (1) canonical edits, each with a per-file review gate → (2) barrier + integrate canonical → (3) mirror render. Worktree isolation makes this **worse**, not better: an isolated worker renders mirrors from stale pre-integration canonical with no merge conflict to signal the violation.
 - **Disjoint canonical edits** within phase 1 may run in parallel only if their write-sets do not overlap.
+
+## Fleet Delivery Workflow
+
+The default end-to-end shape for executing **≥2 file/section-disjoint slices** (validated 2026-06: ≈2–2.5× cheaper and 1.9–3.6× faster than single-context serial work, with net accuracy at least equal — the safety comes from the three layers below, not from any single agent):
+
+1. **Fan out** — one fleet-tier agent per slice, **worktree-isolated**, each committing to a named branch. Briefs are self-contained: a spec *pointer* by absolute path (untracked files are invisible inside worktrees — point, don't paraphrase), scoped-edit constraints that name what sibling branches touch ("edit only section X of this file"), the validator commands to run, and **no version bumps on branches** (bumps on N branches guarantee an N-way manifest conflict; bump once at merge).
+2. **Lead review** — the Lead reads every diff, reruns validators/lint/smoke, and prechecks merges pairwise with `git merge-tree --write-tree` before anything lands.
+3. **Optional fresh re-review** — dispatch a clean-context reviewer (review-tier L1/L2) for canon, MUST-rule, or security surfaces; skip for mechanical slices.
+4. **Auto-merge on green gates** — squash-merge (matching linear history) without further approval only when *all* hold: per-branch validators pass, every pairwise merge-tree is CLEAN, and the post-merge validation rerun is green. Any red gate returns that slice to its worker instead of merging.
+
+Below the threshold — a single slice, tightly coupled edits, or under ~10 minutes of work — stay single-context (AP-COORD-4): the worktree/brief/report overhead exceeds the parallel gain. The ordering barriers above still bind: canonical→mirror dependencies never fan out in one unbarriered stage.
 
 ## Review Mechanism
 
