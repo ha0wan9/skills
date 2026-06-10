@@ -13,9 +13,10 @@ falsifiable build plan; `orchestrate` decides how it is run.
 ## Mode
 
 **editing** — produces a committed, reviewable contract artifact. Judgment-heavy (tier/parallel/
-checkpoint decisions) → runs on the **main session / Opus** (the conductor tier). Per-task review
-panels delegate to Sonnet. Interactive: this skill emits to the engine **only when the user invoked
-`orchestrate`** (the two-bar opt-in; [`engine-handoff.md`](../references/engine-handoff.md)).
+checkpoint decisions) → runs on the **main session model (Fable-class when available; see model-tier
+canon)** (the conductor tier). Per-task review panels delegate to Sonnet (fleet). Interactive: this
+skill emits to the engine **only when the user invoked `orchestrate`** (the two-bar opt-in;
+[`engine-handoff.md`](../references/engine-handoff.md)).
 
 ## Required references
 
@@ -37,7 +38,8 @@ milestone — it decides how the already-planned work runs.
 1. **Read the build plan.** Take its **build order** (the dependency-ordered task list) as the rows
    of the contract. Reuse the plan's items verbatim — do not re-decompose.
 2. **Produce the orchestration plan.** For each task decide: `model_tier` (deterministic→cli ·
-   judgment→sonnet default · hard→opus, escalate only on a concrete shortfall), `parallelization`
+   judgment→sonnet fleet default · escalation/synth→opus · conductor→fable; escalate only on a
+   demonstrated fleet shortfall), `parallelization`
    (serial / parallel(N) / pipeline — fan-out is a cost, not a quality lever; AP-COORD-4),
    `orchestrator_effort`, `human_checkpoint` (🔴 for new dep / ops / live backend / push / open
    decision), and `review_level` (auto-derive a floor with `review_tier.py`; escalate on judgment
@@ -48,9 +50,11 @@ milestone — it decides how the already-planned work runs.
    **hint to eyeball Opus-heaviness / fan-out width before signing — "estimate, not a guarantee,"**
    not the engine `budget`. If it looks Opus-heavy or too wide, adjust tiers/parallelism and re-run.
 4. **Instantiate + deliver the contract.** Fill
-   [`templates/orchestration-contract.md`](../templates/orchestration-contract.md). It is a shared,
-   user-facing artifact → **deliver it for operator review before any `git commit`** (pre-commit
-   delivery), like every editing recipe.
+   [`templates/orchestration-contract.md`](../templates/orchestration-contract.md). Include the
+   tier-mix footer: `tier-mix: <tok-share>% fleet / <n>×opus / <n>×fable / <n>×cli`, where
+   `<tok-share>` is the fleet token-share computed from the `budget_hint.py` totals (target ≥80 %).
+   It is a shared, user-facing artifact → **deliver it for operator review before any `git commit`**
+   (pre-commit delivery), like every editing recipe.
 5. **Sign.** Mark `status: signed` only when every sign-off box holds (all tasks rowed, review levels
    + escalation reasons set, checkpoints enumerated, budget hint reviewed, delivered). Signing is the
    gate before emission.

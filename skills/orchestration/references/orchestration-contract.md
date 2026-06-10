@@ -21,7 +21,7 @@ Each task row carries exactly these fields:
 | Field | Values | Meaning |
 |---|---|---|
 | `task` | free text + (optional) build-plan item id | the unit of work, traceable back to the `plan` build order |
-| `model_tier` | `cli` · `sonnet` · `opus` | deterministic → CLI (no model); judgment → Sonnet (default); hard/primary → Opus. Escalate to Opus only on a concrete mid-tier shortfall, never precautionarily. (canon: `project-meta/references/multi-agent-protocols.md#model-tier`) |
+| `model_tier` | `cli` · `sonnet` · `opus` · `fable` | deterministic → CLI (no model); judgment → Sonnet (fleet, default); escalation/synth → Opus (one escalation slot + one synthesis slot max per pipeline); conductor-only → Fable (at most one dispatched unblock call after Opus failed; justify per-slot). Escalate to Opus only on a demonstrated fleet shortfall, never precautionarily. (canon: `project-meta/references/multi-agent-protocols.md#model-tier`) |
 | `parallelization` | `serial` · `parallel(N)` · `pipeline` | the fan-out shape. Fan-out is a *cost and a coordination* signal, not a quality one (AP-COORD-4: don't over-parallelize). |
 | `orchestrator_effort` | `low` · `medium` · `high` | how much the Lead invests coordinating this task (brief depth, re-brief budget). Distinct from `model_tier` of the workers. |
 | `human_checkpoint` | `none` · `before` · `after` · `both` | the explicit halt-and-ask points (🔴). New dep / ops / live backend / push / unresolved decision MUST carry a checkpoint (execution-policy). |
@@ -40,11 +40,26 @@ The hint **does not drive the engine `budget`** and the skill **cannot enable or
 engine** (AP-COORD-7). There is no calibration claim: the bands are heuristic constants, not fit to
 a cost corpus (none exists yet).
 
+## Tier-mix footer
+
+Every signed contract includes a **tier-mix footer** line:
+
+```
+tier-mix: <tok-share>% fleet / <n>×opus / <n>×fable / <n>×cli
+```
+
+`<tok-share>` is the fleet token-share computed from the `budget_hint.py` per-task expected-token
+totals (fleet expected tokens ÷ total expected tokens × 100). Target: ≥80 % fleet token-share.
+`<n>×opus` and `<n>×fable` are the count of tasks at those tiers; `0×fable` is the documented
+normal case (Fable is conductor-only; dispatched Fable is exceptional). Computed at contract-signing
+time; re-check if any task's `model_tier` or `budget_hint` changes.
+
 ## Signing
 
 A contract is **signed** when (a) every build-order task has a row, (b) the per-task review levels
-and human checkpoints are set and justified where escalated, and (c) the budget hint has been
-computed and reviewed. Signing is the gate **before** any engine emission. The signed contract is
+and human checkpoints are set and justified where escalated, (c) the budget hint has been computed
+and reviewed, and (d) the tier-mix footer is present and the fleet token-share target is met or the
+deviation is explained. Signing is the gate **before** any engine emission. The signed contract is
 committed (it is a shared, user-facing artifact → deliver for operator review before commit, like
 every editing recipe).
 

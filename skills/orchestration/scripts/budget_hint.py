@@ -13,9 +13,9 @@ constants, not calibrated against any cost corpus (none exists yet: `dispatch_le
 has no token/runtime fields; adding them + collecting actuals is a separate later item).
 
 Usage:
-    budget_hint.py --task <tier>:<class>:<fanout>[:<label>] [--task ...] [--json]
+    budget_hint.py --task <tier>:<class>:<fanout>[:<label>] [--task ...] [--json] [--dollars]
 
-    <tier>   = cli | sonnet | opus       (cli = no model = 0 tokens)
+    <tier>   = cli | sonnet | opus | fable  (cli = no model = 0 tokens)
     <class>  = mechanical | lint | edit | review | research | plan | hard | scaffold
                (lint≈mechanical, hard≈plan; any other value → default band, flagged with *)
     <fanout> = positive int (parallel copies of this task); default 1
@@ -23,6 +23,7 @@ Usage:
 Examples:
     budget_hint.py --task cli:lint:1
     budget_hint.py --task opus:hard:1 --task sonnet:review:4 --json
+    budget_hint.py --task fable:plan:1 --task sonnet:edit:3 --dollars
 """
 from __future__ import annotations
 
@@ -46,8 +47,16 @@ CLASS_BANDS: dict[str, int] = {
 }
 DEFAULT_BAND = 8_000
 
-# Tier multipliers. cli runs no model (0 tokens). Opus reasons more per step → more tokens.
-TIER_FACTOR: dict[str, float] = {"cli": 0.0, "sonnet": 1.0, "opus": 2.5}
+# Tier token-emission multipliers. These scale TOKENS, not dollars — stronger models think
+# and emit more output per task. All values are uncalibrated heuristics (no cost corpus
+# exists yet); they are never pricing ratios. cli runs no model (0 tokens). Fable's
+# adaptive thinking (always on) raises emission above Opus — factor is a rough heuristic.
+TIER_FACTOR: dict[str, float] = {"cli": 0.0, "sonnet": 1.0, "opus": 2.5, "fable": 3.0}
+
+# Output price in $/MTok for the --dollars flag only. Never used in token estimation.
+# Source: Anthropic API pricing (2026-06). Separated from TIER_FACTOR intentionally —
+# pricing and emission volume are independent dimensions.
+TIER_PRICE: dict[str, float] = {"cli": 0.0, "sonnet": 15.0, "opus": 25.0, "fable": 50.0}
 
 # Order-of-magnitude envelope around the expected value (the critic's non-predictive finding).
 LOW_MULT = 0.3
@@ -76,7 +85,7 @@ def parse_task(spec: str) -> dict:
     if len(parts) >= 4:
         label = ":".join(parts[3:]).strip()
     if tier not in TIER_FACTOR:
-        raise ValueError(f"unknown tier '{tier}' in '{spec}' (cli|sonnet|opus)")
+        raise ValueError(f"unknown tier '{tier}' in '{spec}' (cli|sonnet|opus|fable)")
     band_known = cls in CLASS_BANDS
     band = CLASS_BANDS.get(cls, DEFAULT_BAND)
     expected = band * TIER_FACTOR[tier] * fanout
@@ -90,10 +99,17 @@ def parse_task(spec: str) -> dict:
     }
 
 
+def _cost_usd(tokens: float, tier: str) -> float:
+    """Convert output tokens to USD using TIER_PRICE ($/MTok)."""
+    return tokens * TIER_PRICE.get(tier, 0.0) / 1_000_000
+
+
 def hint(tasks: list[dict]) -> dict:
     rows = []
-    total = 0.0
+    total_tokens = 0.0
+    total_cost = 0.0
     for t in tasks:
+        expected_cost = _cost_usd(t["expected"], t["tier"])
         rows.append(
             {
                 "label": t["label"] or f"{t['tier']}:{t['class']}",
@@ -102,21 +118,26 @@ def hint(tasks: list[dict]) -> dict:
                 "class_known": t["class_known"],
                 "fanout": t["fanout"],
                 "expected_tokens": round100(t["expected"]),
+                "expected_cost_usd": round(expected_cost, 4),
             }
         )
-        total += t["expected"]
+        total_tokens += t["expected"]
+        total_cost += expected_cost
     return {
         "tasks": rows,
-        "low_tokens": round100(total * LOW_MULT),
-        "expected_tokens": round100(total),
-        "high_tokens": round100(total * HIGH_MULT),
+        "low_tokens": round100(total_tokens * LOW_MULT),
+        "expected_tokens": round100(total_tokens),
+        "high_tokens": round100(total_tokens * HIGH_MULT),
+        "low_cost_usd": round(total_cost * LOW_MULT, 4),
+        "expected_cost_usd": round(total_cost, 4),
+        "high_cost_usd": round(total_cost * HIGH_MULT, 4),
         "disclaimer": DISCLAIMER,
         "predictive": False,
         "drives_engine_budget": False,
     }
 
 
-def render(result: dict) -> str:
+def render(result: dict, dollars: bool = False) -> str:
     lines = ["Orchestration budget hint  (" + result["disclaimer"] + ")", ""]
     lines.append(f"{'task':<28} {'tier':<7} {'class':<11} {'fan':>3} {'~tokens':>10}")
     lines.append("-" * 62)
@@ -133,6 +154,11 @@ def render(result: dict) -> str:
         f"  range  low {result['low_tokens']:,}  ·  expected {result['expected_tokens']:,}"
         f"  ·  high {result['high_tokens']:,}"
     )
+    if dollars:
+        lines.append(
+            f"  cost   low ${result['low_cost_usd']:.4f}  ·  expected ${result['expected_cost_usd']:.4f}"
+            f"  ·  high ${result['high_cost_usd']:.4f}  (output $/MTok; estimate only)"
+        )
     if any(not r["class_known"] for r in result["tasks"]):
         lines.append("  * unknown work class → default band used")
     lines.append("")
@@ -151,6 +177,11 @@ def main(argv: list[str] | None = None) -> int:
         help="one task in the contract; repeatable",
     )
     ap.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    ap.add_argument(
+        "--dollars",
+        action="store_true",
+        help="additionally print a low/expected/high cost band in USD (output $/MTok × tokens)",
+    )
     args = ap.parse_args(argv)
 
     if not args.task:
@@ -165,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps(result, indent=2))
     else:
-        print(render(result))
+        print(render(result, dollars=args.dollars))
     return 0
 
 

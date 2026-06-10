@@ -1,7 +1,7 @@
 ---
 name: orchestration
 description: "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing."
-metadata: {version: 0.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 0.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Orchestration
@@ -52,9 +52,7 @@ project-meta is not installed. When both are present, **project-meta is canonica
 - **Reviewer-Between-Subtasks:** brief a fresh worker → a fresh, separate reviewer on clean
   context (diff + brief only); a BLOCKER halts forward dispatch until the user decides
   (AP-COORD-2). A scripted/background runner must stop on the first BLOCKER, never batch them.
-- **Model tier:** deterministic → CLI (no model) · judgment → Sonnet sub-agent (default) ·
-  hard/primary → Opus/main. Escalate one agent to Opus only on a concrete mid-tier shortfall,
-  never precautionarily (`project-meta/references/multi-agent-protocols.md#model-tier`).
+- **Model tier:** deterministic → CLI · judgment → Sonnet (fleet, default) · escalation/synth → Opus · conductor → session model (Fable-class when available). Escalate one agent to Opus only on a demonstrated fleet shortfall, never precautionarily (`project-meta/references/multi-agent-protocols.md#model-tier`).
 - **Review level:** every review fast; tokens proportionate to stakes — L0 self-check · L1 one
   reviewer · L2 parallel panel · L3 adversarial + pressure (`#review-tier`).
 - **Engine boundary (AP-COORD-7):** the contract is **policy**; the scripted engine (Claude Code
@@ -106,6 +104,18 @@ project-meta is not installed. When both are present, **project-meta is canonica
   enable `ultracode` session-mode (`effortLevel:"ultracode"` set by a skill silently no-ops).
 - **Installed alone?** Without project-meta, the Dependency & Canon floor above is the whole contract
   — roles, reviewer-between, model tiers, review levels. With project-meta present, it is canonical.
+
+## Skill Arbitration
+
+When the request could match `orchestration` **and** a peer skill, resolve as follows and state the resolution before acting.
+
+| Request shape | Owner | Notes |
+|---|---|---|
+| Orchestrate a milestone, draft/review/sign a contract, estimate run cost (`/orchestrate`, contract trigger, budget trigger) | **`orchestration`** | acts |
+| Dispatch-policy canon, review-tier levels (`multi-agent-protocols.md`, `review-tier.md`), ad-hoc multi-agent coordination inside a `/project-meta` verb, repo harness / memory work | **`project-meta`** | `project-meta`'s `references/multi-agent-protocols.md` stays canonical; this skill cites it, never duplicates it |
+| Actual engine execution (Workflow tool, "ultracode" session-mode, Codex Agents-SDK run loop) | **the runtime engine** — not a skill | user-gated; never re-implemented here — AP-COORD-7 |
+
+If the request is unclear, ask before acting. Never silently invoke both.
 
 ## Output
 
