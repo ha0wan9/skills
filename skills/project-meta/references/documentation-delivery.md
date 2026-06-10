@@ -33,7 +33,7 @@ Project Meta already has an agent-facing documentation framework:
 - `SKILL.md`: trigger policy, core workflow, and reference routing
 - `references/*.md`: focused progressive-disclosure protocols
 - `templates/*.md`: skill-level canonical seed templates for repeatable project-level artifacts
-- `scripts/validate_project_meta.py`: mechanical validation for the harness
+- `scripts/validate_target_harness.py` (shipped with the skill): mechanical validation for the harness; the dev-repo validator `validate_project_meta.py` lives at the marketplace repo root, not in the skill
 - `agents/openai.yaml`: UI metadata that affects skill discovery
 
 Do not replace this framework with a parallel one. Extend it only when a new agent-facing rule has a clear owner and routing path.
@@ -55,7 +55,7 @@ Project Meta skill layer
     - multi-agent coordination rules
   templates/*.md
     - skill-level canonical seed templates with source references and instantiation rules
-  scripts/validate_project_meta.py
+  scripts/validate_target_harness.py
     - skill-level validation
 
 Installed or target project layer

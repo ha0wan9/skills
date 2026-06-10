@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.10.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.11.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -93,7 +93,7 @@ When the user's request would match `project-meta` *and* a peer skill on this ma
 | Survey or research output needs to be packaged as a target-repo artifact (with provenance frontmatter, mirror sync, delivery summary) | **`project-meta`** | wraps the peer's output for delivery |
 | Schedule, classify, or bulk-edit calendar events (CRUD across Google/Apple/Notion/MCP calendars) | **`calendar-crud-workflow`** | not this skill — defer; run `/project-meta init` only if the calendar work lives in a repo that needs a harness |
 | Create/manage a Claude *or Codex* config profile, or the global config root (`~/.claude*`, `~/.codex*`) | **`global-meta`** (supersedes `profile-creator`) | not this skill — defer; `project-meta` owns repo memory, not user-level config dirs (`global-meta` reuses project-meta's engine) |
-| Orchestrate a chosen milestone / build plan across agents: draft, review, cost-estimate, or sign an **orchestration contract** (`/orchestrate`, contract trigger, budget trigger) | **`orchestration`** | owns the dispatch-policy canon (`references/multi-agent-protocols.md`, `references/review-tier.md`) that the contract cites; acts itself only for ad-hoc dispatch inside a `/project-meta` verb (no contract workflow in play) and wraps delivery. |
+| Orchestrate a chosen milestone / build plan across agents: draft, review, cost-estimate, or sign an **orchestration contract** (`/orchestrate`, contract trigger, budget trigger) | **`orchestration`** | defer the contract workflow to it; **this skill stays canonical** for the dispatch-policy canon the contract cites (`references/multi-agent-protocols.md`, `references/review-tier.md`). This skill acts itself only for ad-hoc dispatch inside a `/project-meta` verb (no contract workflow in play) and wraps delivery. |
 | Multi-agent orchestration *execution* — spawning/parallelizing subagents, scripted workflows, effort tier | **the runtime engine** (Claude Code Workflow / "ultracode"; Codex Agents-SDK) — not a skill | `project-meta` owns the *policy* (when to dispatch, review/verify topology) and delegates *execution* to the engine. It recommends/prepares but **cannot enable it** (user-gated). Never re-implement it — AP-COORD-7. Reference it generically ("scripted-engine tier"), not by name. |
 | Intra-task software-engineering *method* (brainstorm→plan→TDD→review→verify) | **the methodology plugin** (e.g. `superpowers`) — external, not bindable | defer for intra-task process; `project-meta` *reclaims* only harness/skill authoring + cross-task governance. Assume the methodology's SessionStart bootstrap is mandatory/uncontrollable — be additive, never contradictory. |
 
@@ -107,7 +107,7 @@ Non-obvious traps the agent will hit without being warned. Keep these here, not 
 - **`USER.template.md` is a skill-layer questionnaire, not a target-repo file.** Do not copy it into target repos. Render selected presets and checked items directly into ignored local `USER.md` via `scripts/render_user_preferences.py`.
 - **`templates/*.md` are skill-level seeds, not a target-repo template library.** Instantiate at semantic project paths (`agents/delegation.md`, `agents/pre-commit-delivery.md`, `agents/readme-structure.md`, etc.); do not commit a generic `agents/templates/*.md` directory in the target repo.
 - **Every instantiated artifact carries a YAML provenance frontmatter block** (`artifact_name`, `instantiated_from`, `source_reference`, `project_scope`, `owner`, `review_policy`, `last_reviewed`). Do not strip these fields when editing — the manifest and audit checks rely on them.
-- **`scripts/validate_project_meta.py` requires a git working tree** for the `check_memory_boundaries` git ignore checks. Outside one, those sub-checks are skipped (the script no longer crashes), but a full validation still requires running from the dev repo or a git checkout.
+- **`scripts/validate_project_meta.py` is the dev-repo validator (marketplace repo root — not shipped with the skill) and requires a git working tree** for the `check_memory_boundaries` git ignore checks. Outside one, those sub-checks are skipped (the script no longer crashes), but a full validation still requires running from the dev repo or a git checkout. The validator that ships with the skill is `scripts/validate_target_harness.py`.
 - **Mirror roles depend on tool context.** When Claude Code is the primary agent, `CLAUDE.md` is canonical and `AGENTS.md` is the mirror. When Codex is primary, the reverse. Always detect tool context before syncing. In both cases, write durable rules into topical files, not into the loader.
 - **`/project-meta init` does not depend on existing `USER.md`.** Do not assume preferences exist before init runs; ask for preset and checklist selection first, then render `USER.md`.
 
@@ -126,6 +126,7 @@ When the user invokes `/project-meta <command>`, route via the recipes directory
 | `settings` | editing (read-only view by default) | [`recipes/settings.md`](recipes/settings.md) |
 | `roadmap` | editing | [`recipes/roadmap.md`](recipes/roadmap.md) |
 | `refine` | editing (sub-workflow of `roadmap`; load from roadmap or run standalone) | [`recipes/refine.md`](recipes/refine.md) |
+| `mirror-linear` | editing (documented sub-workflow of the issue-tracker Track Loop; load on demand) | [`recipes/mirror-linear.md`](recipes/mirror-linear.md) |
 
 Cross-cutting policy (route contract, reserved verbs, shared rules, implementation risks) lives in [`references/cli-command-patterns.md`](references/cli-command-patterns.md). Recipes own *how each verb works*; that reference owns *what's true across all verbs*.
 

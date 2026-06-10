@@ -1,6 +1,12 @@
 # Proposal: project-meta token diet + three-tier (Fable/Opus/Sonnet) pipeline contract
 
-> **Status:** Proposed (design, **rev 2** — revised after a 4-lens adversarial critic panel:
+> **Status:** Partially shipped (2026-06-10) — **D2** (router repair), **D6** (trigger coverage)
+> and **PR-D** (three-tier model canon + orchestration schema) landed in project-meta 1.10.0 /
+> orchestration 0.2.0 (PR #36); the harness-feedback machinery (Stop gate #5 et al.) landed via
+> the board PR line. Remaining: **D1 description trim (DASH-031)**, **D3–D5**. Branch
+> coordinates referenced below (`harness-feedback`, `claude/clever-jang-25c094`) are
+> historical — all branches have merged and been deleted.
+> (Design **rev 2** — revised after a 4-lens adversarial critic panel:
 > cost-model, enforcement-feasibility, regression, scope/conflict. Panel adjudication in §7.)
 > Extends board item DASH-031 (token diet) with the audit evidence behind it, and adds the
 > model-tier v2 contract for the 2026 three-tier lineup (Fable 5 > Opus 4.8 > Sonnet 4.6;

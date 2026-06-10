@@ -17,7 +17,8 @@ go in which version*; `plan` turns *one chosen milestone* into a falsifiable bui
 
 **editing** — co-builds the roadmap *with* the operator and writes `items.jsonl` +
 `roadmap.json` **atomically** via `scripts/board.py`. Interactive, judgment-heavy → runs on the
-**main session / Opus** (DASH-15 conductor tier). The L2 review panel below delegates to Sonnet.
+**main session (conductor tier — the active session model, per `references/multi-agent-protocols.md#model-tier`)**.
+The L2 review panel below delegates to Sonnet (fleet tier).
 
 ## Required references
 

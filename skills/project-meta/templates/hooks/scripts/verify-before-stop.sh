@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Stop hook: run repo-defined verification before the agent ends a turn.
 #
-# Two responsibilities:
+# Five responsibilities (each self-skips when its artifact is absent):
 #   1. Phase-lock check (when phase-lock contract installed) — verify the
 #      current phase's gate has passed at least once since started_utc.
 #   2. Project verifier — run the project's own verification command if
 #      .harness/verify.sh exists.
+#   3. Memory write-back gate — repo_memory.py writeback.
+#   4. Mandatory-dispatch gate — dispatch_ledger.py gate (AP-COORD-1).
+#   5. Project Board store integrity — board.py tx.
 #
 # Profile-aware via $HARNESS_PROFILE:
 #   minimal   — disabled; never run
@@ -19,6 +22,12 @@ set -euo pipefail
 
 PROFILE="${HARNESS_PROFILE:-standard}"
 [[ "$PROFILE" == "minimal" ]] && exit 0
+
+# Per-invocation temp dir: fixed /tmp names collide across concurrent sessions
+# (routine in multi-worktree fleet runs) and corrupt the diagnostics the agent
+# sees. Fail-open if mktemp is unavailable — diagnostics matter less than turns.
+TMPD="$(mktemp -d "${TMPDIR:-/tmp}/vbs.XXXXXX" 2>/dev/null)" || exit 0
+trap 'rm -rf "$TMPD"' EXIT
 
 advisory_exit() {
   # Standard profile: warn on stderr, exit 0 so the agent can still close
@@ -55,23 +64,19 @@ if [[ -f .harness/phase-state.json ]]; then
   pm_dir="$(resolve_project_meta scripts/phase_lock_check.py)" || pm_dir=""
   pm_check="$pm_dir/scripts/phase_lock_check.py"
   if [[ -x "$pm_check" ]] || [[ -f "$pm_check" ]]; then
-    if ! python3 "$pm_check" --harness-dir .harness >/tmp/_pl.out 2>&1; then
-      cat /tmp/_pl.out >&2
-      rm -f /tmp/_pl.out
+    if ! python3 "$pm_check" --harness-dir .harness >"$TMPD/pl.out" 2>&1; then
+      cat "$TMPD/pl.out" >&2
       advisory_exit "phase-lock gate failed; see above."
     fi
-    rm -f /tmp/_pl.out
   fi
 fi
 
 # 2) Project verifier.
 if [[ -x .harness/verify.sh ]]; then
-  if ! .harness/verify.sh >/tmp/_v.out 2>&1; then
-    cat /tmp/_v.out >&2
-    rm -f /tmp/_v.out
+  if ! .harness/verify.sh >"$TMPD/v.out" 2>&1; then
+    cat "$TMPD/v.out" >&2
     advisory_exit "project verification failed; see above."
   fi
-  rm -f /tmp/_v.out
 fi
 
 # 3) Memory write-back gate. Flags a pending write-back decision when the turn
@@ -81,12 +86,10 @@ fi
 pm_dir="$(resolve_project_meta scripts/repo_memory.py)" || pm_dir=""
 pm_mem="$pm_dir/scripts/repo_memory.py"
 if [[ -f "$pm_mem" ]]; then
-  if ! python3 "$pm_mem" --target-root . writeback 2>/tmp/_wb.out; then
-    cat /tmp/_wb.out >&2
-    rm -f /tmp/_wb.out
+  if ! python3 "$pm_mem" --target-root . writeback 2>"$TMPD/wb.out"; then
+    cat "$TMPD/wb.out" >&2
     advisory_exit "memory write-back decision pending; see above."
   fi
-  rm -f /tmp/_wb.out
 fi
 
 # 4) Mandatory-dispatch gate. Flags the AP-COORD-1 pattern: the turn edited >=2
@@ -95,12 +98,10 @@ fi
 #    Delegates to project-meta's dispatch_ledger.py (resolve-don't-vendor).
 pm_disp="$pm_dir/scripts/dispatch_ledger.py"
 if [[ -f "$pm_disp" ]]; then
-  if ! python3 "$pm_disp" --target-root . gate 2>/tmp/_dg.out; then
-    cat /tmp/_dg.out >&2
-    rm -f /tmp/_dg.out
+  if ! python3 "$pm_disp" --target-root . gate 2>"$TMPD/dg.out"; then
+    cat "$TMPD/dg.out" >&2
     advisory_exit "mandatory-dispatch gate: see above."
   fi
-  rm -f /tmp/_dg.out
 fi
 
 # 5) Project Board store integrity. When a board store exists, validate it (board.py tx:
@@ -108,18 +109,20 @@ fi
 #    hand-edited or stale store is caught before the turn ends. Resolve-don't-vendor;
 #    pm_dir was resolved above for repo_memory.py, re-resolve on the board sentinel if needed.
 if [[ -f docs/backlog/items.jsonl ]]; then
-  pm_board="$pm_dir/scripts/board.py"
-  if [[ ! -f "$pm_board" ]]; then
+  # Guard against an empty resolve result: "$pm_dir/scripts/board.py" with pm_dir=""
+  # would yield the filesystem-rooted path /scripts/board.py.
+  pm_board=""
+  if [[ -n "$pm_dir" ]]; then pm_board="$pm_dir/scripts/board.py"; fi
+  if [[ -z "$pm_board" || ! -f "$pm_board" ]]; then
     pm_bdir="$(resolve_project_meta scripts/board.py)" || pm_bdir=""
-    pm_board="$pm_bdir/scripts/board.py"
+    pm_board=""
+    if [[ -n "$pm_bdir" ]]; then pm_board="$pm_bdir/scripts/board.py"; fi
   fi
-  if [[ -f "$pm_board" ]]; then
-    if ! python3 "$pm_board" tx --root . >/tmp/_bt.out 2>&1; then
-      cat /tmp/_bt.out >&2
-      rm -f /tmp/_bt.out
+  if [[ -n "$pm_board" && -f "$pm_board" ]]; then
+    if ! python3 "$pm_board" tx --root . >"$TMPD/bt.out" 2>&1; then
+      cat "$TMPD/bt.out" >&2
       advisory_exit "project board store check (board.py tx) failed; see above."
     fi
-    rm -f /tmp/_bt.out
   fi
 fi
 

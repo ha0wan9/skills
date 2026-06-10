@@ -26,6 +26,8 @@ The `/project-meta <command>` route table maps verbs to recipe files:
 | `/project-meta audit` | read-only by default | [`recipes/audit.md`](../recipes/audit.md) |
 | `/project-meta settings` | editing (read-only view by default) | [`recipes/settings.md`](../recipes/settings.md) |
 | `/project-meta roadmap` | editing | [`recipes/roadmap.md`](../recipes/roadmap.md) |
+| `/project-meta refine` | editing (sub-workflow of `roadmap`; load from roadmap or run standalone) | [`recipes/refine.md`](../recipes/refine.md) |
+| `/project-meta mirror-linear` | editing (documented sub-workflow of the issue-tracker Track Loop; load on demand) | [`recipes/mirror-linear.md`](../recipes/mirror-linear.md) |
 
 **`plan` readiness keyword.** `/project-meta plan` writes a falsifiable build plan at one
 of two tiers. The default `floor` tier mandates the §6 per-item verification matrix

@@ -63,7 +63,10 @@ esac
 
 if [[ "$PROFILE" == "strict" ]]; then
   # In strict mode, refuse to pass if the file was modified by the formatter.
-  # The agent must re-stage the formatted version.
+  # The agent must re-stage the formatted version. Guard on git being present:
+  # exit 127 from a missing git would otherwise read as "file changed" and
+  # false-positive block with a misleading message.
+  command -v git >/dev/null 2>&1 || exit 0
   if ! git diff --quiet --no-color -- "$TARGET" 2>/dev/null; then
     echo "[harness] strict: $TARGET was reformatted; re-stage before continuing." >&2
     exit 1
