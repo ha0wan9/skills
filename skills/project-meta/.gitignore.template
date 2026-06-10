@@ -5,3 +5,13 @@
 
 # Do not expose local preference templates in target projects by default.
 /USER.template.md
+
+# project-meta hook runtime state (transient evidence — never committed).
+# Narrow on purpose: do NOT ignore all of .harness/ — phase-lock keeps
+# committed gate scripts at .harness/gates/*.sh.
+.harness/phase-state.json
+.harness/dispatch-log.jsonl
+.harness/dispatch-ack
+.harness/writeback-ack
+.harness/audit-ledger.jsonl
+.board.lock

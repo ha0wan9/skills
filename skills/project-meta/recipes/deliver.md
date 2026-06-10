@@ -29,7 +29,7 @@ Lazy-load:
    - Which files have changed since last commit?
    - Group changes: user-facing docs / agent-facing docs / templates / mirrors / scripts / hooks / phase-lock / USER.md (the latter never gets committed; verify it's still git-ignored).
 
-2. **Run `validate` first**: a delivery cannot ship with FAILs. If validate exits non-zero, return to `audit` or `init` and fix before delivering.
+2. **Run `validate` first**: a delivery cannot ship with FAILs. If validate exits non-zero, return to `audit` or `init` and fix before delivering. Fail fast on audit convergence too: if `.harness/audit-ledger.jsonl` exists and `audit_ledger.py gate` is red, halt the delivery here — do not open a PR that the land gate will refuse (`audit_ledger.py query` shows the round trail; see `recipes/audit.md` Convergence loop).
 
 3. **Confirm the editing recipe already dispatched** (see [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) Reviewer-Between-Subtasks Protocol — its Logging step is where the per-file review verdicts `deliver` checks are recorded):
    - The ≥2-file dispatch (per-file Worker + Reviewer) is the *editing* recipe's responsibility, not `deliver`'s. By the time `deliver` runs, those edits and their review verdicts already exist.

@@ -267,6 +267,16 @@ cmd_land() {
   local branch; branch="$(git rev-parse --abbrev-ref HEAD)"
   local plugins; plugins="$(_changed_plugins || true)"
 
+  # Hard gate: an open + red audit transaction means a final audit did not
+  # converge — never merge past it (DASH-032; recipes/audit.md Convergence
+  # loop). Checked before the version gate so the more fundamental signal
+  # surfaces first. The ledger is branch-scoped and self-skips when absent.
+  local audit_gate="$REPO_ROOT/skills/project-meta/scripts/audit_ledger.py"
+  if [[ -f "$audit_gate" && -f "$REPO_ROOT/.harness/audit-ledger.jsonl" ]]; then
+    python3 "$audit_gate" --target-root "$REPO_ROOT" gate \
+      || die "audit convergence gate failed — see the gate message above for the path out (re-audit to a clean round, or at the cap an operator override: audit_ledger.py record --final --accept-residuals \"reason\")"
+  fi
+
   # Hard gate: never merge a change that did not bump a version.
   cmd_check_version
 
