@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stop hook: run repo-defined verification before the agent ends a turn.
 #
-# Five responsibilities (each self-skips when its artifact is absent):
+# Six responsibilities (each self-skips when its artifact is absent):
 #   1. Phase-lock check (when phase-lock contract installed) — verify the
 #      current phase's gate has passed at least once since started_utc.
 #   2. Project verifier — run the project's own verification command if
@@ -9,6 +9,8 @@
 #   3. Memory write-back gate — repo_memory.py writeback.
 #   4. Mandatory-dispatch gate — dispatch_ledger.py gate (AP-COORD-1).
 #   5. Project Board store integrity — board.py tx.
+#   6. Audit convergence gate — audit_ledger.py gate (final audits are
+#      multi-round; an open+red audit transaction must converge before ship).
 #
 # Profile-aware via $HARNESS_PROFILE:
 #   minimal   — disabled; never run
@@ -28,6 +30,10 @@ PROFILE="${HARNESS_PROFILE:-standard}"
 # sees. Fail-open if mktemp is unavailable — diagnostics matter less than turns.
 TMPD="$(mktemp -d "${TMPDIR:-/tmp}/vbs.XXXXXX" 2>/dev/null)" || exit 0
 trap 'rm -rf "$TMPD"' EXIT
+
+# Every gate below shells out to python3; a missing interpreter must fail open
+# (exit 127 under set -e would otherwise hard-fail the hook in BOTH profiles).
+command -v python3 >/dev/null 2>&1 || exit 0
 
 advisory_exit() {
   # Standard profile: warn on stderr, exit 0 so the agent can still close
@@ -122,6 +128,26 @@ if [[ -f docs/backlog/items.jsonl ]]; then
     if ! python3 "$pm_board" tx --root . >"$TMPD/bt.out" 2>&1; then
       cat "$TMPD/bt.out" >&2
       advisory_exit "project board store check (board.py tx) failed; see above."
+    fi
+  fi
+fi
+
+# 6) Audit convergence gate. Final audits are multi-round (recipes/audit.md,
+#    Convergence loop): an open release-gated audit transaction whose last round
+#    is still red (BLOCKER/MAJOR > 0, or the Round-4 cap) must not slip past a
+#    turn end. Self-skips when no ledger exists — the gate enforces that a
+#    CLAIMED audit converges; it never forces audits to happen.
+if [[ -f .harness/audit-ledger.jsonl ]]; then
+  pm_audit=""
+  if [[ -n "$pm_dir" ]]; then pm_audit="$pm_dir/scripts/audit_ledger.py"; fi
+  if [[ -z "$pm_audit" || ! -f "$pm_audit" ]]; then
+    pm_audir="$(resolve_project_meta scripts/audit_ledger.py)" || pm_audir=""
+    if [[ -n "$pm_audir" ]]; then pm_audit="$pm_audir/scripts/audit_ledger.py"; fi
+  fi
+  if [[ -n "$pm_audit" && -f "$pm_audit" ]]; then
+    if ! python3 "$pm_audit" --target-root . gate >"$TMPD/ag.out" 2>&1; then
+      cat "$TMPD/ag.out" >&2
+      advisory_exit "audit convergence gate: see above."
     fi
   fi
 fi

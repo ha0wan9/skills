@@ -97,7 +97,7 @@ conventions.
 
 ### `verify-before-stop.sh` — Stop
 
-Five responsibilities:
+Six responsibilities:
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
@@ -125,6 +125,17 @@ Five responsibilities:
    Stop-side enforcement leg of the board CRUD contract
    (`references/project-board-crud.md`); `board-guard.sh` is the
    PreToolUse leg.
+6. **Audit convergence gate** via `audit_ledger.py gate` (same resolved
+   path) when `.harness/audit-ledger.jsonl` exists. Final audits are
+   multi-round (`recipes/audit.md`, Convergence loop): an open
+   release-gated audit transaction whose last round is still red
+   (BLOCKER/MAJOR > 0, or the Round-4 cap) flags the turn. Per-round
+   acks (`record --ack`) cover fix-in-progress turns; at the cap only
+   a persistent operator override row (`record --final
+   --accept-residuals`) passes. The ledger is branch-scoped and a red
+   round auto-expires after 72h, so a stale transaction never blocks
+   unrelated work. Self-skips when no ledger exists — the gate
+   enforces that a *claimed* audit converges; it never forces audits.
 
 - `minimal`: hook disabled (the write-back and dispatch gates also
   self-disable on `HARNESS_PROFILE=minimal`)

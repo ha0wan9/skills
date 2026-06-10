@@ -1619,6 +1619,25 @@ def check_board_crud_contract() -> None:
     require(run("minimal", "docs/dashboard.html") == 0, "minimal must disable the guard")
 
 
+def check_audit_convergence() -> None:
+    """The audit Convergence MUST (SKILL.md Core Rule / recipes/audit.md step 8) is
+    hook-backed (DASH-032): audit_ledger.py exists, passes its deterministic self-test,
+    is wired into the Stop hook, and is named in the canon so determinism_gap_scan can
+    pair the MUST prose with its enforcing hook."""
+    ledger = ROOT / "scripts" / "audit_ledger.py"
+    require(ledger.is_file(), "scripts/audit_ledger.py must exist")
+    require("audit_ledger.py" in read("templates/hooks/scripts/verify-before-stop.sh"),
+            "verify-before-stop.sh must run the audit convergence gate (audit_ledger.py)")
+    require("audit_ledger.py" in read("SKILL.md"),
+            "SKILL.md converge-MUST must name audit_ledger.py")
+    require("audit_ledger.py" in read("recipes/audit.md"),
+            "recipes/audit.md step 8 must spec the audit_ledger.py record calls")
+    require("audit_ledger.py" in read("recipes/deliver.md"),
+            "recipes/deliver.md must fail fast on a red audit ledger")
+    r = subprocess.run([sys.executable, str(ledger), "--self-test"], capture_output=True, text=True)
+    require(r.returncode == 0, f"audit_ledger.py --self-test failed: {(r.stderr or r.stdout).strip()[:300]}")
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1642,6 +1661,7 @@ CHECKS = (
     check_dashboard_wiki,
     check_capture_hook,
     check_board_crud_contract,
+    check_audit_convergence,
     check_skillmd_recipe_table_sync,
     check_trigger_coverage,
 )

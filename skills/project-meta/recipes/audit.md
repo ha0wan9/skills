@@ -122,6 +122,21 @@ GO/NO-GO + blockers only (a score invites gaming, cf. "Auditing for show" below)
    item; escalate to full-scope only when a fix moves content across recipe/reference
    boundaries.
 
+   **Mechanical leg — MUST record rounds in `scripts/audit_ledger.py`.** Open a
+   transaction when and ONLY when the audit gates a ship/release — ordinary L1/L2
+   delivery reviews MUST NOT record rounds here (that boundary is what keeps the gate
+   meaningful). Per round: `audit_ledger.py record --round N --gate release --blockers X
+   --majors Y [--findings "slug,slug"]` — the first row opens the transaction, rounds are
+   sequential, and finding slugs preserve identity across rounds (are Round 3's two
+   blockers the same two from Round 1, or fresh regressions?). Mid-fix turns:
+   `record --ack --round N` (one per round; an auditable ledger row, not a marker file).
+   Converged: `record --final`. At the cap with residuals the only path is the operator
+   override `record --final --accept-residuals "reason"` — persistent and reviewable.
+   Enforcement: `verify-before-stop.sh` step 6 (advisory in standard, blocks in strict)
+   and the `ship_plugin.sh land` hard gate. The only compliant land path is
+   `ship_plugin.sh land`; merging directly via `gh pr merge` bypasses the gate and is a
+   policy violation.
+
 ## Output contract
 
 Structured findings report:
