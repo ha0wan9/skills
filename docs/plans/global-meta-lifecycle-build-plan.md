@@ -59,7 +59,7 @@ recorded spike verdict and stays checkpoint-gated.
 | DASH-039 status+audit | 🟡 fixture-bound | built against the committed seeded fixture (§4 F1–F4) |
 | DASH-040 emit-fix | 🟡 fixture-bound | converge-the-fixture-copy loop is the acceptance |
 | DASH-041 slimming spike | 🟡 autonomous-against-a-specced-fixture (runtime-generated per §4, not committed) | sandboxed `CLAUDE_CONFIG_DIR`; read-only intent on the real root — see §7.2 caveat |
-| DASH-042 slimming impl | 🔴 checkpoint | distribution-semantics change; needs spike GO + operator approval |
+| DASH-042 slimming impl | 🟢 **DONE** (operator approved 2026-06-12, built) | scoped sources + dual-layout resolver + source-aware manifest validation shipped |
 
 ## §4 Preflight & fixtures
 
@@ -164,3 +164,4 @@ Fixtures:
   safe; §6 threshold amended — advisory-class residuals legitimately survive `--apply`
   (converged = zero scriptable findings). Milestone build phase complete: DASH-039/040/041/043/044
   done, DASH-042 awaiting the §7.1 operator checkpoint.
+- 2026-06-12 — **DASH-042 built** (operator approval received 2026-06-12): all 9 plugins migrated to scoped sources (`source: "./skills/<name>"`, `skills: ["./"]`) materializing only the target skill directory per install; two couplings beyond the spike required fixes — `_validate_marketplace` in `ship_plugin.sh` needed source-aware path resolution (mirroring `ci.yml`), and the `agents` array paths in dl-research/deep-survey-bfs are source-relative under scoped layout; dual-layout resolver added to `verify-before-stop.sh` + `shared-cli-delegation.md`; all 9 plugins bump patch, marketplace bumps major (3.0.0). Local reload required for all 9 after land.

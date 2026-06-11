@@ -58,7 +58,14 @@ _changed_plugins() {
 }
 
 # --- marketplace.json sanity: parses, every skills[] path is a dir with SKILL.md,
-#     plugin names are unique, and each plugin description matches its SKILL.md. ---
+#     plugin names are unique, and each plugin description matches its SKILL.md.
+#
+#     Skills paths are source-relative (marketplace >=3.0 scoped layout):
+#       source: "./skills/<name>", skills: ["./"]  → resolves to repo_root/skills/<name>/
+#     Legacy (pre-3.0 full-repo layout):
+#       source: "./",             skills: ["./skills/<name>"]  → also resolves correctly
+#     Formula: os.path.normpath(repo_root / source / skills[i])
+#     This mirrors the ci.yml manifest-sanity check exactly. ---
 _validate_marketplace() {
   python3 - "$REPO_ROOT" <<'PY'
 import json, os, re, sys
@@ -72,14 +79,15 @@ for p in data.get("plugins", []):
     if n in names:
         errs.append(f"duplicate plugin name: {n}")
     names.add(n)
+    src = p.get("source", "./")
     for sk in p.get("skills", []):
-        d = os.path.normpath(os.path.join(root, sk))
+        d = os.path.normpath(os.path.join(root, src, sk))
         if not os.path.isdir(d):
-            errs.append(f"{n}: skills path not a dir: {sk}")
+            errs.append(f"{n}: skills path not a dir: {sk} (resolved via source={src!r})")
             continue
         sm = os.path.join(d, "SKILL.md")
         if not os.path.isfile(sm):
-            errs.append(f"{n}: no SKILL.md in {sk}")
+            errs.append(f"{n}: no SKILL.md in {sk} (resolved via source={src!r})")
             continue
         # If SKILL.md frontmatter declares a version, it must match the manifest version.
         head = open(sm, encoding="utf-8").read()[:4000]

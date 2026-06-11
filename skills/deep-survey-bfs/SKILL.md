@@ -11,7 +11,7 @@ description: >-
   versioned incrementally as new evidence arrives. Use when the user asks for
   a literature review, comprehensive survey, "research X for me", or to
   expand/audit an existing survey.
-metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Deep Survey (BFS)

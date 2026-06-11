@@ -38,11 +38,12 @@ known locations in priority order, then delegates. **`~/.claude/skills/project-m
 alone is not enough** — that is the *personal-skill* path; a marketplace **plugin**
 install lands under `~/.claude/plugins/`, so the resolver must probe those too or
 it silently falls to the thin floor on the most common install. Verified install
-layouts (Claude Code 2.1.x):
+layouts (Claude Code 2.1.x, both cache generations):
 
 - personal skill: `~/.claude/skills/project-meta/`
-- plugin (marketplace checkout): `~/.claude/plugins/marketplaces/<marketplace>/skills/project-meta/`
-- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/project-meta/` (e.g. `<plugin>` = `global-meta` when bundled — the cache segment is the *plugin* name, not `project-meta`)
+- plugin (marketplace checkout, full-repo clone — all versions): `~/.claude/plugins/marketplaces/<marketplace>/skills/project-meta/`
+- plugin (legacy full-repo-copy cache, pre-marketplace-3.0): `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/project-meta/` (e.g. `<plugin>` = `global-meta` when bundled — the cache segment is the *plugin* name, not `project-meta`)
+- plugin (scoped cache, marketplace ≥3.0): `~/.claude/plugins/cache/<marketplace>/project-meta/<version>/` — under scoped sources (`source: "./skills/project-meta"`), the cache root **is** the skill root; no nested `skills/project-meta/` segment
 
 ```bash
 # Canonical executable copy: templates/hooks/scripts/verify-before-stop.sh
@@ -51,7 +52,8 @@ layouts (Claude Code 2.1.x):
 pm_dir=""
 for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
          "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*; do
   [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
 done
 if [ -n "$pm_dir" ]; then

@@ -1,7 +1,7 @@
 ---
 name: sketch-asset-generator
 description: Generate modular, reusable, original visual asset packs from user-provided design sketches, wireframes, whiteboard photos, Figma or Sketch screenshots, UI mocks, moodboards, or existing UI source (CSS, SVG, components). Prefer extracting assets from user-owned resources (tokens, vectors, component code); use GPT Image only when an asset cannot be extracted. Use when turning sketches or source UI into design-system-ready assets, asset-pack.yaml briefs, design tokens, SVG and component primitives, manifests, contact sheets, or validation reports, using public design systems only as structural references and never copying third-party brand visuals. Works whether the agent is Claude or Codex.
-metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Sketch Asset Generator

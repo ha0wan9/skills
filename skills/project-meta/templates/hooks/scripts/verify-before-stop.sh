@@ -46,10 +46,17 @@ advisory_exit() {
   exit 0
 }
 
-# Resolve project-meta's install dir containing the sentinel script $1. Probes:
-# explicit override, personal-skill location, and the two plugin-install layouts
-# (marketplace checkout + version cache). Existence-checked on the sentinel, so
-# an older installed copy that lacks it is skipped. Echoes the dir, or returns 1.
+# Resolve project-meta's install dir containing the sentinel script $1. Probes
+# in priority order (first match wins):
+#   1. explicit $PROJECT_META_DIR override (baked at init — most robust)
+#   2. personal-skill locations (~/.codex/skills, ~/.claude/skills)
+#   3. marketplace checkout (full-repo clone, all versions)
+#   4. old-layout version cache: cache/<mkt>/<plugin>/<ver>/skills/project-meta/
+#      (pre-3.0 installs; <plugin> is the installing plugin, e.g. global-meta)
+#   5. new-layout (scoped) version cache: cache/<mkt>/project-meta/<ver>/
+#      (marketplace >=3.0; source="./skills/project-meta" → cache root IS skill root)
+# Existence-checked on the sentinel, so an older installed copy that lacks it
+# is skipped safely. Echoes the dir, or returns 1.
 resolve_project_meta() {
   local sentinel=$1 c
   for c in \
@@ -57,9 +64,11 @@ resolve_project_meta() {
     "$HOME/.codex/skills/project-meta" \
     "$HOME/.claude/skills/project-meta" \
     "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
-    "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
     "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-    "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta ; do
+    "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
+    "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+    "$HOME"/.codex/plugins/cache/*/project-meta/* \
+    "$HOME"/.claude/plugins/cache/*/project-meta/* ; do
     if [[ -n "$c" && -f "$c/$sentinel" ]]; then printf '%s\n' "$c"; return 0; fi
   done
   return 1

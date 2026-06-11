@@ -10,7 +10,7 @@ description: >-
   user wants to debug, root-cause, or systematically fix a non-trivial bug, a
   regression, a heisenbug, a "works locally but fails in prod" issue, or a
   post-incident root cause — even if they don't name this skill.
-metadata: {version: 1.2.2, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.3, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Meta-Debug

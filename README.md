@@ -64,7 +64,7 @@ From a git repo URL (`git@github.com:ha0wan9/skills.git` or `https://github.com/
 /plugin install openclaw-devops@ha0wan9-skills
 ```
 
-Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace.json` and copies the referenced skill directory into the user's plugin store. Skills install independently; you can install one without the other.
+Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace.json` and copies the referenced skill directory into the user's plugin store. Skills install independently; you can install one without the other. With marketplace ≥3.0 (scoped plugin sources), each install materializes **only that plugin's skill directory** — prior versions (pre-3.0 cached installs) copied the full repo until reinstalled.
 
 For users who do not use the plugin marketplace, manual install copies one skill subdirectory into the agent's skills directory:
 
@@ -177,7 +177,7 @@ skills/
         └── scripts/      # validate_asset_pack.py, render_contact_sheet.py
 ```
 
-The `skills/<name>/` flat layout mirrors `anthropics/skills` and is what `/plugin install` expects when reading `marketplace.json`.
+The `skills/<name>/` flat layout mirrors `anthropics/skills`. With the scoped plugin sources in marketplace ≥3.0, each plugin's `source` points directly at `./skills/<name>/` so `/plugin install` materializes only that skill directory rather than the full repo.
 
 ## License
 
