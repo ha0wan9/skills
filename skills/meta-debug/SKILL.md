@@ -10,7 +10,7 @@ description: >-
   user wants to debug, root-cause, or systematically fix a non-trivial bug, a
   regression, a heisenbug, a "works locally but fails in prod" issue, or a
   post-incident root cause — even if they don't name this skill.
-metadata: {version: 1.2.1, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.2, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Meta-Debug
@@ -73,7 +73,7 @@ critic-scores, and the closing lesson are tracked by `scripts/debug_session.py`.
 | Debug / root-cause / systematically fix a bug | **meta-debug** | acts (runs the pipeline) |
 | *How* to read/lay out repo memory, the multi-agent dispatch contract, promoting a lesson into canonical memory, repo harness bootstrap | **project-meta** | meta-debug **delegates** to it: phase 1 reads memory in project-meta layout, phase 6 dispatches workers via project-meta's multi-agent protocol, phase 9 promotes lessons via project-meta's CRUD rules. Run `/project-meta init` first if no harness exists. |
 | Maintaining an OpenClaw install, or the concrete reproduce/verify/rollback mechanics for an OpenClaw bug (phase 0 mitigate, phase 8 canary/revert) | **openclaw-devops** | meta-debug calls its `rollback`/`verify`/`sanity` as the OpenClaw backing for those phases; openclaw-devops owns the maintenance actions, meta-debug owns the debug workflow. |
-| Config-root corruption / incident root-cause (registry wipe, marketplace corruption, scope drift, stale plugin keys) — surfaced by the config-root lifecycle skill's `audit` verb and handed off as a case file | **meta-debug** | acts — runs the full gated pipeline; the audit skill reports findings and hands off the case file, then defers; it never root-causes, only audits and hands off. *(Reciprocal row lives in the config-root lifecycle skill's arbitration table — DASH-039.)* |
+| Config-root corruption / incident root-cause (registry wipe, marketplace corruption, scope drift, stale plugin keys) — surfaced by `global-meta`'s `audit` verb and handed off as a case file | **meta-debug** | acts — runs the full gated pipeline; `global-meta audit` reports findings and hands off the case file, then defers; it never root-causes, only audits and hands off. |
 
 meta-debug owns the *debugging workflow*; project-meta owns the *harness* the
 workflow reads from and writes back to. They compose — meta-debug never

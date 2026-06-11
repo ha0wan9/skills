@@ -49,7 +49,7 @@
     },
     {
       "name": "global-meta",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -59,7 +59,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin \u2014 all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE \u2014 create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed, see proposals/global-meta.md) \u2014 status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
+      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin \u2014 all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE \u2014 create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status \u2014 read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit \u2014 four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; snapshot/restore \u2014 ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) \u2014 drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -150,7 +150,7 @@
     },
     {
       "name": "meta-debug",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "metadata": {
         "compat": [
           "claude-code",
