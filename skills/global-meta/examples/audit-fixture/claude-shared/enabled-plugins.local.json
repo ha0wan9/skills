@@ -1,0 +1,8 @@
+{
+  "enabledPlugins": {
+    "alpha-plugin@test-mkt": true,
+    "beta-plugin@test-mkt": true,
+    "gamma-plugin@test-mkt": true,
+    "retired-plugin@test-mkt": true
+  }
+}

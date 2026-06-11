@@ -1,0 +1,44 @@
+{
+  "plugins": {
+    "alpha-plugin@test-mkt": [
+      {
+        "scope": "local",
+        "projectPath": "/Users/HaoranWang",
+        "installPath": "claude-shared/plugins/cache/test-mkt/alpha-plugin/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-06-01T00:00:00.000Z",
+        "lastUpdated": "2026-06-01T00:00:00.000Z",
+        "gitCommitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "scope": "user",
+        "installPath": "claude-shared/plugins/cache/test-mkt/alpha-plugin/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-06-02T00:00:00.000Z",
+        "lastUpdated": "2026-06-02T00:00:00.000Z",
+        "gitCommitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "beta-plugin@test-mkt": [
+      {
+        "scope": "user",
+        "installPath": "claude-shared/plugins/cache/test-mkt/beta-plugin/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-06-01T00:00:00.000Z",
+        "lastUpdated": "2026-06-01T00:00:00.000Z",
+        "gitCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "gamma-plugin@test-mkt": [
+      {
+        "scope": "local",
+        "projectPath": "/Users/HaoranWang",
+        "installPath": "claude-shared/plugins/cache/test-mkt/gamma-plugin/1.2.0",
+        "version": "1.2.0",
+        "installedAt": "2026-06-01T00:00:00.000Z",
+        "lastUpdated": "2026-06-01T00:00:00.000Z",
+        "gitCommitSha": "cccccccccccccccccccccccccccccccccccccccc"
+      }
+    ]
+  }
+}

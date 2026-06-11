@@ -1,7 +1,7 @@
 ---
 name: global-meta
 description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed, see proposals/global-meta.md) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 1.0.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.0.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -116,6 +116,7 @@ If arbitration is unclear, ask before acting. Never silently invoke two skills.
 ## Examples
 
 - [`examples/sample-profile/`](examples/sample-profile/README.md) — dual-runtime `create` reference run.
+- [`examples/audit-fixture/`](examples/audit-fixture/README.md) + [`examples/audit-fixture-clean/`](examples/audit-fixture-clean/README.md) — seeded/clean config-root fixtures for the roadmap `audit` verb (acceptance data for DASH-033/034; see `docs/plans/global-meta-lifecycle-build-plan.md`).
 
 ## Output Footer
 

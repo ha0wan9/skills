@@ -1,0 +1,3 @@
+#!/bin/sh
+# fixture launcher — health check target only, never executed by the audit
+CLAUDE_CONFIG_DIR="$HOME/.claude-work" exec claude "$@"
