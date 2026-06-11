@@ -127,7 +127,7 @@ Fixtures:
 
 - Workers: Sonnet, in git worktrees, one item each; Lead (this session) reviews + lands sequentially.
 - Version bumps: DASH-039 → global-meta **1.1.0**; DASH-040 → **1.2.0**; DASH-043 already carries marketplace 2.0.2; DASH-044 → project-meta patch + meta-debug patch.
-- `config_root_audit.py` exit codes: 0 clean · 1 findings · 2 error. Stdlib only. Findings print as ready-to-run `board.py inbox-add` lines (capture, not auto-write). **Exact capture-line contract** (the §6 assertion greps for the prefix): `python3 skills/project-meta/scripts/board.py inbox-add --title "<code>: <one-line finding>" --source "config_root_audit"` — one line per finding, `<code>` ∈ {F1..F4 classes or future codes}.
+- `config_root_audit.py` exit codes: 0 clean · 1 findings · 2 error. Stdlib only. Findings print as ready-to-run `board.py inbox-add` lines (capture, not auto-write). **Exact capture-line contract** (the §6 assertion greps for the prefix `python3 skills/project-meta/scripts/board.py inbox-add --title `): `python3 skills/project-meta/scripts/board.py inbox-add --title <shlex-quoted '<code>: <one-line finding>'> --source config_root_audit` — one line per finding, `<code>` ∈ {F1..F4 classes or future codes}; the title is shell-escaped via `shlex.quote` because registry keys are untrusted input (review finding, PR #47).
 - Snapshot ledger location: `~/.claude-shared/snapshots/<UTC-ts>/` — never inside a git repo, never auto-pruned.
 - Spike verdict storage: board item body (DASH-041) + §9 of this plan; no new doc file.
 - The audit treats `claude doctor` overlap as delegation: report "covered by doctor" instead of re-checking.
@@ -154,3 +154,7 @@ Fixtures:
   Compensating change required: broaden the project-meta resolver glob (cache root = skill root
   under scoped sources) and bake `PROJECT_META_DIR` at init. Safety lesson folded into §7.2.
   DASH-042 remains 🔴 — awaiting operator approval.
+- 2026-06-11 — **PR #47 review round** (fresh adversarial reviewer): BLOCKER — capture-line
+  shell injection via untrusted registry keys → fixed with `shlex.quote` (§8 contract amended).
+  Non-blocking NB-1 (malformed store JSON must exit 2, not 1/silent) and NB-2 (`claude-shared`
+  misdetected as a profile) fixed in the same round. Acceptance battery re-run green.

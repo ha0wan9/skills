@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -69,6 +70,26 @@ def load_json(p: Path) -> dict | list | None:
         return None
 
 
+def load_store_json(p: Path, what: str, *, required: bool) -> dict | None:
+    """Strict loader for the core stores: malformed JSON is an ERROR (exit 2),
+    never a finding (exit 1) or a silent {} — the audit cannot certify a store
+    it could not parse. A missing optional store returns None."""
+    if not p.exists():
+        if required:
+            print(f"error: {what} missing: {p}", file=sys.stderr)
+            sys.exit(2)
+        return None
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"error: {what} is malformed JSON ({e.__class__.__name__}): {p}", file=sys.stderr)
+        sys.exit(2)
+    if not isinstance(data, dict):
+        print(f"error: {what} is not a JSON object: {p}", file=sys.stderr)
+        sys.exit(2)
+    return data
+
+
 def resolve_install_path(raw: str, config_home: Path) -> Path:
     """Relative installPath values resolve against config_home."""
     p = Path(raw)
@@ -87,6 +108,10 @@ def find_profiles(config_home: Path) -> list[dict]:
     for item in sorted(config_home.iterdir()):
         name = item.name
         if not item.is_dir():
+            continue
+        # The shared plugin store is NOT a profile (it has no settings.json and
+        # would otherwise register as a bogus "shared" profile).
+        if name in {".claude-shared", "claude-shared", ".codex-shared", "codex-shared"}:
             continue
         # Match .claude, .claude-<name>, .codex, .codex-<name>
         # AND dotless equivalents: claude, claude-<name>, codex, codex-<name>
@@ -271,13 +296,11 @@ def _audit_findings(
     findings = []
 
     reg_path = stores["installed_plugins"]
-    reg = load_json(reg_path)
-    if reg is None:
-        return [{"code": "error", "message": f"Cannot read registry: {reg_path}"}]
-    plugins_reg = reg.get("plugins", {}) if isinstance(reg, dict) else {}
+    reg = load_store_json(reg_path, "plugin registry", required=True)
+    plugins_reg = reg.get("plugins", {})
 
     enabled_path = stores["enabled_plugins"]
-    enabled_data = load_json(enabled_path) or {}
+    enabled_data = load_store_json(enabled_path, "enabled-plugins store", required=False) or {}
     enabled_keys = set((enabled_data.get("enabledPlugins", {}) or {}).keys())
 
     cache_root = stores["cache_root"]
@@ -464,9 +487,11 @@ def cmd_audit(args: argparse.Namespace) -> int:
         code = f.get("code", "unknown")
         plugin = f.get("plugin", f.get("launcher", ""))
         title_body = f"{code}: {plugin}" if plugin else f"{code}: {f.get('message', '')[:60]}"
+        # shlex.quote: registry/enablement keys are untrusted input — a crafted
+        # plugin name must not become shell injection when the line is pasted.
         print(
             f"python3 skills/project-meta/scripts/board.py inbox-add "
-            f'--title "{title_body}" --source "config_root_audit"'
+            f"--title {shlex.quote(title_body)} --source config_root_audit"
         )
 
     return 1
