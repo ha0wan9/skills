@@ -25,7 +25,7 @@ Use this skill for any of these triggers:
 - Iteration trigger: a project lesson, failure, review finding, or recurring workflow should become durable guidance.
 - Coordination trigger: the user explicitly asks for multi-agent work, or task complexity warrants planning, delegated execution, and review.
 - User-preference trigger: the user asks to create, reset, or change local `USER.md` options.
-- Settings trigger: the user asks to view or change the harness enforcement profile (`HARNESS_PROFILE`) or to enable/disable an optional capability (hooks, phase-lock, multi-host, issue-tracker) after init — route to `settings`, not a full `init`.
+- Settings trigger: the user asks to view or change the harness enforcement profile (`HARNESS_PROFILE`) or to enable/disable an optional capability (hooks, phase-lock, multi-host, issue-tracker, code-graph) after init — route to `settings`, not a full `init`.
 
 Do not use the skill for ordinary implementation work that does not touch project memory, operating rules, coordination, or durable knowledge.
 
@@ -192,6 +192,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
 - Wiring a repo to an external issue tracker (Linear/GitHub/Jira) so feature work is mirrored — check-first / write-progress-back / open-if-missing — or installing/auditing the `issue-tracker` capability and its advisory reminder hook:
   - load [`references/issue-tracking-integration.md`](references/issue-tracking-integration.md), then instantiate [`templates/issue-tracking.md`](templates/issue-tracking.md). Install via `/project-meta init --issue-tracker <tracker>` or `/project-meta settings enable issue-tracker`.
+- Wiring a repo to an external code-knowledge-graph engine for token-efficient code navigation (code-graph capability), or installing/auditing it:
+  - load [`references/code-graph-integration.md`](references/code-graph-integration.md), then instantiate [`templates/code-graph.md`](templates/code-graph.md). Install via `/project-meta init --code-graph` or `/project-meta settings enable code-graph`.
 - Adding/reading/updating/deleting Project Board items, or wiring board enforcement (the store is CLI-managed; the dashboard + Harness tab are derived):
   - load [`references/project-board-crud.md`](references/project-board-crud.md) — the CRUD contract (`board.py` is the only writer; verb→CRUD map; integrity invariants; the optional `board-guard` hook). Scaffold via `/project-meta init --board`.
 - Mirroring Project Board rows to Linear:

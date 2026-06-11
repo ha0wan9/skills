@@ -37,6 +37,7 @@ REQUIRED_REFERENCES = {
     "references/harness-engineering.md",
     "references/multi-agent-protocols.md",
     "references/review-tier.md",
+    "references/code-graph-integration.md",
 }
 
 REQUIRED_TEMPLATES = {

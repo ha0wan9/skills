@@ -48,6 +48,9 @@ None by default. Lazy-load only when status detection surfaces something needing
    - Hooks installed? (`<repo>/.claude/hooks/` + settings.json)
    - Phase-lock contract installed? (`agents/phase-lock-contract.md` + `.harness/`)
    - Multi-host manifests present?
+   - **Code-graph capability present?** (`agents/code-graph.md`) — if so, check it is routed from
+     canonical memory (AGENTS.md / CLAUDE.md contains a pointer to `agents/code-graph.md`); report
+     on / off / half-installed. A doc without routing is a half-install — report as such.
    - **Project Board present?** (`docs/backlog/items.jsonl`) — if so, surface it read-only:
      `python3 scripts/board.py tx --root .` (integrity + item count + roadmap rev) and, for the
      version timeline, `python3 scripts/board.py list --root . --version <vX>`. Never mutate
