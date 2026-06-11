@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.13.1",
+      "version": "1.14.0",
       "metadata": {
         "compat": [
           "claude-code",
