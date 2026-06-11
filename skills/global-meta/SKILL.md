@@ -1,7 +1,7 @@
 ---
 name: global-meta
-description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 1.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
+description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix — write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
+metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -27,6 +27,10 @@ this version ships the `create` verb.
 - **Audit / consistency check** (LIVE): user asks to audit, find inconsistencies,
   check plugin hygiene, or identify stale/wrong-scope/duplicate/mismatched-cache
   entries. → `config_root_audit.py audit`
+- **Emit remediation script** (LIVE): user wants a reviewable script to fix audit
+  findings without running blind; combine with `audit --emit-fix <path>` then
+  review the script before running `--apply`. →
+  `config_root_audit.py audit --emit-fix <path>`
 - **Snapshot / restore** (LIVE): user asks to snapshot the three config stores or
   restore from a snapshot. → `config_root_audit.py snapshot|restore`
 - **Config-root corruption / incident root-cause** (ARBITRATE): `audit` reports
@@ -115,6 +119,14 @@ If arbitration is unclear, ask before acting. Never silently invoke two skills.
 5. **Remind the user**: open a fresh terminal and run `claude-<name>` / `codex-<name>`.
 6. **Never** run plugin marketplace add/update from the new profile — use `ccplug`.
 7. **Lifecycle request?** Route to the proposal; do not improvise audit/drift/reconcile.
+8. **Fix audit findings** — emit a reviewable script first, then apply:
+   ```bash
+   python3 skills/global-meta/scripts/config_root_audit.py audit \
+     --config-home $HOME --home-dir $HOME --spec-marketplace <mkt> \
+     --emit-fix /tmp/fix.sh
+   /bin/bash /tmp/fix.sh          # dry-run: review plan
+   /bin/bash /tmp/fix.sh --apply  # apply (operator-run only; snapshots first)
+   ```
 
 ## When To Load References
 
