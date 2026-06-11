@@ -1,7 +1,7 @@
 ---
 name: global-meta
-description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Supersedes profile-creator. LIVE now — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed, see proposals/global-meta.md) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 0.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
+description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed, see proposals/global-meta.md) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
+metadata: {version: 1.0.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -11,8 +11,9 @@ metadata: {version: 0.1.0, compat: [claude-code, codex], published: [claude-mark
 
 User/global-scope counterpart to `project-meta`: it manages the user's **config
 root** — `~/.claude`, `~/.codex`, and every `~/.claude-<name>` / `~/.codex-<name>`
-profile. It **absorbs and supersedes `profile-creator`** (now dual-runtime). The
-broader audit/evolve lifecycle is designed in [`proposals/global-meta.md`](../project-meta/proposals/global-meta.md);
+profile. It **absorbed and replaced `profile-creator`** (retired from the
+marketplace; the claude leg is unchanged, now dual-runtime). The broader
+audit/evolve lifecycle is designed in [`proposals/global-meta.md`](../project-meta/proposals/global-meta.md);
 this version ships the `create` verb.
 
 ## Trigger Decision
@@ -69,7 +70,7 @@ asks for `--isolated`. The claude leg reproduces former `profile-creator` behavi
 | Request shape | Owner | global-meta's role |
 |---|---|---|
 | Create / manage a user config profile (Claude or Codex) | **`global-meta`** | acts |
-| Create a Claude profile (legacy `/profile-creator`) | **`global-meta create`** | absorbs; `profile-creator` is a deprecation stub |
+| Create a Claude profile (legacy `/profile-creator`) | **`global-meta create`** | absorbed; the `profile-creator` plugin is retired — this skill owns the trigger |
 | Repo harness (`.claude/` in a repo, `AGENTS.md`, repo memory) | `project-meta` | defer; reuse its engine |
 | Edit a single `settings.json` value/hook in isolation | `update-config` | delegate the leaf edit |
 | Multi-agent orchestration *execution* (subagents, workflows, effort) | the runtime engine ("scripted-engine tier") — not a skill | own policy, delegate mechanism; never re-implement — AP-COORD-7 |

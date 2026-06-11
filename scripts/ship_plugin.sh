@@ -182,6 +182,8 @@ PY
 # plugin (root/infra only) must bump the marketplace metadata.version instead.
 # A brand-new plugin (absent on the base branch) passes on first appearance with
 # any valid semver — there is no base version to exceed.
+# A REMOVED plugin (manifest entry and skills/<name>/ dir both gone) is a retirement,
+# not a missing bump; the covering bump is the marketplace metadata.version.
 cmd_check_version() {
   local plugins; plugins="$(_changed_plugins || true)"
   python3 - "$REPO_ROOT" "$BASE_BRANCH" "$plugins" <<'PY'
@@ -213,12 +215,22 @@ def higher(name):
         return True             # new plugin: first appearance with a valid version IS the bump
     return c > b
 
-fails = []
+fails, removed = [], []
 if changed:
     for name in changed:
+        # Manifest entry AND skill dir both gone → the plugin was retired, not
+        # left unbumped. Dir-still-present falls through to the normal failure
+        # (an unregistered skill dir is drift, not a removal).
+        if ver(cur, name) is None and not os.path.isdir(os.path.join(root, "skills", name)):
+            removed.append(name)
+            continue
         if not higher(name):
             fails.append(f"plugin '{name}' version not bumped ({ver(base,name)} -> {ver(cur,name)}); "
                          f"run: ship_plugin.sh bump {name} <major|minor|patch>")
+    if removed and not higher("marketplace"):
+        fails.append(f"plugin removal ({', '.join(removed)}) requires a marketplace version bump "
+                     f"({ver(base,'marketplace')} -> {ver(cur,'marketplace')}); "
+                     f"run: ship_plugin.sh bump marketplace <major|minor|patch>")
 else:
     if not higher("marketplace"):
         fails.append(f"no plugin changed and marketplace version not bumped "
@@ -228,8 +240,10 @@ else:
 if fails:
     print("check-version: FAIL\n  - " + "\n  - ".join(fails), file=sys.stderr)
     sys.exit(1)
-tgt = ", ".join(changed) if changed else "marketplace"
-print(f"check-version: ok ({tgt} bumped)", file=sys.stderr)
+live = [n for n in changed if n not in removed]
+tgt = ", ".join(live) if live else "marketplace"
+note = f"; removed: {', '.join(removed)}" if removed else ""
+print(f"check-version: ok ({tgt} bumped{note})", file=sys.stderr)
 PY
 }
 
@@ -326,6 +340,15 @@ cmd_reload() {
   local n failed=0
   for n in "$@"; do
     [[ -n "$n" ]] || continue
+    # A name no longer in the manifest is a RETIRED plugin: the marketplace no longer
+    # offers it, so a reinstall would fail. Remove the local install instead
+    # (best-effort — it may never have been installed on this machine).
+    if ! python3 -c 'import json,sys; d=json.load(open(".claude-plugin/marketplace.json")); sys.exit(0 if any(p.get("name")==sys.argv[1] for p in d.get("plugins",[])) else 1)' "$n"; then
+      info "plugin $n is gone from the manifest (retired) — uninstalling locally"
+      claude plugin uninstall "$n@$MARKETPLACE" \
+        || info "uninstall $n@$MARKETPLACE non-zero (may not be installed locally)"
+      continue
+    fi
     # `claude plugin update` is a no-op when the manifest version is unchanged, so a
     # same-version edit never re-materializes the cache (it reports "already at the latest
     # version" and the stale copy under .../plugins/cache/<mkt>/<plugin>/<version>/ stands).
