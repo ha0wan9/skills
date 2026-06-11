@@ -27,7 +27,8 @@
 #   changed-plugins     print the plugin names touched vs the base branch (one per line)
 #   open "<title>"      stage all, commit if there are changes, push branch, open/echo PR
 #   land [--no-reload]  merge the current branch's PR if clean, then reload changed plugins
-#   reload [names...]   refresh local install: marketplace update + reinstall (per name)
+#   reload [names...]   refresh local install: marketplace update + scope-aware reinstall
+#                       (each plugin re-lands at its recorded scope/projectPath)
 #
 # Env overrides: BASE_BRANCH (default main), MARKETPLACE (default ha0wan9-skills),
 #                MERGE_FLAGS (default "--squash --delete-branch").
@@ -332,6 +333,85 @@ cmd_land() {
   fi
 }
 
+# --- scope-aware reload helpers ----------------------------------------------
+# `claude plugin uninstall`/`install` default to --scope user, but installs on this
+# machine may be recorded at LOCAL scope (scope:"local" + projectPath in
+# installed_plugins.json). A scope-blind uninstall misses those, and the follow-up
+# install then lands a user-scope DUPLICATE next to the stale local record —
+# registry drift that needed manual re-convergence after every land. Reload
+# therefore refreshes each plugin AT its recorded scope, running local/project-scope
+# work from the recorded projectPath (the CLI keys those scopes to its cwd).
+
+# _plugin_records <name> — registry lookup for <name>@$MARKETPLACE. Prints one
+# "record<TAB>scope<TAB>projectPath" line per install record, local-scope rows
+# first (the first row is the one reload refreshes; extra rows are drift). A plugin
+# with NO record prints a single "sibling<TAB>scope<TAB>projectPath" row carrying
+# the dominant scope of the other plugins from this marketplace — a brand-new
+# plugin should land where its siblings live, not at the CLI's user-scope default.
+# Prints nothing when the registry is missing or holds no marketplace records.
+# The registry path is resolved through symlinks: shared-store setups point
+# ~/.claude/plugins at a common store (e.g. ~/.claude-shared/plugins).
+_plugin_records() {
+  python3 - "$1" "$MARKETPLACE" <<'PY'
+import json, os, sys
+from collections import Counter
+name, mkt = sys.argv[1], sys.argv[2]
+cfg = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+reg = os.path.realpath(os.path.join(cfg, "plugins", "installed_plugins.json"))
+try:
+    with open(reg) as f:
+        plugins = json.load(f).get("plugins", {})
+except (OSError, ValueError):
+    sys.exit(0)
+recs = plugins.get("%s@%s" % (name, mkt)) or []
+if recs:
+    for r in sorted(recs, key=lambda r: r.get("scope") != "local"):
+        print("record\t%s\t%s" % (r.get("scope", "user"), r.get("projectPath", "")))
+else:
+    sibs = Counter(
+        (r.get("scope", "user"), r.get("projectPath", ""))
+        for key, rs in plugins.items() if key.endswith("@" + mkt)
+        for r in (rs or []))
+    if sibs:
+        scope, proj = sibs.most_common(1)[0][0]
+        print("sibling\t%s\t%s" % (scope, proj))
+PY
+}
+
+# Local-scope plugin ops write <projectPath>/.claude/settings.local.json. In a
+# shared-enablement setup that file is a SYMLINK (e.g. -> ~/.claude-shared/
+# enabled-plugins.local.json) and the CLI refuses symlink writes. Work around it:
+# park the link, give the CLI a real copy, then push the (possibly CLI-edited)
+# copy back into the link target and restore the link. The EXIT trap guarantees
+# the link comes back even if a CLI call dies mid-window.
+_PARK_LINK=""
+_PARK_TARGET=""
+_park_settings() {  # $1 = projectPath; no-op unless settings.local.json is a symlink
+  local s="$1/.claude/settings.local.json"
+  [[ -L "$s" ]] || return 0
+  _PARK_TARGET="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$s")"
+  mv "$s" "$s.symlink-parked"
+  _PARK_LINK="$s"
+  trap _unpark_settings EXIT
+  if ! cp "$_PARK_TARGET" "$s"; then
+    _PARK_LINK=""
+    mv "$s.symlink-parked" "$s"
+    die "settings.local.json symlink target unreadable ($_PARK_TARGET); aborted before any uninstall"
+  fi
+  info "parked settings.local.json symlink under $1 (CLI refuses symlink writes)"
+}
+_unpark_settings() {
+  [[ -n "$_PARK_LINK" ]] || return 0
+  local s="$_PARK_LINK"
+  _PARK_LINK=""
+  # Keep enablement edits the CLI made inside the window: sync the working copy
+  # back into the shared target before swapping the symlink back in.
+  if [[ -f "$s" ]]; then cp "$s" "$_PARK_TARGET"; fi
+  rm -f "$s"
+  mv "$s.symlink-parked" "$s"
+  info "restored settings.local.json symlink ($s)"
+}
+
 cmd_reload() {
   info "updating marketplace: $MARKETPLACE"
   # A failed marketplace update leaves a STALE cache: the install below would silently
@@ -339,36 +419,131 @@ cmd_reload() {
   # a reload from a stale cache is worse than no reload (memory: ship-reload-stale-cache-trap).
   claude plugin marketplace update "$MARKETPLACE" \
     || die "marketplace update failed — cache is stale; aborting reload (re-run after fixing connectivity/auth)"
-  local n failed=0
+  local n recs primary kind scope proj dup mode failed=0
+  local scoped_jobs=""   # one line per scoped job: projectPath \t name \t scope \t mode \t dup
   for n in "$@"; do
     [[ -n "$n" ]] || continue
+    recs="$(_plugin_records "$n")"
+    primary="$(printf '%s\n' "$recs" | head -n 1)"
+    kind="${primary%%$'\t'*}"
+    primary="${primary#*$'\t'}"
+    scope="${primary%%$'\t'*}"
+    proj="${primary#*$'\t'}"
+    # Older scope-blind reloads left user-scope duplicates next to local records;
+    # remember to drop the dup once the real record is refreshed.
+    dup=0
+    if [[ "$kind" == "record" && "$scope" != "user" ]] \
+        && printf '%s\n' "$recs" | grep -q $'^record\tuser\t'; then
+      dup=1
+    fi
+
     # A name no longer in the manifest is a RETIRED plugin: the marketplace no longer
     # offers it, so a reinstall would fail. Remove the local install instead
     # (best-effort — it may never have been installed on this machine).
     if ! python3 -c 'import json,sys; d=json.load(open(".claude-plugin/marketplace.json")); sys.exit(0 if any(p.get("name")==sys.argv[1] for p in d.get("plugins",[])) else 1)' "$n"; then
-      info "plugin $n is gone from the manifest (retired) — uninstalling locally"
-      claude plugin uninstall "$n@$MARKETPLACE" \
-        || info "uninstall $n@$MARKETPLACE non-zero (may not be installed locally)"
+      if [[ "$kind" != "record" ]]; then
+        info "plugin $n is retired and not installed locally — nothing to remove"
+      elif [[ -n "$proj" ]]; then
+        scoped_jobs+="${proj}"$'\t'"${n}"$'\t'"${scope}"$'\t'retired$'\t'"${dup}"$'\n'
+      else
+        info "plugin $n is gone from the manifest (retired) — uninstalling locally (--scope $scope)"
+        claude plugin uninstall "$n@$MARKETPLACE" --scope "$scope" \
+          || info "uninstall $n@$MARKETPLACE non-zero (may not be installed locally)"
+      fi
       continue
     fi
+
     # `claude plugin update` is a no-op when the manifest version is unchanged, so a
     # same-version edit never re-materializes the cache (it reports "already at the latest
     # version" and the stale copy under .../plugins/cache/<mkt>/<plugin>/<version>/ stands).
     # Reinstall instead: uninstall + install re-clones from the refreshed marketplace cache
     # and refreshes the recorded gitCommitSha. Names in installed_plugins.json are
     # marketplace-qualified, so address as <name>@<mkt> (the bare name fails "not found").
-    info "reinstalling plugin: $n@$MARKETPLACE"
-    # Uninstall is best-effort: a not-yet-installed plugin makes it exit non-zero, and the
-    # install below is what actually matters, so swallow it and proceed.
-    claude plugin uninstall "$n@$MARKETPLACE" \
-      || info "uninstall $n@$MARKETPLACE non-zero (plugin may be absent; proceeding to install)"
+    mode="live"
+    if [[ "$kind" == "sibling" ]]; then
+      mode="fresh"   # not installed yet: adopt the siblings' scope, skip the uninstall
+      info "plugin $n not installed — adopting marketplace siblings' scope (${scope}${proj:+ @ $proj})"
+    elif [[ "$kind" != "record" ]]; then
+      # No record and no siblings either: nothing to imitate — plain install at the
+      # CLI default (user scope).
+      info "installing plugin: $n@$MARKETPLACE (no local records; CLI default scope)"
+      if ! claude plugin install "$n@$MARKETPLACE"; then
+        info "ERROR: install $n@$MARKETPLACE failed"
+        failed=1
+      fi
+      continue
+    fi
+    if [[ -z "$proj" && "$scope" != "user" ]]; then
+      info "ERROR: $n has a $scope-scope record with no projectPath (malformed registry); skipping — fix installed_plugins.json manually"
+      failed=1
+      continue
+    fi
+
+    if [[ -n "$proj" ]]; then
+      scoped_jobs+="${proj}"$'\t'"${n}"$'\t'"${scope}"$'\t'"${mode}"$'\t'"${dup}"$'\n'
+      continue
+    fi
+
+    # User-scope record (no projectPath): reinstall in place, scope made explicit.
+    info "reinstalling plugin: $n@$MARKETPLACE (--scope $scope)"
+    if [[ "$mode" == "live" ]]; then
+      # Uninstall is best-effort: a not-yet-installed plugin makes it exit non-zero, and
+      # the install below is what actually matters, so swallow it and proceed.
+      claude plugin uninstall "$n@$MARKETPLACE" --scope "$scope" \
+        || info "uninstall $n@$MARKETPLACE non-zero (plugin may be absent; proceeding to install)"
+    fi
     # Install is load-bearing: if it fails after a successful uninstall the plugin is now
     # GONE locally — surface loudly and mark the reload failed rather than swallowing it.
-    if ! claude plugin install "$n@$MARKETPLACE"; then
+    if ! claude plugin install "$n@$MARKETPLACE" --scope "$scope"; then
       info "ERROR: install $n@$MARKETPLACE failed — plugin may now be UNINSTALLED locally; reinstall it manually"
       failed=1
     fi
   done
+
+  # Scoped (local/project) jobs, grouped per projectPath so the settings.local.json
+  # symlink dance happens once per project, not once per plugin.
+  if [[ -n "$scoped_jobs" ]]; then
+    local p jproj jname jscope jmode jdup
+    while IFS= read -r p; do
+      [[ -n "$p" ]] || continue
+      if [[ ! -d "$p" ]]; then
+        info "ERROR: recorded projectPath missing: $p — skipping its plugins"
+        failed=1
+        continue
+      fi
+      _park_settings "$p"
+      while IFS=$'\t' read -r jproj jname jscope jmode jdup; do
+        [[ "$jproj" == "$p" ]] || continue
+        if [[ "$jmode" == "retired" ]]; then
+          info "plugin $jname is gone from the manifest (retired) — uninstalling (--scope $jscope @ $p)"
+          (cd "$p" && claude plugin uninstall "$jname@$MARKETPLACE" --scope "$jscope") \
+            || info "uninstall $jname@$MARKETPLACE non-zero (may not be installed locally)"
+          continue
+        fi
+        info "reinstalling plugin: $jname@$MARKETPLACE (--scope $jscope @ $p)"
+        if [[ "$jmode" == "live" ]]; then
+          # Uninstall is best-effort: a not-yet-installed plugin makes it exit non-zero,
+          # and the install below is what actually matters, so swallow it and proceed.
+          (cd "$p" && claude plugin uninstall "$jname@$MARKETPLACE" --scope "$jscope") \
+            || info "uninstall $jname@$MARKETPLACE non-zero (plugin may be absent; proceeding to install)"
+        fi
+        # Install is load-bearing: if it fails after a successful uninstall the plugin is
+        # now GONE locally — surface loudly and mark the reload failed, not swallowed.
+        if ! (cd "$p" && claude plugin install "$jname@$MARKETPLACE" --scope "$jscope"); then
+          info "ERROR: install $jname@$MARKETPLACE failed — plugin may now be UNINSTALLED locally; reinstall it manually"
+          failed=1
+        elif [[ "$jdup" == "1" ]]; then
+          # Drift left by older scope-blind reloads: a user-scope duplicate shadowing
+          # the real record. Drop it now that the real record is refreshed.
+          info "dropping stale user-scope duplicate of $jname"
+          claude plugin uninstall "$jname@$MARKETPLACE" --scope user \
+            || info "could not drop user-scope dup of $jname (clean up manually)"
+        fi
+      done <<< "$scoped_jobs"
+      _unpark_settings
+    done <<< "$(printf '%s' "$scoped_jobs" | cut -f1 | sort -u)"
+  fi
+
   [[ "$failed" == "0" ]] \
     || die "one or more plugins failed to reinstall (see above); fix them before restarting Claude Code"
   info "reload done — restart Claude Code to apply updated plugins"
