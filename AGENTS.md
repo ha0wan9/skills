@@ -149,7 +149,7 @@ loop (release tagging, bulk refactors, destructive history rewrites) fall back t
 ## Adding A New Skill
 
 1. Create `skills/<new-skill-name>/SKILL.md` with name + description frontmatter. The `SKILL.md` `description` is the **canonical** description for the skill.
-2. Add a plugin entry to `.claude-plugin/marketplace.json` with `name`, `version`, `description`, `source: "./"`, `strict: false`, and `skills: ["./skills/<new-skill-name>"]`. The plugin `description` MUST be copied **verbatim** from the skill's `SKILL.md` frontmatter — do not paraphrase. This keeps install-time discovery and trigger-time matching in sync (drift here is how the manifest goes stale).
+2. Add a plugin entry to `.claude-plugin/marketplace.json` with `name`, `version`, `description`, `source: "./skills/<new-skill-name>"`, `strict: false`, and `skills: ["./"]`. For skills that also ship agent definitions, list them as `agents: ["./agents/<file>.md"]` (paths are relative to `source`). The plugin `description` MUST be copied **verbatim** from the skill's `SKILL.md` frontmatter — do not paraphrase. This keeps install-time discovery and trigger-time matching in sync (drift here is how the manifest goes stale).
 3. Update this `AGENTS.md` and `README.md` with the new skill in the routing table, and refresh the marketplace `metadata.description` to mention the new plugin.
 4. If the new skill needs a dev validator, place it under top-level `scripts/`, not inside `skills/<name>/`, so it is not shipped.
 5. When a skill's `SKILL.md` description changes, re-copy it into the matching `marketplace.json` plugin `description` in the same change.

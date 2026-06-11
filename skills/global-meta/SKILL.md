@@ -1,7 +1,7 @@
 ---
 name: global-meta
 description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix — write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 1.2.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -73,7 +73,7 @@ engine (user-gated). Reference it generically ("scripted-engine tier").
 co-writers; global-meta audits/promotes across lanes, never claims sole authorship.
 
 **MUST delegate harness logic to `project-meta`, never vendor.** Resolve it
-(`$PROJECT_META_DIR` → `~/.claude/skills/project-meta` → `~/.claude/plugins/*/*/*/skills/project-meta`)
+(`$PROJECT_META_DIR` → `~/.claude/skills/project-meta` → `~/.claude/plugins/{marketplaces/*/skills,cache/*/*/*/skills,cache/*/project-meta/*}/project-meta`)
 and call its scripts; carry a thin floor if absent. See
 `project-meta/references/shared-cli-delegation.md`.
 
