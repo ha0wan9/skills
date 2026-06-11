@@ -9,7 +9,7 @@
 > - `settings enable/disable` — **CUT** (update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script).
 > - `track` (dotfiles git) — **DEFERRED** (snapshot ledger covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay).
 > - `deliver` — **unchanged** (reuses project-meta deliver as specified).
-> **Board items:** DASH-039 (`status`+`audit` v1.1), DASH-040 (`reconcile`→`audit --emit-fix` v1.2), DASH-041/036 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
+> **Board items:** DASH-039 (`status`+`audit` v1.1), DASH-040 (`reconcile`→`audit --emit-fix` v1.2), DASH-041 + DASH-042 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
 > **Build plan:** `docs/plans/global-meta-lifecycle-build-plan.md`.
 > **Scope:** a new top-level skill `skills/global-meta/` that **absorbs and deprecates `profile-creator`**, adds the
 > audit/drift/reconcile/track lifecycle for Claude *and* Codex config roots, and reuses `project-meta` as its root engine.
