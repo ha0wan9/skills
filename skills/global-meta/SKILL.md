@@ -1,7 +1,7 @@
 ---
 name: global-meta
-description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed). ROADMAP (proposed, see proposals/global-meta.md) — status/audit/drift/reconcile/settings/track for cross-profile drift, hook/skill/plugin hygiene, context-tax, and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 1.0.1, compat: [claude-code, codex], published: [claude-marketplace]}
+description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
+metadata: {version: 1.1.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -21,18 +21,29 @@ this version ships the `create` verb.
 - **Create a profile** (LIVE): user asks to create / add / spin up a new Claude
   *or* Codex profile, config dir, or launcher (`claude-<name>` / `codex-<name>`),
   or to clone/seed one from an existing profile.
-- **Manage the global config** (ROADMAP): user asks to inventory, audit, diff, or
-  reconcile their global config across profiles, check hook/skill/plugin hygiene
-  or context-tax, or put `~/.claude` under version control. → route to the
-  proposal; do not improvise the lifecycle verbs.
+- **Inventory / status** (LIVE): user asks to list or inspect profiles, plugins,
+  hooks, launchers, or context-tax across their global config root. →
+  `config_root_audit.py status`
+- **Audit / consistency check** (LIVE): user asks to audit, find inconsistencies,
+  check plugin hygiene, or identify stale/wrong-scope/duplicate/mismatched-cache
+  entries. → `config_root_audit.py audit`
+- **Snapshot / restore** (LIVE): user asks to snapshot the three config stores or
+  restore from a snapshot. → `config_root_audit.py snapshot|restore`
+- **Config-root corruption / incident root-cause** (ARBITRATE): `audit` reports
+  findings and produces a case file; hand off to `meta-debug` for root-causing.
+  See Skill Arbitration table below.
+- **Drift / reconcile / settings / dotfiles git** (ROADMAP): user asks to diff or
+  reconcile cross-profile settings, or put `~/.claude` under version control. →
+  route to the proposal; do not improvise these lifecycle verbs.
 
 ## Bootstrap Order
 
 1. Read this file (always).
 2. For `create` mechanics / manual recovery: load [`references/create-profile.md`](references/create-profile.md).
 3. To scaffold: invoke [`scripts/create_profile.py`](scripts/create_profile.py) (see Quick Workflow).
-4. Launcher bodies: `templates/launcher-{simple,isolated}.sh` — load only if generating by hand.
-5. For any harness reuse (memory, provenance, mirrors, validators): resolve
+4. For `status` / `audit` / `snapshot` / `restore`: invoke [`scripts/config_root_audit.py`](scripts/config_root_audit.py) (see Quick Workflow).
+5. Launcher bodies: `templates/launcher-{simple,isolated}.sh` — load only if generating by hand.
+6. For any harness reuse (memory, provenance, mirrors, validators): resolve
    `project-meta` at runtime and delegate — see Core Rules.
 
 ## Core Rules
@@ -71,6 +82,8 @@ asks for `--isolated`. The claude leg reproduces former `profile-creator` behavi
 |---|---|---|
 | Create / manage a user config profile (Claude or Codex) | **`global-meta`** | acts |
 | Create a Claude profile (legacy `/profile-creator`) | **`global-meta create`** | absorbed; the `profile-creator` plugin is retired — this skill owns the trigger |
+| Inventory / audit / snapshot the config root | **`global-meta status/audit/snapshot`** | acts — runs `config_root_audit.py` |
+| Config-root corruption or incident root-cause | `meta-debug` | global-meta `audit` reports findings + emits a case file; hand the case file to `meta-debug` for root-causing |
 | Repo harness (`.claude/` in a repo, `AGENTS.md`, repo memory) | `project-meta` | defer; reuse its engine |
 | Edit a single `settings.json` value/hook in isolation | `update-config` | delegate the leaf edit |
 | Multi-agent orchestration *execution* (subagents, workflows, effort) | the runtime engine ("scripted-engine tier") — not a skill | own policy, delegate mechanism; never re-implement — AP-COORD-7 |
