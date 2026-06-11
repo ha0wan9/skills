@@ -1,8 +1,16 @@
 # Proposal: `global-meta` — a user/global-scope harness skill (superset of `profile-creator`, dual-runtime)
 
-> **Status:** Partially shipped — the `create` verb is **live** in `skills/global-meta/` 0.1.0
-> (profile creation for Claude + Codex); status/audit/drift/reconcile/settings/track remain
-> roadmap. Author handoff doc; supersede sections as they land.
+> **Status:** Partially shipped — the `create` verb is **live** in `skills/global-meta/` 1.0.0 (2026-06-11; `profile-creator`
+> retired from marketplace, marketplace 2.0.x). Remaining verbs: verdict written back 2026-06-11 (see below).
+> - `create` — **LIVE** since 1.0.0 (profile-creator retired 2026-06-11, marketplace 2.0.0).
+> - `status` + `audit` — **APPROVED, build as v1.1** (DASH-039; `config_root_audit.py`; four-way consistency as first-class check; snapshot ledger; context-tax report; findings as `board.py inbox-add` lines).
+> - `drift` — **FOLDED into `audit`** as a cross-profile section (2026-06-11; shared `~/.claude-shared` store eliminated most surface).
+> - `reconcile` — **SUPERSEDED by `audit --emit-fix` v1.2** (DASH-040; reviewable idempotent snapshot-guarded fix script; never auto-applies; borrowed from openclaw-devops transactional shape).
+> - `settings enable/disable` — **CUT** (update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script).
+> - `track` (dotfiles git) — **DEFERRED** (snapshot ledger covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay).
+> - `deliver` — **unchanged** (reuses project-meta deliver as specified).
+> **Board items:** DASH-039 (`status`+`audit` v1.1), DASH-040 (`reconcile`→`audit --emit-fix` v1.2), DASH-041 + DASH-042 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
+> **Build plan:** `docs/plans/global-meta-lifecycle-build-plan.md`.
 > **Scope:** a new top-level skill `skills/global-meta/` that **absorbs and deprecates `profile-creator`**, adds the
 > audit/drift/reconcile/track lifecycle for Claude *and* Codex config roots, and reuses `project-meta` as its root engine.
 > **Decisions locked (2026-06-06):** (1) absorb + deprecate `profile-creator`; (2) full Claude+Codex parity in v1;
@@ -10,6 +18,8 @@
 > **Reviewed (2026-06-06):** adversarial self-critique → aligned to the **one-sided coordination stance** — `project-meta`/
 > `global-meta` are the only bindable parties; the runtime engine and methodology plugins are *adapted to*, not bound (encoded
 > as `AP-COORD-7`). global-meta owns *policy*, delegates *mechanism*, and treats durable memory as a multi-writer set.
+> **Verdict reviewed 2026-06-11:** per-verb dispositions above; diagnosis arbitration: when `audit` surfaces a config-root
+> corruption/incident, root-causing routes to `meta-debug`; global-meta reports findings and hands off a case file.
 > **Grounding:** the gap analysis in this session (memory `global-meta-skill-gap`, `project-meta-vs-ultracode-superpowers`),
 > verified against current Claude Code behavior (settings precedence, ~26 hook events, skill context-tax, `CLAUDE_CONFIG_DIR`
 > isolation bug anthropics/claude-code#58815, hook-RCE CVE-2025-59536). Builds on the existing `profile-creator` skill and the
@@ -69,19 +79,18 @@ requirement at the *capability* level, not just the frontmatter.
 
 ## 4. Capability surface (verbs) — `project-meta`-shaped
 
-| Verb | Mode | What it does | Origin |
-|---|---|---|---|
-| `create <name> [--runtime claude\|codex] [--isolated] [--seed-from]` | editing | scaffold a profile: dir, plugins symlink, launcher, optional memory seed | **absorbed from `profile-creator`**, now dual-runtime |
-| `status` | read-only | inventory all profiles × runtimes: skills, plugins, hooks, MCP servers, launcher health, **context-tax estimate** | new |
-| `audit` | read-only | hygiene: stale/broken hooks, dead launchers, orphaned plugins, skills over context budget, unknown MCP, hook-provenance/CVE flags, `known_marketplaces.json` integrity | new |
-| `drift` | read-only | cross-profile diff vs a baseline; surfaces #58815 `CLAUDE.md` bleed + marketplace corruption | new |
-| `reconcile` | editing (synchronous user gate) | apply drift fixes / re-sync the shared baseline across profiles | new |
-| `settings enable/disable` | editing | toggle global capabilities/hooks (home of the `git-pull-ff` hook installed this session) | new |
-| `track` | editing | turn a config root into a **secret-safe dotfiles git repo** — the §6 safety prerequisite | new |
-| `deliver` | read-only | pre-change review | reuses `project-meta deliver` |
+| Verb | Mode | What it does | Origin | Status |
+|---|---|---|---|---|
+| `create <name> [--runtime claude\|codex] [--isolated] [--seed-from]` | editing | scaffold a profile: dir, plugins symlink, launcher, optional memory seed | **absorbed from `profile-creator`**, now dual-runtime | **live 1.0.0** (2026-06-11) |
+| `status` | read-only | inventory all profiles × runtimes: skills, plugins, hooks, MCP servers, launcher health, **context-tax estimate** | new | **approved v1.1 (DASH-039)** |
+| `audit` | read-only | hygiene: stale/broken hooks, dead launchers, orphaned plugins, skills over context budget, unknown MCP, hook-provenance/CVE flags, `known_marketplaces.json` integrity; **first-class check: four-way consistency** (installed_plugins ↔ enabled-plugins ↔ cache dirs ↔ local-scope@home spec); context-tax report; findings as ready-to-run `board.py inbox-add` lines | new | **approved v1.1 (DASH-039)** |
+| ~~`drift`~~ | ~~read-only~~ | ~~cross-profile diff vs a baseline; surfaces #58815 `CLAUDE.md` bleed + marketplace corruption~~ | ~~new~~ | **folded into `audit`** as cross-profile section (2026-06-11 verdict; shared `~/.claude-shared` store eliminated most surface) |
+| ~~`reconcile`~~ | ~~editing (synchronous user gate)~~ | ~~apply drift fixes / re-sync the shared baseline across profiles~~ | ~~new~~ | **superseded by `audit --emit-fix` v1.2 (DASH-040)**; emits reviewable, idempotent, snapshot-guarded fix script; never auto-applies; transactional shape borrowed from openclaw-devops |
+| ~~`settings enable/disable`~~ | ~~editing~~ | ~~toggle global capabilities/hooks~~ | ~~new~~ | **cut** — update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script |
+| `track` | editing | turn a config root into a **secret-safe dotfiles git repo** — the §6 safety prerequisite | new | **deferred** — snapshot ledger (v1.1) covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay |
+| `deliver` | read-only | pre-change review | reuses `project-meta deliver` | **unchanged** |
 
-Read-only verbs never edit; editing verbs gate on dry-run + `deliver`. `reconcile` (cross-profile, highest blast radius) is a
-synchronous user gate.
+Read-only verbs never edit; editing verbs gate on dry-run + `deliver`. `reconcile` is superseded by `audit --emit-fix` (see above).
 
 ## 5. Reuse map (derived design — resolver + thin floor, no vendoring)
 
@@ -139,12 +148,10 @@ tier") to survive renames, and cannot enable it unilaterally (the engine is user
 
 ## 8. `profile-creator` deprecation path (decision: absorb + deprecate)
 
-1. Move `create_profile.py` + launcher templates + `create-profile.md` into `skills/global-meta/`, generalized with the adapter.
-2. Prove `global-meta create` parity against the existing 5 profiles in `--dry-run`.
-3. Reduce `skills/profile-creator/SKILL.md` to a one-screen **deprecation stub** that routes to `global-meta create` (keeps the
-   `/profile-creator` muscle-memory working for one release), and drop it from `marketplace.json` after a deprecation window.
-4. Update every peer skill's arbitration row that points at `profile-creator` (e.g. `project-meta`'s table) to point at
-   `global-meta`.
+1. ~~Move `create_profile.py` + launcher templates + `create-profile.md` into `skills/global-meta/`, generalized with the adapter.~~ **DONE** (2026-06-11, global-meta 1.0.0).
+2. ~~Prove `global-meta create` parity against the existing 5 profiles in `--dry-run`.~~ **DONE** (2026-06-11, global-meta 1.0.0).
+3. ~~Reduce `skills/profile-creator/SKILL.md` to a one-screen **deprecation stub** that routes to `global-meta create` (keeps the `/profile-creator` muscle-memory working for one release), and drop it from `marketplace.json` after a deprecation window.~~ **DONE** — stub removed and `profile-creator` dropped from `marketplace.json` (2026-06-11, marketplace 2.0.0).
+4. ~~Update every peer skill's arbitration row that points at `profile-creator` (e.g. `project-meta`'s table) to point at `global-meta`.~~ **DONE** (2026-06-11, marketplace 2.0.0).
 
 ## 9. Build & ship plan
 
@@ -162,4 +169,5 @@ tier") to survive renames, and cannot enable it unilaterally (the engine is user
 - Codex's exact plugin/marketplace model vs Claude's `known_marketplaces.json` — confirm the Codex-side corruption guard shape
   before writing `ccodexplug`.
 - Whether the global preference questionnaire should be a single `USER.md` per config root or one shared across profiles.
-- Context-tax thresholds: surface-only (report) in v1; promote to a `strict`-profile gate later.
+- Context-tax thresholds: surface-only (report) in v1; promote to a `strict`-profile gate later. *(2026-06-11 verdict: context-tax report is included in `audit` v1.1; `strict` gate deferred.)*
+- *(2026-06-11 verdict)* Drift detection surface: answered — `drift` verb folded into `audit` cross-profile section; the shared `~/.claude-shared` store eliminated most cross-profile drift surface; per-profile settings/CLAUDE.md/hooks divergence is the remaining scope.
