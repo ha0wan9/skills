@@ -121,12 +121,21 @@ scripts/ship_plugin.sh land                      # re-runs version gate, merge-i
 
 `land` re-runs `check-version` (refusing to merge an unbumped change), re-checks GitHub
 mergeability and refuses on `DIRTY`/`BEHIND`/`BLOCKED`; it then runs
-`claude plugin marketplace update ha0wan9-skills` and **reinstalls** each changed plugin —
-`claude plugin uninstall <plugin>@ha0wan9-skills` (best-effort) then `claude plugin install
-<plugin>@ha0wan9-skills` (use `scripts/ship_plugin.sh changed-plugins` to see the set).
+`claude plugin marketplace update ha0wan9-skills` and **reinstalls** each changed plugin
+**at its recorded scope** (use `scripts/ship_plugin.sh changed-plugins` to see the set).
 Reinstall rather than `claude plugin update`, because `update` is a no-op when the manifest
 version is unchanged (it reports "already at the latest version" and the materialized cache
-copy stays stale), so same-version edits would never reload. The uninstall is best-effort (a
+copy stays stale), so same-version edits would never reload. The reload is **scope-aware**:
+`claude plugin uninstall`/`install` default to `--scope user`, but installs here may be
+recorded at **local** scope (`scope:"local"` + `projectPath` in `installed_plugins.json`) —
+a scope-blind uninstall misses those and the follow-up install lands a user-scope duplicate
+next to the stale local record. `reload` instead reads each plugin's record from the
+registry (symlink-resolved) and reinstalls with the matching `--scope`, running local-scope
+work from the recorded `projectPath`; when that project's `.claude/settings.local.json` is a
+symlink (shared-enablement setups) it parks the link around the window, since the CLI
+refuses symlink writes, and restores it via an EXIT trap. Stale user-scope duplicates from
+older scope-blind reloads are dropped after the real record refreshes; a never-installed
+plugin adopts the scope its marketplace siblings use. The uninstall is best-effort (a
 not-yet-installed plugin fails it harmlessly); the **install is load-bearing** — if it fails
 after a successful uninstall the plugin is left removed locally, so `reload` exits non-zero
 and refuses to report success. Plugin names in `installed_plugins.json` are
