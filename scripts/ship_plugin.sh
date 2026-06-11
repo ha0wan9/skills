@@ -406,7 +406,10 @@ _unpark_settings() {
   _PARK_LINK=""
   # Keep enablement edits the CLI made inside the window: sync the working copy
   # back into the shared target before swapping the symlink back in.
-  if [[ -f "$s" ]]; then cp "$s" "$_PARK_TARGET"; fi
+  if [[ -f "$s" ]]; then
+    cp "$s" "$_PARK_TARGET" \
+      || info "WARNING: could not sync settings edits back to $_PARK_TARGET; CLI edits inside the park window may be lost"
+  fi
   rm -f "$s"
   mv "$s.symlink-parked" "$s"
   info "restored settings.local.json symlink ($s)"
