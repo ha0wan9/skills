@@ -48,6 +48,7 @@ KNOWN_INSTANTIATED_ARTIFACTS = {
     "agents/project-artifacts.md",
     "agents/execution-rules.md",
     "agents/issue-tracking.md",
+    "agents/code-graph.md",
 }
 
 REQUIRED_PROVENANCE_FIELDS = (
@@ -396,6 +397,50 @@ def check_issue_tracker(root: Path) -> Finding:
     )
 
 
+def check_code_graph(root: Path) -> Finding:
+    """Code-graph capability integrity: a capability is on iff fully wired.
+
+    - Not installed (no doc) -> PASS (optional capability, skipped).
+    - Doc present but not routed from canonical memory -> FAIL (half-install).
+    - Doc present and routed -> PASS.
+    Provenance of agents/code-graph.md is covered by check_artifact_provenance.
+    """
+    doc = root / "agents" / "code-graph.md"
+    doc_present = doc.is_file()
+
+    if not doc_present:
+        return Finding(
+            "code-graph capability",
+            "PASS",
+            "not installed (skipping)",
+        )
+
+    routed = False
+    for memory_name in ("AGENTS.md", "CLAUDE.md"):
+        memory = root / memory_name
+        if memory.is_file():
+            text = memory.read_text(encoding="utf-8", errors="replace")
+            # Require a pointer to the artifact path, not the bare stem — an
+            # incidental mention of "code-graph" must not count as routing.
+            if "agents/code-graph.md" in text:
+                routed = True
+                break
+
+    if not routed:
+        return Finding(
+            "code-graph capability",
+            "FAIL",
+            "agents/code-graph.md present but not routed (no pointer to "
+            "agents/code-graph.md in AGENTS.md / CLAUDE.md) — half-install",
+        )
+
+    return Finding(
+        "code-graph capability",
+        "PASS",
+        "installed and wired (doc routed)",
+    )
+
+
 def check_project_board(root: Path) -> Finding:
     """Project Board store (DASH-17). Optional capability:
     - No store (docs/backlog/items.jsonl absent) -> PASS (skipped).
@@ -451,6 +496,7 @@ def main(argv: list[str] | None = None) -> int:
         check_mirror_alignment(root),
         check_execution_rules(root),
         check_issue_tracker(root),
+        check_code_graph(root),
         check_project_board(root),
     ]
     for finding in findings:

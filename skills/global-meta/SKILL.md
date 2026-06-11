@@ -116,7 +116,7 @@ If arbitration is unclear, ask before acting. Never silently invoke two skills.
 ## Examples
 
 - [`examples/sample-profile/`](examples/sample-profile/README.md) — dual-runtime `create` reference run.
-- [`examples/audit-fixture/`](examples/audit-fixture/README.md) + [`examples/audit-fixture-clean/`](examples/audit-fixture-clean/README.md) — seeded/clean config-root fixtures for the roadmap `audit` verb (acceptance data for DASH-033/034; see `docs/plans/global-meta-lifecycle-build-plan.md`).
+- [`examples/audit-fixture/`](examples/audit-fixture/README.md) + [`examples/audit-fixture-clean/`](examples/audit-fixture-clean/README.md) — seeded/clean config-root fixtures for the roadmap `audit` verb (acceptance data for DASH-039/034; see `docs/plans/global-meta-lifecycle-build-plan.md`).
 
 ## Output Footer
 

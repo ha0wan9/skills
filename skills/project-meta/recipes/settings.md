@@ -7,7 +7,7 @@ which optional capabilities are installed — without re-running a full `init`.
 
 - User invokes `/project-meta settings` (no args → view; with args → toggle)
 - User asks to "turn on/off" a harness capability after init (hooks, phase-lock,
-  multi-host, issue-tracker), or to change the `HARNESS_PROFILE`
+  multi-host, issue-tracker, code-graph), or to change the `HARNESS_PROFILE`
 - User asks "what's enabled in this harness and how do I change it?"
 
 ## Mode
@@ -35,6 +35,7 @@ lives:
 | phase-lock | `agents/phase-lock-contract.md` + `.harness/phase-state.json` + `.harness/gates/*.sh` |
 | multi-host | generated mirror files (`.cursor/`, `.opencode/`, `gemini-extension.json`, `.codex/`) |
 | issue-tracker | `agents/issue-tracking.md` (+ optional `issue-tracker-reminder.sh` wiring) |
+| `code-graph` | `agents/code-graph.md` (+ `graphify-out/` gitignore line) |
 
 A capability is "on" iff its artifacts are present **and** wired (routed +
 manifest-registered). A doc without routing, or a hook without its doc, is
@@ -59,13 +60,14 @@ Load lazily, only for the operation requested:
   - phase-lock → [`templates/phase-lock-contract.md`](../templates/phase-lock-contract.md)
   - multi-host → [`references/multi-host-manifests.md`](../references/multi-host-manifests.md)
   - issue-tracker → [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md)
+  - code-graph → [`references/code-graph-integration.md`](../references/code-graph-integration.md)
 
 ## Workflow
 
 1. **Parse the operation** from the invocation:
    - no args → **view**
    - `profile <minimal|standard|strict>` → change the enforcement dial
-   - `enable <hooks|phase-lock|multi-host|issue-tracker[:<tracker>]>` → install
+   - `enable <hooks|phase-lock|multi-host|issue-tracker[:<tracker>]|code-graph>` → install
    - `disable <capability>` → remove
    - Unknown operation/capability → list the supported set and stop; do not guess.
 
@@ -148,6 +150,7 @@ jq -r '.env.HARNESS_PROFILE // "unset"' .claude/settings.json 2>/dev/null
 ls .claude/hooks/*.sh 2>/dev/null            # hooks
 [ -f .harness/phase-state.json ] && echo phase-lock
 [ -f agents/issue-tracking.md ] && echo issue-tracker
+[ -f agents/code-graph.md ] && echo code-graph
 ls .cursor/rules/agents.md .opencode/instructions.md 2>/dev/null  # multi-host
 
 # half-install guard: issue-tracker doc present but not routed (match the path,

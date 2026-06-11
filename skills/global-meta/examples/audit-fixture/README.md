@@ -1,7 +1,7 @@
 # audit-fixture — seeded config root for `config_root_audit.py`
 
 A fake user config root with **four seeded findings** (F1–F4). The acceptance test for
-DASH-033 (and the convergence test for DASH-034's `--emit-fix`) runs against this tree.
+DASH-039 (and the convergence test for DASH-040's `--emit-fix`) runs against this tree.
 The zero-findings twin is [`../audit-fixture-clean/`](../audit-fixture-clean/).
 
 ## Layout mapping (fixture dir ↔ real machine)

@@ -34,4 +34,4 @@ Artifacts:
   owner: shared-user-facing
   review_policy: user review when goal or readiness changes; per-PR fresh-context review before land
   last_reviewed: 2026-06-11
-  refresh_trigger: v0.5 milestone scope changes, readiness re-audit, or a DASH-035 spike verdict that flips DASH-036
+  refresh_trigger: v0.5 milestone scope changes, readiness re-audit, or a DASH-041 spike verdict that flips DASH-042
