@@ -145,6 +145,9 @@ Fixtures:
 - 2026-06-11 — **Round 2** (fresh-context auditor): **GO** — 0 BLOCKER, 0 MAJOR, 2 MINOR
   (M1 snapshot placeholder path, M2 tier label) — both fixed in this revision. Gates green
   (validate PASS, lint 0 FAIL, collision 0). Convergence recorded in `.harness/audit-ledger.jsonl`; transaction closed.
+- 2026-06-11 — **Renumber:** a parallel session landed code-graph as DASH-033 (PR #44,
+  project-meta 1.14.0) while this plan was in flight; this milestone's items were renumbered
+  DASH-033..038 → **DASH-039..044** during the merge (board re-added via `board.py`, roadmap rev 44+).
 - 2026-06-11 — **DASH-041 spike verdict: GO.** Scoped sources work natively
   (`source: "./skills/<name>"` + `skills: ["./"]` materializes only the skill subtree).
   Measured tax: 256 SKILL.md copies across 33 cached version dirs (~31k redundant tokens).
