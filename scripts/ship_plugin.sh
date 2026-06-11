@@ -324,8 +324,10 @@ cmd_land() {
 
   if [[ "$do_reload" == "1" ]]; then
     # $plugins is newline-separated; split explicitly instead of relying on IFS word-split.
+    # No mapfile: macOS /bin/bash is 3.2 (mapfile is bash 4+), and `env bash` can
+    # resolve there — land used to die right after the merge on exactly that.
     local -a plugin_arr=()
-    mapfile -t plugin_arr <<< "$plugins"
+    while IFS= read -r _p; do plugin_arr+=("$_p"); done <<< "$plugins"
     cmd_reload "${plugin_arr[@]}"
   fi
 }
