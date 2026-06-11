@@ -920,11 +920,19 @@ def collect_harness(root: Path) -> dict[str, Any]:
             it_tracker = None
     issue_detail = {"doc": rel(it_doc) if it_present else None, "routed_in": it_routed_in, "tracker": it_tracker}
 
+    # code-graph — doc present AND routed from canonical memory
+    cg_doc = root / "agents" / "code-graph.md"
+    cg_present = cg_doc.is_file()
+    cg_routed_in = _routed_in(root, "agents/code-graph.md")
+    cg_sources = [rel(cg_doc)] if cg_present else []
+    cg_detail = {"doc": rel(cg_doc) if cg_present else None, "routed_in": cg_routed_in}
+
     capabilities = [
         {"key": "hooks", "state": _cap_state(bool(hook_scripts), hooks_wired), "sources": hooks_sources, "detail": hooks_detail},
         {"key": "phase-lock", "state": _cap_state(pl_contract.is_file(), pl_state.is_file()), "sources": pl_sources, "detail": phase_detail},
         {"key": "multi-host", "state": "on" if mirror_present else "off", "sources": mirror_present, "detail": {"mirrors": mirrors_detail}},
         {"key": "issue-tracker", "state": _cap_state(it_present, bool(it_routed_in)), "sources": it_sources, "detail": issue_detail},
+        {"key": "code-graph", "state": _cap_state(cg_present, bool(cg_routed_in)), "sources": cg_sources, "detail": cg_detail},
     ]
 
     return {

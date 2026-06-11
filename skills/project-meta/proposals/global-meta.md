@@ -3,13 +3,13 @@
 > **Status:** Partially shipped — the `create` verb is **live** in `skills/global-meta/` 1.0.0 (2026-06-11; `profile-creator`
 > retired from marketplace, marketplace 2.0.x). Remaining verbs: verdict written back 2026-06-11 (see below).
 > - `create` — **LIVE** since 1.0.0 (profile-creator retired 2026-06-11, marketplace 2.0.0).
-> - `status` + `audit` — **APPROVED, build as v1.1** (DASH-033; `config_root_audit.py`; four-way consistency as first-class check; snapshot ledger; context-tax report; findings as `board.py inbox-add` lines).
+> - `status` + `audit` — **APPROVED, build as v1.1** (DASH-039; `config_root_audit.py`; four-way consistency as first-class check; snapshot ledger; context-tax report; findings as `board.py inbox-add` lines).
 > - `drift` — **FOLDED into `audit`** as a cross-profile section (2026-06-11; shared `~/.claude-shared` store eliminated most surface).
-> - `reconcile` — **SUPERSEDED by `audit --emit-fix` v1.2** (DASH-034; reviewable idempotent snapshot-guarded fix script; never auto-applies; borrowed from openclaw-devops transactional shape).
+> - `reconcile` — **SUPERSEDED by `audit --emit-fix` v1.2** (DASH-040; reviewable idempotent snapshot-guarded fix script; never auto-applies; borrowed from openclaw-devops transactional shape).
 > - `settings enable/disable` — **CUT** (update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script).
 > - `track` (dotfiles git) — **DEFERRED** (snapshot ledger covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay).
 > - `deliver` — **unchanged** (reuses project-meta deliver as specified).
-> **Board items:** DASH-033 (`status`+`audit` v1.1), DASH-034 (`reconcile`→`audit --emit-fix` v1.2), DASH-035/036 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
+> **Board items:** DASH-039 (`status`+`audit` v1.1), DASH-040 (`reconcile`→`audit --emit-fix` v1.2), DASH-041/036 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
 > **Build plan:** `docs/plans/global-meta-lifecycle-build-plan.md`.
 > **Scope:** a new top-level skill `skills/global-meta/` that **absorbs and deprecates `profile-creator`**, adds the
 > audit/drift/reconcile/track lifecycle for Claude *and* Codex config roots, and reuses `project-meta` as its root engine.
@@ -82,10 +82,10 @@ requirement at the *capability* level, not just the frontmatter.
 | Verb | Mode | What it does | Origin | Status |
 |---|---|---|---|---|
 | `create <name> [--runtime claude\|codex] [--isolated] [--seed-from]` | editing | scaffold a profile: dir, plugins symlink, launcher, optional memory seed | **absorbed from `profile-creator`**, now dual-runtime | **live 1.0.0** (2026-06-11) |
-| `status` | read-only | inventory all profiles × runtimes: skills, plugins, hooks, MCP servers, launcher health, **context-tax estimate** | new | **approved v1.1 (DASH-033)** |
-| `audit` | read-only | hygiene: stale/broken hooks, dead launchers, orphaned plugins, skills over context budget, unknown MCP, hook-provenance/CVE flags, `known_marketplaces.json` integrity; **first-class check: four-way consistency** (installed_plugins ↔ enabled-plugins ↔ cache dirs ↔ local-scope@home spec); context-tax report; findings as ready-to-run `board.py inbox-add` lines | new | **approved v1.1 (DASH-033)** |
+| `status` | read-only | inventory all profiles × runtimes: skills, plugins, hooks, MCP servers, launcher health, **context-tax estimate** | new | **approved v1.1 (DASH-039)** |
+| `audit` | read-only | hygiene: stale/broken hooks, dead launchers, orphaned plugins, skills over context budget, unknown MCP, hook-provenance/CVE flags, `known_marketplaces.json` integrity; **first-class check: four-way consistency** (installed_plugins ↔ enabled-plugins ↔ cache dirs ↔ local-scope@home spec); context-tax report; findings as ready-to-run `board.py inbox-add` lines | new | **approved v1.1 (DASH-039)** |
 | ~~`drift`~~ | ~~read-only~~ | ~~cross-profile diff vs a baseline; surfaces #58815 `CLAUDE.md` bleed + marketplace corruption~~ | ~~new~~ | **folded into `audit`** as cross-profile section (2026-06-11 verdict; shared `~/.claude-shared` store eliminated most surface) |
-| ~~`reconcile`~~ | ~~editing (synchronous user gate)~~ | ~~apply drift fixes / re-sync the shared baseline across profiles~~ | ~~new~~ | **superseded by `audit --emit-fix` v1.2 (DASH-034)**; emits reviewable, idempotent, snapshot-guarded fix script; never auto-applies; transactional shape borrowed from openclaw-devops |
+| ~~`reconcile`~~ | ~~editing (synchronous user gate)~~ | ~~apply drift fixes / re-sync the shared baseline across profiles~~ | ~~new~~ | **superseded by `audit --emit-fix` v1.2 (DASH-040)**; emits reviewable, idempotent, snapshot-guarded fix script; never auto-applies; transactional shape borrowed from openclaw-devops |
 | ~~`settings enable/disable`~~ | ~~editing~~ | ~~toggle global capabilities/hooks~~ | ~~new~~ | **cut** — update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script |
 | `track` | editing | turn a config root into a **secret-safe dotfiles git repo** — the §6 safety prerequisite | new | **deferred** — snapshot ledger (v1.1) covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay |
 | `deliver` | read-only | pre-change review | reuses `project-meta deliver` | **unchanged** |
