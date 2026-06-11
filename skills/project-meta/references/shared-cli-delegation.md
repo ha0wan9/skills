@@ -42,7 +42,7 @@ layouts (Claude Code 2.1.x):
 
 - personal skill: `~/.claude/skills/project-meta/`
 - plugin (marketplace checkout): `~/.claude/plugins/marketplaces/<marketplace>/skills/project-meta/`
-- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/project-meta/` (e.g. `<plugin>` = `profile-creator` when bundled — the cache segment is the *plugin* name, not `project-meta`)
+- plugin (version cache): `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/project-meta/` (e.g. `<plugin>` = `global-meta` when bundled — the cache segment is the *plugin* name, not `project-meta`)
 
 ```bash
 # Canonical executable copy: templates/hooks/scripts/verify-before-stop.sh

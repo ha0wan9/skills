@@ -1,6 +1,6 @@
 # skills marketplace
 
-`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`orchestration`](skills/orchestration/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`profile-creator`](skills/profile-creator/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), [`sketch-asset-generator`](skills/sketch-asset-generator/), [`meta-debug`](skills/meta-debug/), and [`openclaw-devops`](skills/openclaw-devops/). Each is independently installable via `.claude-plugin/marketplace.json`.
+`AGENTS.md` is the agent-facing routing file for this Claude Code plugin marketplace. It hosts skills under `skills/`, including [`project-meta`](skills/project-meta/), [`orchestration`](skills/orchestration/), [`global-meta`](skills/global-meta/), [`dl-research`](skills/dl-research/), [`deep-survey-bfs`](skills/deep-survey-bfs/), [`calendar-crud-workflow`](skills/calendar-crud-workflow/), [`sketch-asset-generator`](skills/sketch-asset-generator/), [`meta-debug`](skills/meta-debug/), and [`openclaw-devops`](skills/openclaw-devops/). Each is independently installable via `.claude-plugin/marketplace.json`.
 
 ## Read Order
 
@@ -21,7 +21,7 @@
 | `skills/orchestration/` | orchestration skill (split out, depends on project-meta): `orchestrate` recipe, the orchestration-contract schema + template + example, engine-handoff reference, and `scripts/budget_hint.py` (non-predictive budget hint). Owns orchestration policy, not the run engine. |
 | `skills/dl-research/` | full dl-research skill, including phases, modes, references, templates, agents/openai.yaml |
 | `skills/deep-survey-bfs/` | full deep-survey-bfs skill, including phases, references, templates, scripts (`arxiv_search.py`, `coverage_check.py`, `claims_validate.py`, `bias_audit.py`), agents/openai.yaml |
-| `skills/profile-creator/` | multi-Claude profile creation skill with shared plugin-store conventions |
+| `skills/global-meta/` | user/global config-root skill (absorbed the retired `profile-creator`): dual-runtime profile `create` (`scripts/create_profile.py`, launcher templates), references, sample-profile example; audit/evolve lifecycle proposed in `skills/project-meta/proposals/global-meta.md` |
 | `skills/calendar-crud-workflow/` | calendar event CRUD workflow skill for stable calendars, title prefixes, searchable tags, source links, and safe batch operations |
 | `skills/sketch-asset-generator/` | extraction-first design-system asset packs from sketches or source UI; direct token/SVG/code extraction by default, GPT Image fallback; ships `scripts/validate_asset_pack.py` and `scripts/render_contact_sheet.py`, schema, references, and example fixtures |
 | `skills/meta-debug/` | gated, rollbackable, looping meta-debug pipeline (triage → repro → red test → hypotheses → sandbox fixes → canary → lesson); composes with project-meta; ships `scripts/debug_session.py` |
