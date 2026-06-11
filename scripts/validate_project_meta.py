@@ -1292,8 +1292,8 @@ def check_board_cli() -> None:
         require(bare.get("profile") == "unset", "bare repo must derive HARNESS_PROFILE=unset")
         bare_caps = {c["key"]: c["state"] for c in bare.get("capabilities", [])}
         require(
-            set(bare_caps) == {"hooks", "phase-lock", "multi-host", "issue-tracker"},
-            "harness must report the four optional capabilities",
+            set(bare_caps) == {"hooks", "phase-lock", "multi-host", "issue-tracker", "code-graph"},
+            "harness must report the five optional capabilities",
         )
         require(all(s == "off" for s in bare_caps.values()), "capabilities must read 'off' with no artifacts")
 
