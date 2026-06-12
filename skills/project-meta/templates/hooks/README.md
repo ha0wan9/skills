@@ -152,6 +152,49 @@ git repo / nothing changed / <2 harness files), the hook is a no-op — the
 harness can ship it without forcing every repo to install phase-locks,
 define a verifier, or adopt the write-back / dispatch gates.
 
+### session_receipt — Stop + SessionStart payload
+
+`session_receipt.py` (in `skills/project-meta/scripts/`) is the backing CLI for
+a lightweight per-session context capsule stored at `.harness/session-receipt.json`.
+It is **git-ignored** (same rationale as `.harness/dispatch-log.jsonl`: session-grained
+transient evidence, not durable state) and is **never** used to duplicate board state —
+it carries a board *pointer* (item ids) only.
+
+**Two subcommands:**
+
+- `write` — write or overwrite the receipt. Accepts `--goal`, `--done`, `--blocked`,
+  `--next`, `--memo` (all optional strings) and `--items` (comma-separated board item ids).
+  Also accepts `--auto` for the Stop-hook auto-write mode (see below).
+- `inject` — print the latest receipt as a compact human block, hard-capped at **30 lines**
+  (truncated with `...truncated` if needed). Prints nothing and exits 0 when
+  `HARNESS_PROFILE=minimal` or when no receipt file exists.
+
+**Auto-write vs semantic write:**
+
+The Stop hook (`verify-before-stop.sh`, step 5.5) calls `write --auto`, which records
+only the UTC timestamp, current git branch, and changed-file count. Auto mode is a
+**no-op** when an existing receipt is younger than 24 hours *and* contains at least one
+semantic field (`goal`, `done`, `blocked`, `next`, or `memo`) — ensuring that a richer
+receipt written earlier in the turn by the agent is preserved, not clobbered.
+
+The agent (or another hook/script) can write a semantic receipt at any point during a
+turn by calling `write` with named fields. That receipt will survive the Stop-hook auto
+pass for up to 24 hours.
+
+**Profile gating:**
+
+- `minimal`: `inject` prints nothing and exits 0. The Stop-hook auto-write step is still
+  executed (it only writes to the local `.harness/` transient store), but `inject` in the
+  SessionStart hook suppresses output entirely.
+- `standard` / `strict`: `inject` prints the receipt block on SessionStart.
+
+The `.harness/session-receipt.json` gitignore line lives in the repo's `.gitignore`.
+Add it with:
+
+```
+.harness/session-receipt.json
+```
+
 ### `issue-tracker-reminder.sh` — UserPromptSubmit (optional)
 
 Ships **only** with the `issue-tracker` capability (`/project-meta init
