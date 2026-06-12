@@ -55,9 +55,12 @@ Do not commit `USER.md`. The repo's top-level `.gitignore` and the project-meta 
 
 - `scripts/provenance.py` — frontmatter parse/validate/stamp (the `instantiated_from`/`source_reference`/`last_reviewed` trio). Skills must not re-roll frontmatter parsing; `skill_architecture_lint.py` WARNs when they do.
 - `scripts/repo_memory.py` — runtime memory read leg, write-back gate, write, validate. The `SessionStart`/`Stop` hooks delegate to it; the Memory Contract it backs is in `references/repo-memory-crud.md#memory-contract`.
-- `scripts/dispatch_ledger.py` — multi-agent dispatch audit ledger (record/validate/query) + the mandatory-dispatch `gate` the `Stop` hook runs. Enforcement/audit backing for the Task Dispatch paradigm in `references/multi-agent-protocols.md#mechanical-enforcement` (not a dispatch engine).
+- `scripts/dispatch_ledger.py` — multi-agent dispatch audit ledger (record/validate/query/overlap/claim) + the mandatory-dispatch `gate` the `Stop` hook runs; schema v2 adds claim atomicity, touch-set overlap detection, context capsule, budget ceiling, and checkpoint fields. Enforcement/audit backing for the Task Dispatch paradigm in `references/multi-agent-protocols.md#mechanical-enforcement` (not a dispatch engine).
 - `scripts/worktree_audit.py` — read-only gather+classify leg of the Worktree Trim Contract (`references/worktree-hygiene.md`). Backs the session-start worktree sweep below; never removes/merges/commits.
 - `scripts/board.py` — Project Board store CRUD + dashboard render (this repo's own `docs/backlog/` store + derived `docs/dashboard.html`, incl. the Harness tab). The **only** sanctioned writer — never hand-edit the store (`items.jsonl`/`roadmap.json`) or the derived `docs/dashboard.html`. CRUD verb map, integrity invariants, and the optional `board-guard`/`board.py tx` enforcement live in [`skills/project-meta/references/project-board-crud.md`](skills/project-meta/references/project-board-crud.md).
+- `scripts/memory_staleness.py` — referential staleness lint for canonical memory; reports OK/STALE/UNKNOWN per cited path; wired into `repo_memory.py validate` as an advisory sub-check. See `references/repo-memory-crud.md`.
+- `scripts/session_receipt.py` — session receipt write/inject (Stop-written, SessionStart-injected, ≤30-line cap); receipt stored at `.harness/session-receipt.json` (git-ignored). See `templates/hooks/README.md`.
+- `scripts/test_integrity_diff.py` — assertion-weakening detector (advisory in `ship validate`, strict-profile hard gate in `land`); flags removed assertions and added skips across a diff. See `references/harness-engineering.md`.
 
 ## Session Start: Worktree Trim Contract
 
