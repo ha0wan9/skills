@@ -59,8 +59,11 @@ show the user.
   not merge-ready by default.
 - **Mergeable → review then merge.** A clean branch with unmerged commits is a
   candidate to land, not stale debris. Route it through the normal review+merge
-  path (the repo's ship/delivery flow), not a blind merge. Only after it merges
-  does it become `stale` and trimmable.
+  path (the repo's ship/delivery flow), not a blind merge. When the repo has the
+  land-queue capability installed (`agents/land-queue.md`), the merge leg is
+  `scripts/land.sh queue <branches…>` — sequential, deterministic, test-gated
+  (see [`land-queue-integration.md`](land-queue-integration.md)). Only after it
+  merges does it become `stale` and trimmable.
 - **Stale local base branch.** While auditing, if the primary worktree's base
   branch is behind its remote (`git rev-parse main` ≠ `git rev-parse origin/main`)
   with no local divergence, fast-forward it (`git fetch && git merge --ff-only`)

@@ -51,6 +51,10 @@ None by default. Lazy-load only when status detection surfaces something needing
    - **Code-graph capability present?** (`agents/code-graph.md`) — if so, check it is routed from
      canonical memory (AGENTS.md / CLAUDE.md contains a pointer to `agents/code-graph.md`); report
      on / off / half-installed. A doc without routing is a half-install — report as such.
+   - **Land-queue capability present?** (`agents/land-queue.md`) — if so, check `scripts/land.sh`
+     exists and is executable, and the doc is routed from canonical memory; report
+     on / off / half-installed. Doc without script, script without doc, or doc unrouted is a
+     half-install. `scripts/land.sh status` gives the runtime view (read-only).
    - **Project Board present?** (`docs/backlog/items.jsonl`) — if so, surface it read-only:
      `python3 scripts/board.py tx --root .` (integrity + item count + roadmap rev) and, for the
      version timeline, `python3 scripts/board.py list --root . --version <vX>`. Never mutate

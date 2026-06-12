@@ -5,13 +5,13 @@
     "email": "haoran.wang@stereolabs.com"
   },
   "metadata": {
-    "description": "Agent harness skills: project-meta (repo memory + execution governance), orchestration (turn a milestone into a signed orchestration contract, then hand it to the runtime's scripted engine; depends on project-meta), global-meta (user/global Claude+Codex config root — dual-runtime profiles now, audit/evolve lifecycle proposed; replaces the retired profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance — sanity/repair/transactional update/rollback — that uses meta-debug as its debug base layer).",
+    "description": "Agent harness skills: project-meta (repo memory + execution governance), orchestration (turn a milestone into a signed orchestration contract, then hand it to the runtime's scripted engine; depends on project-meta), global-meta (user/global Claude+Codex config root \u2014 dual-runtime profiles now, audit/evolve lifecycle proposed; replaces the retired profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
     "version": "3.0.0"
   },
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.14.2",
+      "version": "1.15.1",
       "metadata": {
         "compat": [
           "claude-code",
@@ -21,7 +21,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates.",
+      "description": "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands \u2014 /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates.",
       "source": "./skills/project-meta",
       "strict": false,
       "skills": [
@@ -40,7 +40,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing.",
+      "description": "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract \u2014 per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint \u2014 then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing.",
       "source": "./skills/orchestration",
       "strict": false,
       "skills": [
@@ -59,7 +59,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix — write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
+      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin \u2014 all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE \u2014 create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status \u2014 read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit \u2014 four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix \u2014 write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore \u2014 ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) \u2014 drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
       "source": "./skills/global-meta",
       "strict": false,
       "skills": [
@@ -161,7 +161,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "A gated, rollbackable, looping meta-debug pipeline for root-causing hard, flaky, or recurring bugs: triage & mitigate → clean-context case file → deterministic repro → red test (reuse existing CI) → falsifiable hypotheses → constraint-scored solutions → top-k parallel sandbox fixes → adversarial-critic validation → canary with a rollback trigger → recorded lesson. Runtime-agnostic (Claude Code, Codex, OpenClaw); composes with project-meta. Use whenever the user wants to debug, root-cause, or systematically fix a non-trivial bug, a regression, a heisenbug, a \"works locally but fails in prod\" issue, or a post-incident root cause — even if they don't name this skill.",
+      "description": "A gated, rollbackable, looping meta-debug pipeline for root-causing hard, flaky, or recurring bugs: triage & mitigate \u2192 clean-context case file \u2192 deterministic repro \u2192 red test (reuse existing CI) \u2192 falsifiable hypotheses \u2192 constraint-scored solutions \u2192 top-k parallel sandbox fixes \u2192 adversarial-critic validation \u2192 canary with a rollback trigger \u2192 recorded lesson. Runtime-agnostic (Claude Code, Codex, OpenClaw); composes with project-meta. Use whenever the user wants to debug, root-cause, or systematically fix a non-trivial bug, a regression, a heisenbug, a \"works locally but fails in prod\" issue, or a post-incident root cause \u2014 even if they don't name this skill.",
       "source": "./skills/meta-debug",
       "strict": false,
       "skills": [
@@ -181,7 +181,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "OpenClaw maintenance DevOps skill: a sanity/health probe, bounded self-repair, transactional auto-update across all npm copies with post-update integrity verification + automatic rollback, an ops lessons journal, and a bugs panel/backlog any agent or cron can log to and track to resolution — driven by an OpenClaw cron or on demand. Runtime-agnostic (Claude Code, Codex, OpenClaw). Delegates systematic debugging to the meta-debug skill and supplies the OpenClaw reproduce/verify/rollback mechanics its phases call. Use when health-checking, repairing, upgrading, rolling back, or scheduling maintenance for an OpenClaw gateway/node install, when logging or tracking bugs in the backlog, or when OpenClaw is broken / out of date / crash-looping / failing config validation.",
+      "description": "OpenClaw maintenance DevOps skill: a sanity/health probe, bounded self-repair, transactional auto-update across all npm copies with post-update integrity verification + automatic rollback, an ops lessons journal, and a bugs panel/backlog any agent or cron can log to and track to resolution \u2014 driven by an OpenClaw cron or on demand. Runtime-agnostic (Claude Code, Codex, OpenClaw). Delegates systematic debugging to the meta-debug skill and supplies the OpenClaw reproduce/verify/rollback mechanics its phases call. Use when health-checking, repairing, upgrading, rolling back, or scheduling maintenance for an OpenClaw gateway/node install, when logging or tracking bugs in the backlog, or when OpenClaw is broken / out of date / crash-looping / failing config validation.",
       "source": "./skills/openclaw-devops",
       "strict": false,
       "skills": [
