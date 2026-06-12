@@ -33,6 +33,7 @@ modes, or repo-side pre-commit/CI gates.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -49,6 +50,7 @@ KNOWN_INSTANTIATED_ARTIFACTS = {
     "agents/execution-rules.md",
     "agents/issue-tracking.md",
     "agents/code-graph.md",
+    "agents/land-queue.md",
 }
 
 REQUIRED_PROVENANCE_FIELDS = (
@@ -441,6 +443,69 @@ def check_code_graph(root: Path) -> Finding:
     )
 
 
+def check_land_queue(root: Path) -> Finding:
+    """Land-queue capability integrity: a capability is on iff fully wired.
+
+    - Not installed (no doc, no script) -> PASS (optional capability, skipped).
+    - Doc without script, script without doc, or doc not routed from canonical
+      memory -> FAIL (half-install).
+    - Doc + executable script + routing -> PASS.
+    Provenance of agents/land-queue.md is covered by check_artifact_provenance.
+    """
+    doc = root / "agents" / "land-queue.md"
+    script = root / "scripts" / "land.sh"
+    doc_present = doc.is_file()
+    script_present = script.is_file()
+
+    if not doc_present and not script_present:
+        return Finding("land-queue capability", "PASS", "not installed (skipping)")
+
+    if doc_present and not script_present:
+        return Finding(
+            "land-queue capability",
+            "FAIL",
+            "agents/land-queue.md present but scripts/land.sh missing — half-install",
+        )
+    if script_present and not doc_present:
+        return Finding(
+            "land-queue capability",
+            "FAIL",
+            "scripts/land.sh present but agents/land-queue.md missing — half-install",
+        )
+
+    if not os.access(script, os.X_OK):
+        return Finding(
+            "land-queue capability",
+            "FAIL",
+            "scripts/land.sh is not executable (chmod +x)",
+        )
+
+    routed = False
+    for memory_name in ("AGENTS.md", "CLAUDE.md"):
+        memory = root / memory_name
+        if memory.is_file():
+            text = memory.read_text(encoding="utf-8", errors="replace")
+            # Require a pointer to the artifact path, not the bare stem — an
+            # incidental mention of "land-queue" must not count as routing.
+            if "agents/land-queue.md" in text:
+                routed = True
+                break
+
+    if not routed:
+        return Finding(
+            "land-queue capability",
+            "FAIL",
+            "agents/land-queue.md present but not routed (no pointer to "
+            "agents/land-queue.md in AGENTS.md / CLAUDE.md) — half-install",
+        )
+
+    return Finding(
+        "land-queue capability",
+        "PASS",
+        "installed and wired (doc routed, script executable)",
+    )
+
+
 def check_project_board(root: Path) -> Finding:
     """Project Board store (DASH-17). Optional capability:
     - No store (docs/backlog/items.jsonl absent) -> PASS (skipped).
@@ -497,6 +562,7 @@ def main(argv: list[str] | None = None) -> int:
         check_execution_rules(root),
         check_issue_tracker(root),
         check_code_graph(root),
+        check_land_queue(root),
         check_project_board(root),
     ]
     for finding in findings:
