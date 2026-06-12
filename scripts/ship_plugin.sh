@@ -18,6 +18,9 @@
 # new backward-compatible capability; major = breaking change). `check-version`
 # enforces it in both `validate` and `land`; `land` will not merge without it.
 #
+# `land` hard gates (in order): audit convergence, test-integrity diff (HARNESS_PROFILE=strict),
+#   version bump. `validate` runs test-integrity advisory (always-exit-0).
+#
 # Subcommands:
 #   validate            run repo validators + the version-bump gate; exit 0 iff all pass
 #   check-version       gate: every changed plugin's marketplace.json version must be
@@ -128,6 +131,16 @@ cmd_validate() {
         python3 skills/dl-research/scripts/validate_ledger.py "$lf"
       done <<<"$ledgers"
     fi
+  fi
+
+  # Advisory: test-integrity diff — flags assertion removals, widened matchers, added skips,
+  # and deleted test files in changed test files. Never fails validate; findings are informational.
+  local _changed; _changed="$(_changed_files || true)"
+  if printf '%s\n' "$_changed" | grep -qE \
+      '(^|/)tests?/|__tests__/|spec/|__spec__/|test_[^/]+\.py$|[^/]+_test\.(py|[jt]sx?|rb)$|[^/]+\.(test|spec)\.[jt]sx?$'; then
+    info "running test_integrity_diff (advisory)"
+    python3 skills/project-meta/scripts/test_integrity_diff.py --repo . --advisory \
+      || true
   fi
 
   info "validate: PASS"
@@ -298,6 +311,17 @@ cmd_land() {
   if [[ -f "$audit_gate" && -f "$REPO_ROOT/.harness/audit-ledger.jsonl" ]]; then
     python3 "$audit_gate" --target-root "$REPO_ROOT" gate \
       || die "audit convergence gate failed — see the gate message above for the path out (re-audit to a clean round, or at the cap an operator override: audit_ledger.py record --final --accept-residuals \"reason\")"
+  fi
+
+  # Hard gate (strict only): test-integrity diff must be clean before merge.
+  # Flags assertion removals, widened matchers, added skips, and deleted test files.
+  if [[ "${HARNESS_PROFILE:-standard}" == "strict" ]]; then
+    local _tid="$REPO_ROOT/skills/project-meta/scripts/test_integrity_diff.py"
+    if [[ -f "$_tid" ]]; then
+      info "running test_integrity_diff (strict gate)"
+      python3 "$_tid" --repo "$REPO_ROOT" \
+        || die "test-integrity gate failed — resolve the findings above before landing"
+    fi
   fi
 
   # Hard gate: never merge a change that did not bump a version.
