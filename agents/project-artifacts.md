@@ -35,3 +35,11 @@ Artifacts:
   review_policy: user review when goal or readiness changes; per-PR fresh-context review before land
   last_reviewed: 2026-06-11
   refresh_trigger: v0.5 milestone scope changes, readiness re-audit, or a DASH-041 spike verdict that flips DASH-042
+- path: docs/plans/agentic-infra-v0.6-build-plan.md
+  artifact_name: agentic-infra-v0.6-build-plan
+  instantiated_from: project-meta/templates/building-plan.md
+  source_reference: skills/project-meta/proposals/agentic-infra-bottlenecks-2026.md; docs/backlog/roadmap.json (v0.6)
+  owner: shared-user-facing
+  review_policy: user review when goal or readiness changes; per-PR fresh-context review before land
+  last_reviewed: 2026-06-12
+  refresh_trigger: v0.6 milestone scope changes or critic-panel NO-GO

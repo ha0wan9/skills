@@ -1,7 +1,7 @@
 ---
 name: project-meta
-description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing documentation delivery; instantiates canonical templates via project-level artifact instantiation; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with review and pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, a skill-critic suite, and pressure-testing of MUST-rules; and promotes validated lessons into durable knowledge. Use when starting work in a repo, creating or repairing repo memory, improving agent instructions, coordinating complex project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.15.2, compat: [claude-code, codex], published: [claude-marketplace]}
+description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
+metadata: {version: 1.16.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -190,6 +190,10 @@ Detail for each step lives in the artifact owning that step:
   - load [`templates/phase-lock-contract.md`](templates/phase-lock-contract.md). Run `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` to verify gates locally; the script is also the Stop-hook payload.
 - Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), or switching `HARNESS_PROFILE` between minimal/standard/strict:
   - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
+- Need to lint canonical memory for stale citations (paths in AGENTS.md or memory files that no longer exist):
+  - run `python3 scripts/memory_staleness.py --target-root <repo>` (advisory leg of `validate`/`audit`; OK/STALE/UNKNOWN per cited path).
+- Need session-receipt hook payloads, destructive-command-guard, or env-readiness-probe hook payloads:
+  - load [`templates/hooks/README.md`](templates/hooks/README.md) — the hooks pack now documents `session_receipt.py`, the `pre-tool-guard.sh` destructive-command guard, and the `env-readiness-probe.sh` SessionStart check.
 - Wiring a repo to an external issue tracker (Linear/GitHub/Jira) so feature work is mirrored — check-first / write-progress-back / open-if-missing — or installing/auditing the `issue-tracker` capability and its advisory reminder hook:
   - load [`references/issue-tracking-integration.md`](references/issue-tracking-integration.md), then instantiate [`templates/issue-tracking.md`](templates/issue-tracking.md). Install via `/project-meta init --issue-tracker <tracker>` or `/project-meta settings enable issue-tracker`.
 - Wiring a repo to an external code-knowledge-graph engine for token-efficient code navigation (code-graph capability), or installing/auditing it:

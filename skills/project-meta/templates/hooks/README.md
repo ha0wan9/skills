@@ -118,6 +118,11 @@ Six responsibilities:
    when <2 harness files changed or `.harness/dispatch-ack` exists
    (one-shot). The enforcement leg of the Task Dispatch paradigm
    (`references/multi-agent-protocols.md#mandatory-subagent-dispatch`).
+   For v2 ledger rows (`schema_version >= 2`), `dispatch_ledger.py
+   validate` additionally checks capsule completeness (`goal`,
+   `constraints`, `decisions`, `out_of_scope`) and checkpoint
+   completeness (`completed`, `touched_files`, `open_decisions`), and
+   reports `budget_tokens`/`spent_tokens` exceedance as advisory text.
 5. **Project Board store integrity** via `board.py tx` (same resolved
    path) when `docs/backlog/items.jsonl` exists — item schema,
    duplicate ids, roadmap references, `items_sha256` freshness — so a
@@ -146,6 +151,49 @@ If none of the artifacts are present (no phase-state, no verifier, not a
 git repo / nothing changed / <2 harness files), the hook is a no-op — the
 harness can ship it without forcing every repo to install phase-locks,
 define a verifier, or adopt the write-back / dispatch gates.
+
+### session_receipt — Stop + SessionStart payload
+
+`session_receipt.py` (in `skills/project-meta/scripts/`) is the backing CLI for
+a lightweight per-session context capsule stored at `.harness/session-receipt.json`.
+It is **git-ignored** (same rationale as `.harness/dispatch-log.jsonl`: session-grained
+transient evidence, not durable state) and is **never** used to duplicate board state —
+it carries a board *pointer* (item ids) only.
+
+**Two subcommands:**
+
+- `write` — write or overwrite the receipt. Accepts `--goal`, `--done`, `--blocked`,
+  `--next`, `--memo` (all optional strings) and `--items` (comma-separated board item ids).
+  Also accepts `--auto` for the Stop-hook auto-write mode (see below).
+- `inject` — print the latest receipt as a compact human block, hard-capped at **30 lines**
+  (truncated with `...truncated` if needed). Prints nothing and exits 0 when
+  `HARNESS_PROFILE=minimal` or when no receipt file exists.
+
+**Auto-write vs semantic write:**
+
+The Stop hook (`verify-before-stop.sh`, step 5.5) calls `write --auto`, which records
+only the UTC timestamp, current git branch, and changed-file count. Auto mode is a
+**no-op** when an existing receipt is younger than 24 hours *and* contains at least one
+semantic field (`goal`, `done`, `blocked`, `next`, or `memo`) — ensuring that a richer
+receipt written earlier in the turn by the agent is preserved, not clobbered.
+
+The agent (or another hook/script) can write a semantic receipt at any point during a
+turn by calling `write` with named fields. That receipt will survive the Stop-hook auto
+pass for up to 24 hours.
+
+**Profile gating:**
+
+- `minimal`: `inject` prints nothing and exits 0. The Stop-hook auto-write step is still
+  executed (it only writes to the local `.harness/` transient store), but `inject` in the
+  SessionStart hook suppresses output entirely.
+- `standard` / `strict`: `inject` prints the receipt block on SessionStart.
+
+The `.harness/session-receipt.json` gitignore line lives in the repo's `.gitignore`.
+Add it with:
+
+```
+.harness/session-receipt.json
+```
 
 ### `issue-tracker-reminder.sh` — UserPromptSubmit (optional)
 
@@ -210,6 +258,72 @@ Always exits 0 — a capture hook must never fail a session. Wire under `Session
   }
 ]
 ```
+
+### `pre-tool-guard.sh` — PreToolUse on Bash (DASH-051)
+
+Intercepts shell commands before execution and blocks or warns on patterns that can
+irreversibly destroy repo or system data. Fires only on the `Bash` tool (matcher
+`Bash`); it does not parse file paths from Edit/Write events — that is `board-guard.sh`'s
+domain.
+
+**Closed pattern list v1** (word-boundary, tested against this repo's own scripts for
+false positives):
+
+| Pattern | What it catches |
+|---|---|
+| `rm -rf` / `-fr` / `-r -f` on `/`, `~`, `.`, or `$var` | Recursive force-remove of root, home, cwd, or an unquoted variable expansion |
+| `git reset --hard` | Discards all uncommitted changes |
+| `git clean` with `-f` and `-d` or `-x` combined | Permanently removes untracked files / ignored files |
+| `DROP TABLE` / `DROP DATABASE` / `TRUNCATE TABLE` (case-insensitive) | Destructive SQL in non-doc commands |
+
+**False-positive policy** — the following are explicitly allowed (exit 0, no warning):
+
+- `rm file.txt` — no recursive flag
+- `rm -rf /tmp/something` — concrete absolute subpath under `/tmp`
+- `git reset --soft HEAD~1` — not `--hard`
+- `grep DROP docs/x.md` — grep/cat/echo/head/tail commands are excluded from the SQL check
+
+**Profile ladder:**
+
+- `minimal`: silent pass-through; exit 0 always. No check runs.
+- `standard`: emits a warning to stderr; exit 0 (advisory, never blocks the turn).
+- `strict`: emits a message to stderr; exit 2 (blocks the tool call — PreToolUse deny
+  convention).
+
+Fails open — any payload it cannot parse yields exit 0. It never wedges the session.
+
+### `env-readiness-probe.sh` — SessionStart (DASH-051)
+
+Runs at session start and reports two classes of environment problems. **Always exits 0**
+— a SessionStart hook must never block.
+
+**(a) Command-resolvability leg:** when `.harness/verify.sh`, a `Makefile`, `package.json`,
+`pyproject.toml`/`setup.py`, `Cargo.toml`, or `go.mod` is present at the repo root, the
+implied canonical toolchain entrypoints (`make`, `node`, `python3`, `cargo`, `go`, etc.)
+are checked for resolvability via `command -v`. Unresolvable tools are reported with a
+warning. Heuristics are simple and conservative — a missing optional tool (e.g. yarn when
+only npm is installed) is the expected false-positive trade-off.
+
+**(b) Secret leg:** scans TRACKED files only (`git ls-files`, capped at 2000 files; binary
+files skipped by null-byte heuristic) for credential-shaped strings:
+
+| Pattern | What it finds |
+|---|---|
+| `aws_secret_access_key\s*[=:]\s*\S` | AWS secret key assignments |
+| `AKIA[0-9A-Z]{16}` | AWS access key IDs |
+| `-----BEGIN (RSA \|EC )?PRIVATE KEY-----` | PEM private keys |
+| `ghp_[A-Za-z0-9]{36}` | GitHub personal access tokens |
+| `(api[_-]?key\|secret\|token)\s*[:=]\s*['"][A-Za-z0-9+/]{20,}` | Generic API key/token assignments |
+
+**The secret value itself is never printed.** Only the file path and pattern class are
+reported, so the warning is safe to display in a shared transcript.
+
+**Profile ladder:**
+
+- `minimal`: silent exit 0; no checks run.
+- `standard`: warnings emitted for both legs.
+- `strict`: same as standard (exit 0 is fixed; SessionStart must not block regardless of
+  profile — unlike PreToolUse there is no deny convention here).
 
 ### `board-guard.sh` — PreToolUse on Edit / Write / MultiEdit (optional, Project Board)
 

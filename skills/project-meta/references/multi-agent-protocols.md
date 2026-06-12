@@ -180,6 +180,8 @@ Every delegated task must include:
 - Review criteria: what must be true for the subtask to pass.
 - Memory policy: whether the agent may suggest memory updates, edit canonical memory, or only report durable lessons.
 
+The capsule (`goal`, `constraints`, `decisions`, `out_of_scope`) is the mechanically recordable subset of this package. Record it via `dispatch_ledger.py record --schema-version 2 --capsule-goal … --capsule-constraints … --capsule-decisions … --capsule-out-of-scope …` (or `--capsule <JSON>`). This makes the context handed to each worker auditable alongside the verdict and touch-set in `.harness/dispatch-log.jsonl`. See [Mechanical Enforcement](#mechanical-enforcement) for the full v2 schema.
+
 ## Delegation Template
 
 ```text
@@ -275,20 +277,55 @@ The dispatch *engine* is the Workflow tool / Codex Agents-SDK / the prose loop (
 **Audit ledger** (the "Logging" requirement, line ~191). Each dispatch is recorded to `.harness/dispatch-log.jsonl`:
 
 ```bash
+# v1 (all fields)
 dispatch_ledger.py record --worker <id> --reviewer <id> --role worker \
   --verdict PASS --brief-hash <h> --comment "<what>"
-dispatch_ledger.py validate    # schema + verdict-domain check
+
+# v2 (adds capsule, touch-set, budget, checkpoint; --schema-version 2 required)
+dispatch_ledger.py record --worker <id> --role worker --verdict PASS \
+  --touch-set "a.py,b.py" \
+  --capsule-goal "implement X" --capsule-constraints "stdlib only" \
+  --capsule-decisions "used approach Y" --capsule-out-of-scope "Z" \
+  --budget-tokens 10000 --spent-tokens 8000 \
+  --checkpoint '{"completed":["step1"],"touched_files":["a.py"],"open_decisions":[]}' \
+  --schema-version 2
+# Alternatively, pass the full capsule as one --capsule '{"goal":…}' JSON arg.
+
+dispatch_ledger.py validate    # schema + verdict-domain check;
+                               # v2 rows: capsule/checkpoint completeness + budget advisory
 dispatch_ledger.py query       # chain summary, BLOCKER count
+
+# Atomic task claim — refuses a second claim on the same task id (exit 1)
+dispatch_ledger.py claim --task DASH-046 --worker w1   # exit 0 first time
+dispatch_ledger.py claim --task DASH-046 --worker w2   # exit 1 "duplicate claim"
+
+# Pairwise touch-set overlap report — exit 1 + report if any overlap exists
+dispatch_ledger.py overlap     # exit 0 when all touch-sets are disjoint
 ```
+
+**v2 schema fields** (enforced by `validate` only for rows with `schema_version >= 2`; v1 rows keep the `worker`/`role`/`verdict` floor):
+
+| Field | Type | Notes |
+|---|---|---|
+| `schema_version` | int | `2` for v2 rows; absent on v1 rows |
+| `touch_set` | list[str] | files this dispatch record touches; used by `overlap` |
+| `capsule` | object | context package: `goal`, `constraints`, `decisions`, `out_of_scope` (all required for v2) |
+| `budget_tokens` | int | optional token budget |
+| `spent_tokens` | int | optional tokens actually spent; `validate` reports exceedance as advisory (exit 0) |
+| `checkpoint` | object | `completed`, `touched_files`, `open_decisions` (all required for v2) |
+
+The capsule is the mechanical form of the [Context Package](#context-package) — it records the package that was handed to the worker and is now auditable via the ledger. See "Context Package" below for the prose definition of each field.
 
 **Mandatory-dispatch gate** (the file-count rule). The `Stop` hook runs `dispatch_ledger.py gate`: if the turn left **≥2 harness files** changed in the working tree (the Mandatory Subagent Dispatch file set) with no `.harness/dispatch-ack` marker, it flags the AP-COORD-1 pattern. Profile-gated (`minimal` off, `standard` warns, `strict` blocks). The ack is **one-shot** (consumed when honored) — so it cannot silently disable the gate — and is the mechanical form of the "Bypass requires explicit acknowledgement" rule. **This is a post-hoc detector/deterrent, not structural isolation**: it catches the violation at turn-end but cannot un-edit the files. Structural prevention (a conductor that *cannot* edit while orchestrating) still requires the engine (separate Worker agents) — the gate is the floor for runtimes/turns that skip the engine.
 
-**Designed but not yet shipped — the [Synchronous Gates](#synchronous-gates-under-orchestration) as `PreToolUse` hooks:**
+**Partially shipped — the [Synchronous Gates](#synchronous-gates-under-orchestration) as `PreToolUse` hooks:**
+
+The destructive-command guard is **now shipped** (v0.6, DASH-051): `PreToolUse(Bash)` blocks a closed list of destructive shell patterns (`rm -rf /`, `git reset --hard`, `DROP TABLE`, etc.) with a profile ladder (`minimal` off / `standard` warn / `strict` block, exit 2). The following two gates remain **designed but not yet shipped**:
 
 - *Read-only-verb write* → `PreToolUse(Edit|Write)` blocking edits under a read-only verb.
 - *Pre-commit* → `PreToolUse(Bash)` blocking `git commit` inside a runner.
 
-Both require turn/verb **state** a recipe must set (e.g. `.harness/current-verb`, `.harness/runner-active`). Until that plumbing exists, shipping these as hooks would make them silent-pass = AP-VAL-1 dead code. They are specced here as the next enforcement step, not shipped inert.
+Both of the unshipped gates require turn/verb **state** a recipe must set (e.g. `.harness/current-verb`, `.harness/runner-active`). Until that plumbing exists, shipping these as hooks would make them silent-pass = AP-VAL-1 dead code. They are specced here as the next enforcement step, not shipped inert.
 
 ## Integration Checklist
 

@@ -39,6 +39,7 @@ Score each dimension as **ABSENT / PARTIAL / ENFORCED**.
 - [ ] No stale rules layered over new ones; no contradictions (AP-MEM-3)
 - [ ] No session logs / time-stamped notes accumulating in canonical memory (AP-MEM-4)
 - [ ] Topical files (`agents/*.md`) are narrow enough that the agent loads only relevant context per task
+- [ ] Referential citations in memory files resolve to real repo paths — run `memory_staleness.py --target-root <repo>` (the staleness lint feeds this dimension; STALE rows indicate paths that no longer exist)
 
 ### Skill / harness authoring (when auditing a skill)
 

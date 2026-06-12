@@ -17,6 +17,16 @@
             "command": "bash .claude/hooks/load-agents-md.sh"
           }
         ]
+      },
+      {
+        "_comment": "env-readiness-probe (DASH-051): fires at session start; checks command-resolvability of canonical toolchain entrypoints and scans tracked files for credential-shaped strings. Always exits 0 — advisory only. Independent of the board-guard PreToolUse block.",
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/env-readiness-probe.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -27,6 +37,16 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/board-guard.sh"
+          }
+        ]
+      },
+      {
+        "_comment": "pre-tool-guard (DASH-051): intercepts Bash commands before execution; blocks/warns on destructive patterns (rm -rf on dangerous targets, git reset --hard, git clean -fdx, DROP TABLE/DATABASE, TRUNCATE TABLE). Profile ladder: minimal=silent pass, standard=stderr warning+exit 0, strict=stderr message+exit 2 (block). Independent of board-guard — that guard protects board store files via Edit/Write/MultiEdit events; this guard intercepts Bash commands.",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-guard.sh"
           }
         ]
       }

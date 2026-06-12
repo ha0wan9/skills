@@ -1,10 +1,10 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "e3b0cc309f7a78ae545a1212e0b25eedcfa2fa96d430ab660db107b50b4d6c66",
-    "rev": 60,
+    "items_sha256": "1445a4757c6b766dabd27861887d933bc66fb901d15126a0eefd327a79fce960",
+    "rev": 74,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-06-12T12:37:11Z"
+    "updated_at": "2026-06-12T14:20:58Z"
   },
   "milestones": [
     {
@@ -77,9 +77,23 @@
         "DASH-043",
         "DASH-044"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "global-meta lifecycle + marketplace hygiene",
       "version": "v0.5"
+    },
+    {
+      "detail": "Agentic-infra hardening from the 2026-06 bottleneck research (P1/P2/P4/P5/P6 + token-diet chore): dispatch-state spine (ledger v2), memory staleness lint, session receipt primitive, test-integrity gate, destructive-command guard + env-readiness probe, SKILL.md description trim. P3 (DASH-048) and P7 (DASH-052) deferred in pool: P3 wants its own milestone, P7 depends on DASH-028 + DASH-048.",
+      "items": [
+        "DASH-046",
+        "DASH-047",
+        "DASH-049",
+        "DASH-050",
+        "DASH-051",
+        "DASH-031"
+      ],
+      "status": "done",
+      "title": "Agentic-infra hardening",
+      "version": "v0.6"
     }
   ]
 }

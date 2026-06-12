@@ -45,6 +45,26 @@ case "$PROFILE" in
     if grep -q '^## Topic Routing' "$canonical" 2>/dev/null; then
       echo "[harness] topical routing available; load only the relevant agents/*.md per task."
     fi
+    # Inject prior-session receipt when available (self-gates on profile + existence).
+    # Resolve project-meta's install dir using the same probe logic as verify-before-stop.sh.
+    _rcpt_dir=""
+    for _c in \
+      "${PROJECT_META_DIR:-}" \
+      "$HOME/.codex/skills/project-meta" \
+      "$HOME/.claude/skills/project-meta" \
+      "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
+      "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+      "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
+      "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+      "$HOME"/.codex/plugins/cache/*/project-meta/* \
+      "$HOME"/.claude/plugins/cache/*/project-meta/* ; do
+      if [[ -n "$_c" && -f "$_c/scripts/session_receipt.py" ]]; then
+        _rcpt_dir="$_c"; break
+      fi
+    done
+    if [[ -n "$_rcpt_dir" ]] && command -v python3 >/dev/null 2>&1; then
+      python3 "$_rcpt_dir/scripts/session_receipt.py" --target-root . inject 2>/dev/null || true
+    fi
     ;;
   *)
     echo "[harness] WARN: unknown HARNESS_PROFILE=$PROFILE; falling back to standard."

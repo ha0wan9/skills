@@ -141,6 +141,22 @@ if [[ -f docs/backlog/items.jsonl ]]; then
   fi
 fi
 
+# 5.5) Session receipt — write a minimal auto receipt so the next SessionStart
+#      can surface what this session did. Resolve-don't-vendor (reuses $pm_dir
+#      resolved above). Thin floor: skip silently if unresolvable or if python3
+#      is absent (already guarded above). A richer receipt written earlier in
+#      the turn by the agent is NOT clobbered (--auto self-gates on age+richness).
+pm_rcpt=""
+if [[ -n "$pm_dir" ]]; then pm_rcpt="$pm_dir/scripts/session_receipt.py"; fi
+if [[ -z "$pm_rcpt" || ! -f "$pm_rcpt" ]]; then
+  pm_rdir="$(resolve_project_meta scripts/session_receipt.py)" || pm_rdir=""
+  pm_rcpt=""
+  if [[ -n "$pm_rdir" ]]; then pm_rcpt="$pm_rdir/scripts/session_receipt.py"; fi
+fi
+if [[ -n "$pm_rcpt" && -f "$pm_rcpt" ]]; then
+  python3 "$pm_rcpt" --target-root . write --auto 2>/dev/null || true
+fi
+
 # 6) Audit convergence gate. Final audits are multi-round (recipes/audit.md,
 #    Convergence loop): an open release-gated audit transaction whose last round
 #    is still red (BLOCKER/MAJOR > 0, or the Round-4 cap) must not slip past a

@@ -184,8 +184,39 @@ def cmd_writeback(args: argparse.Namespace) -> int:
             f"[memory] to clear: edit the memory owner, or `touch {ACK_MARKER}` for a one-shot skip (consumed this turn).",
             file=sys.stderr,
         )
+        # Advisory: note staleness if present (does not block writeback).
+        _print_staleness_hint(root)
         return 1
     return 0
+
+
+def _print_staleness_hint(root: Path) -> None:
+    """Print a one-line advisory if the memory files have STALE citations."""
+    try:
+        import importlib.util
+        import io
+        from contextlib import redirect_stdout
+
+        scripts_dir = Path(__file__).parent
+        spec = importlib.util.spec_from_file_location(
+            "memory_staleness",
+            scripts_dir / "memory_staleness.py",
+        )
+        if spec is None or spec.loader is None:
+            return
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            exit_code = mod.run(str(root))
+        if exit_code != 0:
+            print(
+                "[staleness] advisory: memory files have STALE citations — "
+                "consider running memory_staleness.py to review before writing back.",
+                file=sys.stderr,
+            )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def cmd_write(args: argparse.Namespace) -> int:
@@ -232,7 +263,61 @@ def cmd_validate(args: argparse.Namespace) -> int:
             print(f"FAIL {p}", file=sys.stderr)
         return 1
     print(f"PASS memory surface ok (entrypoint: {entry})")
+
+    # --- Staleness lint (advisory) ---
+    # Import from the same directory; fall back gracefully if unavailable.
+    _run_staleness_advisory(root)
+
     return 0
+
+
+def _run_staleness_advisory(root: Path) -> None:
+    """Run memory_staleness lint and print summary as advisory output.
+
+    STALE findings are printed as advisory only — they do NOT flip the
+    validate exit code to 1 in this version. The summary line is always
+    printed so downstream greps can verify wiring.
+    """
+    try:
+        import importlib.util
+        import os
+
+        scripts_dir = Path(__file__).parent
+        spec = importlib.util.spec_from_file_location(
+            "memory_staleness",
+            scripts_dir / "memory_staleness.py",
+        )
+        if spec is None or spec.loader is None:
+            print("[staleness] advisory: memory_staleness.py not found; skipping")
+            return
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+
+        # Redirect mod's stdout to capture its lines, then replay them.
+        import io
+        from contextlib import redirect_stdout
+
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            exit_code = mod.run(str(root))
+        output = buf.getvalue()
+
+        for line in output.splitlines():
+            if line.startswith("staleness:"):
+                print(f"[staleness] {line}")
+            elif line.startswith("[staleness]"):
+                # date annotations from the module itself
+                print(line)
+            # individual OK/STALE/UNKNOWN rows are omitted from validate
+            # output to keep it concise; the summary line is sufficient.
+
+        if exit_code != 0:
+            print(
+                "[staleness] advisory: STALE citations found in memory files "
+                "(run memory_staleness.py directly for details — not blocking validate)"
+            )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[staleness] advisory: lint skipped ({exc})")
 
 
 def main(argv: list[str] | None = None) -> int:

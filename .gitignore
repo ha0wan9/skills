@@ -9,6 +9,7 @@ __pycache__/
 .harness/meta-debug/
 .harness/phase-state.json
 .harness/dispatch-log.jsonl
+.harness/session-receipt.json
 .harness/dispatch-ack
 .harness/writeback-ack
 .harness/audit-ledger.jsonl
