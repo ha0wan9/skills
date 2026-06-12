@@ -2,7 +2,7 @@
 
 > **Status:** Proposed — awaiting operator GO + adversarial critic panel before any canon/code change.
 > **Scope:** map the 2025–2026 practitioner-reported infra bottlenecks of agentic coding onto
-> project-meta's capability surface; propose 6 prioritized additions/refactors (P1–P6).
+> project-meta's capability surface; propose 7 prioritized additions/refactors (P1–P7).
 > **Grounding:** 6 parallel web-research agents (2026-06-12), one per bottleneck domain
 > (context/memory, verification/trust, multi-agent orchestration, execution environment,
 > repo-scale code understanding, spec/governance). Rounds 2–3 (same day, 4 more agents):
@@ -38,10 +38,10 @@ repo harness owns. Three findings recur independently:
    standard detector; AI code carries 2.74× more vulns (Veracode 2025), 1-in-5 orgs had an
    AI-code security incident (Aikido 2026).
 
-Validation for in-flight work: the land-queue capability is squarely confirmed — Anthropic's
+Validation for shipped work: the land-queue capability is squarely confirmed — Anthropic's
 CPO publicly stated they "had to completely re-architect" their merge queue under agent PR
 volume (Trunk.io, Jun 2025); merge-queue-at-scale is now a named product category (Mergify,
-Graphite). Ship it as planned; nothing below duplicates it.
+Graphite). It landed as PR #52 (DASH-045) while this research ran; nothing below duplicates it.
 
 ## 1. Capability map — covered / partial / gap
 
@@ -51,7 +51,7 @@ Graphite). Ship it as planned; nothing below duplicates it.
 | Instruction-file token tax | `context_cost_estimate.py`, DASH-031 token diet, selective loading | **covered** (keep DASH-031 moving) |
 | Token-efficient code navigation | code-graph capability (graphify wrap), `extract_doc_context.py` | **covered**; small gap: graph staleness scoring (folded into P2) |
 | Review tiering economics | L0–L3 + scorer (DASH-019/020), fresh-review gate, audit convergence ledger | **covered**; DASH-028 risk rubric extends |
-| Merge/landing of parallel branches | land-queue capability (reference + templates drafted as uncommitted WIP on `land-queue-capability` branch) | **in flight — confirmed priority** |
+| Merge/landing of parallel branches | land-queue capability (landed as project-meta 1.15.0, PR #52, DASH-045) | **landed — priority confirmed by this research** |
 | Dispatch state: claim/touch-set/capsule/budget/checkpoint | `dispatch_ledger.py` records + gates dispatch *occurrence*, but schema is thin | **gap → P1** |
 | Memory staleness vs repo reality | `repo_memory.py` validates structure, not referential truth | **gap → P2** |
 | Per-rule effectiveness / rule bloat | `audit --friction` (session-level), pressure-testing (adversarial, not observational) | **partial → P3** |
@@ -221,7 +221,7 @@ stringency from model id or measured per-task-class reliability.**
 
 1. Operator reviews this proposal; pick the slice for the next milestone (suggested: **P1+P2**
    — the state spine and the staleness lint are independent, both pure-derived, and P1
-   unblocks safer fleet use of everything else; land-queue continues in parallel).
+   unblocks safer fleet use of everything else; land-queue already landed via PR #52).
 2. Per `critic-before-build-canon`: dispatch a fresh adversarial critic panel against the
    chosen P's *plan* before any canon/code edit.
 3. Implement via the validated-edit → ship → reload workflow; board items track state.
