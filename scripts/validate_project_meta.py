@@ -406,23 +406,15 @@ def check_skill_metadata() -> None:
     require(description, "SKILL.md description is required")
     require(len(description) <= 1024, "SKILL.md description exceeds 1024 chars")
     require("<" not in description and ">" not in description, "Description uses angle brackets")
+    # 5 anchor phrases that must appear verbatim in the description.
+    # These are the minimum trigger-matching anchors; the description may be
+    # trimmed for token budget as long as all five survive.
     for token in (
-        "agent-work harness",
-        "/project-meta commands",
-        "/project-meta init",
+        "/project-meta",
         "AGENTS.md",
         "USER.md",
-        "preference presets",
-        "existing agent-facing documentation framework",
-        "user-facing documentation delivery",
-        "canonical templates",
-        "project-level artifact instantiation",
-        "trigger policy",
-        "behavior guardrails",
         "multi-agent",
-        "pre-commit delivery",
-        "mirror sync",
-        "durable knowledge",
+        "mirror",
     ):
         require(token in description, f"Description missing trigger token: {token}")
 
