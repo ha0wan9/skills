@@ -119,27 +119,126 @@ print("unsafe" if dangerous else "safe")
     return 1
 }
 
-_check_git_reset_hard() {
-    if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])git[[:space:]][^;|&]*reset[[:space:]][^;|&]*--hard'; then
-        GUARD_REASON="git reset --hard discards all uncommitted changes and cannot be undone."
-        return 0
-    fi
-    return 1
-}
+_check_git_destructive() {
+    # Tokenise the full command with python3/shlex so that quoted -m arguments
+    # (e.g. git commit -m "fix: warn about git reset --hard dangers") can never
+    # match.  Each shell-operator-separated segment is treated as an independent
+    # command; the git subcommand and its flags are checked as SEPARATE tokens.
+    #
+    # Detects:
+    #   git reset --hard            → GUARD_REASON set, return 0
+    #   git clean -f + (-d or -x)  → GUARD_REASON set, return 0
+    # Allows:
+    #   git reset --soft, git reset --mixed, etc.
+    #   git clean without -f (or without -d/-x)
+    #   Any git command with --hard/-f/-d/-x in a -m "..." message argument
+    local result
+    result="$(printf '%s' "$cmd" | python3 -c '
+import sys, re, shlex
 
-_check_git_clean() {
-    # git clean is dangerous when it carries -f (force) AND at least one of -d or -x.
-    if ! printf '%s' "$cmd" | grep -qE '(^|[[:space:]])git[[:space:]][^;|&]*clean[[:space:]]'; then
-        return 1
-    fi
-    local has_f=0 has_d_or_x=0
-    if printf '%s' "$cmd" | grep -qE -- 'git[[:space:]][^;|&]*clean[^;|&]*-[a-zA-Z]*f'; then has_f=1; fi
-    if printf '%s' "$cmd" | grep -qE -- 'git[[:space:]][^;|&]*clean[^;|&]*-[a-zA-Z]*[dx]'; then has_d_or_x=1; fi
-    if [ "$has_f" -eq 1 ] && [ "$has_d_or_x" -eq 1 ]; then
-        GUARD_REASON="git clean with -f and -d/-x flags removes untracked files/dirs permanently."
-        return 0
-    fi
-    return 1
+cmd = sys.stdin.read()
+
+# Split into chain segments on shell operators: &&, ||, ;, |, &
+# shlex.split keeps "&&" as a single token; we need segment boundaries.
+# Strategy: tokenise the whole string, then split on operator tokens.
+OPERATORS = {"&&", "||", ";", "|", "&"}
+
+try:
+    all_tokens = shlex.split(cmd, posix=True)
+except ValueError:
+    # Un-parseable (e.g. unterminated quote) — fail open for this check.
+    print("safe")
+    sys.exit(0)
+
+# Walk tokens, splitting into segments at operator boundaries.
+segments = []
+current = []
+for tok in all_tokens:
+    if tok in OPERATORS:
+        if current:
+            segments.append(current)
+        current = []
+    else:
+        current.append(tok)
+if current:
+    segments.append(current)
+
+def find_git_subcommand(seg):
+    """Return (git_idx, subcmd_idx) if segment contains a git invocation,
+    else None.  git_idx is the index of the "git" token; subcmd_idx is the
+    index of the first non-flag token after "git" (the subcommand)."""
+    for i, tok in enumerate(seg):
+        if tok == "git" or tok.endswith("/git"):
+            # Scan forward for subcommand (first non-flag, non-option-value token).
+            j = i + 1
+            skip_next = False
+            while j < len(seg):
+                t = seg[j]
+                if skip_next:
+                    skip_next = False
+                    j += 1
+                    continue
+                # Flags that consume the next token as a value (e.g. -C <dir>).
+                if t in ("-C", "--work-tree", "--git-dir", "--namespace"):
+                    skip_next = True
+                    j += 1
+                    continue
+                if t.startswith("-"):
+                    j += 1
+                    continue
+                return (i, j)
+            return (i, None)
+    return None
+
+for seg in segments:
+    gi = find_git_subcommand(seg)
+    if gi is None:
+        continue
+    git_idx, sub_idx = gi
+    if sub_idx is None:
+        continue
+    subcmd = seg[sub_idx]
+    rest = seg[sub_idx + 1:]  # tokens after the subcommand
+
+    # ── git reset --hard ─────────────────────────────────────────
+    if subcmd == "reset":
+        # Collect flag tokens only (ignore values like HEAD~1, branch names).
+        # A flag starts with "-"; we look for the literal token "--hard".
+        flags = [t for t in rest if t.startswith("-")]
+        if "--hard" in flags:
+            print("reset_hard")
+            sys.exit(0)
+
+    # ── git clean -f[-d/-x] ──────────────────────────────────────
+    if subcmd == "clean":
+        # Gather all flag-chars from combined flags (e.g. -fdx → f,d,x)
+        # and separate flag tokens (e.g. -f -d -x).
+        flag_chars = set()
+        for t in rest:
+            if t.startswith("-") and not t.startswith("--"):
+                flag_chars.update(t[1:])  # strip the leading "-"
+        has_f = "f" in flag_chars
+        has_d_or_x = "d" in flag_chars or "x" in flag_chars
+        if has_f and has_d_or_x:
+            print("clean_fdx")
+            sys.exit(0)
+
+print("safe")
+' 2>/dev/null || echo "safe")"
+
+    case "$result" in
+        reset_hard)
+            GUARD_REASON="git reset --hard discards all uncommitted changes and cannot be undone."
+            return 0
+            ;;
+        clean_fdx)
+            GUARD_REASON="git clean with -f and -d/-x flags removes untracked files/dirs permanently."
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 _check_sql_destructive() {
@@ -160,9 +259,7 @@ _check_sql_destructive() {
 matched=0
 if _check_rm_rf; then
     matched=1
-elif _check_git_reset_hard; then
-    matched=1
-elif _check_git_clean; then
+elif _check_git_destructive; then
     matched=1
 elif _check_sql_destructive; then
     matched=1

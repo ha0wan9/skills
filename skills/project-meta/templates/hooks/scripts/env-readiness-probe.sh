@@ -86,54 +86,69 @@ _probe_secrets() {
         return 0
     fi
 
-    # Combined regex pattern covering all credential shapes.
-    # Intentionally uses -E (POSIX extended) for broad portability; -P (PCRE) tried first.
-    local pat='aws_secret_access_key[[:space:]]*[=:][[:space:]]*[^[:space:]]|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC )?PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|(api.?key|secret|token)[[:space:]]*[:=][[:space:]]*['"'"'"][A-Za-z0-9+/]{20,}'
+    # Single python3 invocation: receives the capped file list via stdin,
+    # sniffs binaries, scans with compiled regexes, prints one warning line
+    # per hit (file path only — matched value is NEVER printed).
+    #
+    # Patterns (same set as the original per-file grep):
+    #   aws_secret_access_key
+    #   AKIA[0-9A-Z]{16}
+    #   -----BEGIN (RSA |EC )?PRIVATE KEY-----
+    #   ghp_[A-Za-z0-9]{36}
+    #   (api[_-]?key|secret|token)\s*[:=]\s*['"'"'"][A-Za-z0-9+/]{20,}  (quote = \x27 or \x22 in embedded python)
+    local scan_output
+    scan_output="$(git -C "$TARGET_ROOT" ls-files 2>/dev/null \
+        | python3 -c '
+import sys, re, os
 
-    local warned_count=0
-    local file_count=0
+TARGET_ROOT = os.environ.get("HARNESS_TARGET_ROOT", ".")
+FILE_CAP = 2000
+PER_FILE_BYTE_CAP = 1 * 1024 * 1024  # 1 MiB per file
 
-    # Iterate tracked files; bash 3.2-compatible (no mapfile).
-    while IFS= read -r rel_path; do
-        file_count=$((file_count + 1))
-        [ "$file_count" -gt 2000 ] && break
+PATTERNS = re.compile(
+    r"aws_secret_access_key\s*[=:]\s*\S"
+    r"|AKIA[0-9A-Z]{16}"
+    r"|-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"
+    r"|ghp_[A-Za-z0-9]{36}"
+    r"|(?:api[_\-]?key|secret|token)\s*[:=]\s*[\x27\x22][A-Za-z0-9+/]{20,}",
+    re.IGNORECASE,
+)
 
-        local abs_path="$TARGET_ROOT/$rel_path"
-        [ -f "$abs_path" ] || continue
+warned = []
+count = 0
+for line in sys.stdin:
+    rel_path = line.rstrip("\n")
+    count += 1
+    if count > FILE_CAP:
+        break
+    abs_path = os.path.join(TARGET_ROOT, rel_path)
+    if not os.path.isfile(abs_path):
+        continue
+    try:
+        file_size = os.path.getsize(abs_path)
+        if file_size > PER_FILE_BYTE_CAP:
+            continue
+        with open(abs_path, "rb") as fh:
+            header = fh.read(8192)
+        # Sniff binary: presence of NUL byte → skip.
+        if b"\x00" in header:
+            continue
+        # Read full file as text for scanning.
+        with open(abs_path, "r", encoding="utf-8", errors="replace") as fh:
+            text = fh.read(PER_FILE_BYTE_CAP)
+    except OSError:
+        continue
+    if PATTERNS.search(text):
+        warned.append(rel_path)
 
-        # Skip binary files: check for null byte in first 8 KB via python3 (portable).
-        local is_binary=0
-        if python3 -c '
-import sys
-try:
-    with open(sys.argv[1], "rb") as f:
-        chunk = f.read(8192)
-    sys.exit(0 if b"\x00" not in chunk else 1)
-except Exception:
-    sys.exit(0)
-' "$abs_path" 2>/dev/null; then
-            : # not binary — continue
-        else
-            is_binary=1
-        fi
-        [ "$is_binary" -eq 1 ] && continue
+for p in warned:
+    print("[env-probe] WARNING: credential-shaped string found in tracked file: " + p + " (value not shown)")
+if warned:
+    print("[env-probe] WARNING: " + str(len(warned)) + " file(s) with potential secrets found — review and rotate credentials if committed accidentally.")
+' 2>/dev/null)"
 
-        # Scan for credential patterns. Never print the matched value.
-        local hit=0
-        if LC_ALL=C grep -qiP "$pat" "$abs_path" 2>/dev/null; then
-            hit=1
-        elif LC_ALL=C grep -qiE "$pat" "$abs_path" 2>/dev/null; then
-            hit=1
-        fi
-
-        if [ "$hit" -eq 1 ]; then
-            warn "credential-shaped string found in tracked file: $rel_path (value not shown)"
-            warned_count=$((warned_count + 1))
-        fi
-    done < <(git -C "$TARGET_ROOT" ls-files 2>/dev/null)
-
-    if [ "$warned_count" -gt 0 ]; then
-        warn "$warned_count file(s) with potential secrets found — review and rotate credentials if committed accidentally."
+    if [ -n "$scan_output" ]; then
+        printf '%s\n' "$scan_output"
     fi
 }
 
