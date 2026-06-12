@@ -216,6 +216,72 @@ Always exits 0 — a capture hook must never fail a session. Wire under `Session
 ]
 ```
 
+### `pre-tool-guard.sh` — PreToolUse on Bash (DASH-051)
+
+Intercepts shell commands before execution and blocks or warns on patterns that can
+irreversibly destroy repo or system data. Fires only on the `Bash` tool (matcher
+`Bash`); it does not parse file paths from Edit/Write events — that is `board-guard.sh`'s
+domain.
+
+**Closed pattern list v1** (word-boundary, tested against this repo's own scripts for
+false positives):
+
+| Pattern | What it catches |
+|---|---|
+| `rm -rf` / `-fr` / `-r -f` on `/`, `~`, `.`, or `$var` | Recursive force-remove of root, home, cwd, or an unquoted variable expansion |
+| `git reset --hard` | Discards all uncommitted changes |
+| `git clean` with `-f` and `-d` or `-x` combined | Permanently removes untracked files / ignored files |
+| `DROP TABLE` / `DROP DATABASE` / `TRUNCATE TABLE` (case-insensitive) | Destructive SQL in non-doc commands |
+
+**False-positive policy** — the following are explicitly allowed (exit 0, no warning):
+
+- `rm file.txt` — no recursive flag
+- `rm -rf /tmp/something` — concrete absolute subpath under `/tmp`
+- `git reset --soft HEAD~1` — not `--hard`
+- `grep DROP docs/x.md` — grep/cat/echo/head/tail commands are excluded from the SQL check
+
+**Profile ladder:**
+
+- `minimal`: silent pass-through; exit 0 always. No check runs.
+- `standard`: emits a warning to stderr; exit 0 (advisory, never blocks the turn).
+- `strict`: emits a message to stderr; exit 2 (blocks the tool call — PreToolUse deny
+  convention).
+
+Fails open — any payload it cannot parse yields exit 0. It never wedges the session.
+
+### `env-readiness-probe.sh` — SessionStart (DASH-051)
+
+Runs at session start and reports two classes of environment problems. **Always exits 0**
+— a SessionStart hook must never block.
+
+**(a) Command-resolvability leg:** when `.harness/verify.sh`, a `Makefile`, `package.json`,
+`pyproject.toml`/`setup.py`, `Cargo.toml`, or `go.mod` is present at the repo root, the
+implied canonical toolchain entrypoints (`make`, `node`, `python3`, `cargo`, `go`, etc.)
+are checked for resolvability via `command -v`. Unresolvable tools are reported with a
+warning. Heuristics are simple and conservative — a missing optional tool (e.g. yarn when
+only npm is installed) is the expected false-positive trade-off.
+
+**(b) Secret leg:** scans TRACKED files only (`git ls-files`, capped at 2000 files; binary
+files skipped by null-byte heuristic) for credential-shaped strings:
+
+| Pattern | What it finds |
+|---|---|
+| `aws_secret_access_key\s*[=:]\s*\S` | AWS secret key assignments |
+| `AKIA[0-9A-Z]{16}` | AWS access key IDs |
+| `-----BEGIN (RSA \|EC )?PRIVATE KEY-----` | PEM private keys |
+| `ghp_[A-Za-z0-9]{36}` | GitHub personal access tokens |
+| `(api[_-]?key\|secret\|token)\s*[:=]\s*['"][A-Za-z0-9+/]{20,}` | Generic API key/token assignments |
+
+**The secret value itself is never printed.** Only the file path and pattern class are
+reported, so the warning is safe to display in a shared transcript.
+
+**Profile ladder:**
+
+- `minimal`: silent exit 0; no checks run.
+- `standard`: warnings emitted for both legs.
+- `strict`: same as standard (exit 0 is fixed; SessionStart must not block regardless of
+  profile — unlike PreToolUse there is no deny convention here).
+
 ### `board-guard.sh` — PreToolUse on Edit / Write / MultiEdit (optional, Project Board)
 
 Keeps board work **fixed and stable** by steering every write through `scripts/board.py` (the
