@@ -118,6 +118,11 @@ Six responsibilities:
    when <2 harness files changed or `.harness/dispatch-ack` exists
    (one-shot). The enforcement leg of the Task Dispatch paradigm
    (`references/multi-agent-protocols.md#mandatory-subagent-dispatch`).
+   For v2 ledger rows (`schema_version >= 2`), `dispatch_ledger.py
+   validate` additionally checks capsule completeness (`goal`,
+   `constraints`, `decisions`, `out_of_scope`) and checkpoint
+   completeness (`completed`, `touched_files`, `open_decisions`), and
+   reports `budget_tokens`/`spent_tokens` exceedance as advisory text.
 5. **Project Board store integrity** via `board.py tx` (same resolved
    path) when `docs/backlog/items.jsonl` exists — item schema,
    duplicate ids, roadmap references, `items_sha256` freshness — so a
