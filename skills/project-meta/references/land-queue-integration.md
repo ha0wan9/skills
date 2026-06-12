@@ -139,8 +139,9 @@ Pipeline steps for `land <branch>`:
    moved base mid-land; re-run).
 
 Exit codes: `0` landed · `1` usage/preflight · `2` residual conflicts
-(agent session) · `3` tests failed · `4` config missing · `5` base not
-fast-forwardable.
+(agent session) · `3` tests failed · `4` config missing (or empty) · `5` base
+not fast-forwardable (base moved mid-land, or the base branch's worktree is
+dirty — clean it, then re-run).
 
 Pushing the updated base to a remote is **not** part of the pipeline. With
 this capability, the remote is a mirror/backup of the locally integrated

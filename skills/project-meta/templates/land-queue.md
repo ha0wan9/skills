@@ -63,7 +63,7 @@ Exit codes route the escalation ladder:
 | 2 | residual conflicts (rerere + Mergiraf exhausted) | bounded conflict session: re-run the rebase, read **both sides' intent**, resolve, re-run `land.sh land` (rerere records it — same conflict never costs twice). Incompatible architectural decisions → stop, surface to operator |
 | 3 | tests failed on the rebased branch | investigate on the branch; base is untouched |
 | 4 | config missing | run `scripts/land.sh setup` |
-| 5 | base moved mid-land | re-run `land.sh land` |
+| 5 | base moved mid-land, or the base branch's worktree is dirty | clean the flagged worktree if any, then re-run `land.sh land` |
 
 ## Rules
 

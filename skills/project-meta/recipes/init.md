@@ -105,7 +105,7 @@ Produce a delivery summary covering:
 - Files created or repaired
 - Preference preset selection or resulting local `USER.md` (questionnaire transcript or summary)
 - Offered execution-rules instantiation (when applicable)
-- Optional capability install summary (phase-lock, hooks, multi-host, issue-tracker, code-graph)
+- Optional capability install summary (phase-lock, hooks, multi-host, issue-tracker, code-graph, land-queue)
 - Validation result, including the `validate_target_harness.py` output
 - Pre-commit delivery sections
 

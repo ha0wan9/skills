@@ -7,7 +7,7 @@ which optional capabilities are installed — without re-running a full `init`.
 
 - User invokes `/project-meta settings` (no args → view; with args → toggle)
 - User asks to "turn on/off" a harness capability after init (hooks, phase-lock,
-  multi-host, issue-tracker, code-graph), or to change the `HARNESS_PROFILE`
+  multi-host, issue-tracker, code-graph, land-queue), or to change the `HARNESS_PROFILE`
 - User asks "what's enabled in this harness and how do I change it?"
 
 ## Mode

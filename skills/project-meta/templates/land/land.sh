@@ -117,10 +117,12 @@ cmd_land() {
   git show-ref --verify --quiet "refs/heads/$base"   || die "no such base branch: $base"
   [ "$branch" != "$base" ] || die "refusing to land base onto itself"
   local testcmd
-  testcmd="$(git config --get land.testcmd 2>/dev/null)" || {
+  testcmd="$(git config --get land.testcmd 2>/dev/null || true)"
+  if [ -z "$testcmd" ]; then
+    # Unset or empty is a hard stop, not a silent skip — the test gate is the point.
     printf 'land.sh: land.testcmd not configured — run: scripts/land.sh setup --test-cmd '\''<cmd>'\''\n' >&2
     exit 4
-  }
+  fi
 
   # Run the rebase in the worktree that has the branch checked out (the
   # usual parallel-agent layout); fall back to checking it out here.
@@ -168,7 +170,12 @@ cmd_land() {
       printf 'land.sh: base %s is checked out dirty in %s — clean it, then re-run\n' "$base" "$base_wt" >&2
       exit 5
     fi
-    git -C "$base_wt" merge --ff-only "$branch" >/dev/null
+    # Explicit guard: when called from `queue`, this function runs in a
+    # condition context where set -e is suppressed — never rely on errexit.
+    git -C "$base_wt" merge --ff-only "$branch" >/dev/null || {
+      printf 'land.sh: fast-forward of %s failed in %s — re-run after cleaning that worktree\n' "$base" "$base_wt" >&2
+      exit 5
+    }
   else
     git fetch . "$branch:$base" 2>/dev/null || {
       printf 'land.sh: could not fast-forward %s — re-run\n' "$base" >&2
@@ -185,7 +192,9 @@ cmd_queue() {
     i=$((i + 1))
     info "queue: landing $b ($i/$total)"
     rc=0
-    cmd_land "$b" || rc=$?
+    # Subshell: cmd_land's exit codes terminate the subshell, not the queue,
+    # so the stopped-queue report below actually prints.
+    (cmd_land "$b") || rc=$?
     if [ "$rc" -ne 0 ]; then
       printf 'land.sh: queue stopped at %s (exit %s). Landed: %s. Not landed: %s\n' \
         "$b" "$rc" "${landed[*]:-none}" "${*:$i}" >&2

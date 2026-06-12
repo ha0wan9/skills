@@ -927,12 +927,26 @@ def collect_harness(root: Path) -> dict[str, Any]:
     cg_sources = [rel(cg_doc)] if cg_present else []
     cg_detail = {"doc": rel(cg_doc) if cg_present else None, "routed_in": cg_routed_in}
 
+    # land-queue — doc + executable script + routed from canonical memory
+    lq_doc = root / "agents" / "land-queue.md"
+    lq_script = root / "scripts" / "land.sh"
+    lq_present = lq_doc.is_file()
+    lq_script_ok = lq_script.is_file() and os.access(lq_script, os.X_OK)
+    lq_routed_in = _routed_in(root, "agents/land-queue.md")
+    lq_sources = [rel(p) for p, ok in ((lq_doc, lq_present), (lq_script, lq_script.is_file())) if ok]
+    lq_detail = {
+        "doc": rel(lq_doc) if lq_present else None,
+        "script": rel(lq_script) if lq_script.is_file() else None,
+        "routed_in": lq_routed_in,
+    }
+
     capabilities = [
         {"key": "hooks", "state": _cap_state(bool(hook_scripts), hooks_wired), "sources": hooks_sources, "detail": hooks_detail},
         {"key": "phase-lock", "state": _cap_state(pl_contract.is_file(), pl_state.is_file()), "sources": pl_sources, "detail": phase_detail},
         {"key": "multi-host", "state": "on" if mirror_present else "off", "sources": mirror_present, "detail": {"mirrors": mirrors_detail}},
         {"key": "issue-tracker", "state": _cap_state(it_present, bool(it_routed_in)), "sources": it_sources, "detail": issue_detail},
         {"key": "code-graph", "state": _cap_state(cg_present, bool(cg_routed_in)), "sources": cg_sources, "detail": cg_detail},
+        {"key": "land-queue", "state": _cap_state(lq_present or lq_script.is_file(), lq_present and lq_script_ok and bool(lq_routed_in)), "sources": lq_sources, "detail": lq_detail},
     ]
 
     return {
