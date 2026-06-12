@@ -53,7 +53,8 @@ Usage:
     # mechanical gate (Stop hook calls this)
     python3 dispatch_ledger.py gate --target-root .
 
-Exit: record/validate/query/claim/overlap 0 ok | 1 problem. gate 0 = ok | 1 =
+Exit: record/validate/query/claim/overlap 0 ok | 1 problem | record 2 = bad
+verdict or bad capsule JSON (bad argument/invocation). gate 0 = ok | 1 =
 dispatch required but not acknowledged. 2 = bad invocation.
 """
 
@@ -61,6 +62,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import fcntl
 import json
 import os
 import subprocess
@@ -290,30 +292,43 @@ def cmd_claim(args: argparse.Namespace) -> int:
     p = _claims_path(root)
     p.parent.mkdir(parents=True, exist_ok=True)
 
-    # Read existing claims and check for duplicate
-    try:
-        existing = _read_claims(root)
-    except ValueError as exc:
-        print(f"FAIL {exc}", file=sys.stderr)
-        return 1
+    # Atomic claim: open (creating if absent) then lock before any read, so no
+    # two processes can both pass the duplicate-check and both append.
+    with p.open("a+", encoding="utf-8") as fh:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        except OSError:
+            pass  # POSIX flock not available (e.g. some NFS mounts) — proceed unlocked
 
-    for row in existing:
-        if row.get("task") == task_id:
-            claimed_by = row.get("claimed_by", "?")
-            print(
-                f"duplicate claim: task {task_id!r} already claimed by {claimed_by!r}",
-                file=sys.stderr,
-            )
-            return 1
+        # With the lock held, read the current contents and check for duplicate.
+        fh.seek(0)
+        raw = fh.read()
+        for i, line in enumerate(raw.splitlines(), 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                print(f"FAIL {CLAIMS}:{i}: invalid JSON ({exc})", file=sys.stderr)
+                return 1
+            if row.get("task") == task_id:
+                claimed_by = row.get("claimed_by", "?")
+                print(
+                    f"duplicate claim: task {task_id!r} already claimed by {claimed_by!r}",
+                    file=sys.stderr,
+                )
+                return 1
 
-    # Append-only write: write the new claim
-    rec = {
-        "utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
-        "task": task_id,
-        "claimed_by": worker,
-    }
-    with p.open("a", encoding="utf-8") as fh:
+        # Still holding the lock: append the new claim then flush.
+        rec = {
+            "utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+            "task": task_id,
+            "claimed_by": worker,
+        }
         fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        fh.flush()
+
     print(f"claimed task {task_id!r} for worker {worker!r}")
     return 0
 
