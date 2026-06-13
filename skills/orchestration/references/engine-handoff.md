@@ -55,3 +55,7 @@ so no runtime is left with an un-runnable contract.
 - **Promotion-time safety.** The engine runs background/cross-turn, so turn-scoped hooks (Stop,
   pre-commit) cannot gate it — apply the contract's invariants when the contract is *promoted to a
   run*, not via a hook on the run itself.
+- **Codex operating loop preservation.** When the signed contract's `operating_loop` is
+  `codex-long-running`, `goal-run`, or `heartbeat-monitor`, the Codex Agents-SDK emission must carry
+  the artifact surface, writeback target, and verification oracle into the run prompt/handoff.
+  Elastic profile state is advisory visibility only; it must not relax approval-sensitive gates.
