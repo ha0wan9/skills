@@ -1636,6 +1636,42 @@ def check_audit_convergence() -> None:
     require(r.returncode == 0, f"audit_ledger.py --self-test failed: {(r.stderr or r.stdout).strip()[:300]}")
 
 
+def check_hook_wiring() -> None:
+    """D5: the file-derived deterministic gates are wired, not merely present.
+    Parse-asserts (not a comment grep) that settings.json.fragment wires
+    verify-before-stop.sh (Stop) and the new provenance-on-edit.sh (PostToolUse);
+    that verify-before-stop.sh actually runs the last-turn-meta gate; and that the
+    scripts/hook the wiring depends on exist and parse. This is the AP-VAL-1 guard
+    for the D5 hook payloads — without it they could ship inert."""
+    frag = json.loads(read("templates/hooks/settings.json.fragment"))
+    hooks = frag.get("hooks", {})
+
+    def commands(event: str) -> str:
+        out = []
+        for block in hooks.get(event, []):
+            for h in block.get("hooks", []):
+                out.append(h.get("command", ""))
+        return " ".join(out)
+
+    require("verify-before-stop.sh" in commands("Stop"),
+            "settings.json.fragment Stop must wire verify-before-stop.sh")
+    require("provenance-on-edit.sh" in commands("PostToolUse"),
+            "settings.json.fragment PostToolUse must wire provenance-on-edit.sh (D5)")
+    require("last_turn_meta.py" in read("templates/hooks/scripts/verify-before-stop.sh"),
+            "verify-before-stop.sh must run the last-turn-meta gate (last_turn_meta.py check)")
+    require((ROOT / "templates/hooks/scripts/provenance-on-edit.sh").is_file(),
+            "templates/hooks/scripts/provenance-on-edit.sh must exist")
+    for script in ("scripts/last_turn_meta.py", "scripts/provenance.py", "scripts/dispatch_ledger.py"):
+        require((ROOT / script).is_file(), f"{script} must exist for D5 wiring")
+    # The D5 subcommands must actually parse (not just be named in prose).
+    for script, sub in (("scripts/last_turn_meta.py", "schema"),
+                        ("scripts/dispatch_ledger.py", "bypass-record"),
+                        ("scripts/provenance.py", "auto-stamp")):
+        r = subprocess.run([sys.executable, str(ROOT / script), sub, "--help"],
+                           capture_output=True, text=True)
+        require(r.returncode == 0, f"{script} {sub} subcommand missing/broken: {(r.stderr or r.stdout)[:200]}")
+
+
 CHECKS = (
     check_required_files,
     check_skill_metadata,
@@ -1660,6 +1696,7 @@ CHECKS = (
     check_capture_hook,
     check_board_crud_contract,
     check_audit_convergence,
+    check_hook_wiring,
     check_skillmd_recipe_table_sync,
     check_trigger_coverage,
 )

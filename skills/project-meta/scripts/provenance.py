@@ -201,6 +201,37 @@ def cmd_stamp(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_auto_stamp(args: argparse.Namespace) -> int:
+    """Advisory provenance pass for a freshly-edited artifact (the PostToolUse
+    leg). NEVER blocks (always exits 0): a first-draft file legitimately lacks
+    provenance, so a hard gate here would deadlock authoring — the hard check
+    moves to deliver/validate. When the artifact already carries lineage
+    (instantiated_from + source_reference), refresh a missing/stale
+    last_reviewed (the one safely-automatable field). When it lacks lineage,
+    warn — but do not invent placeholder values."""
+    path = Path(args.path).expanduser()
+    if not path.is_file():
+        return 0
+    fm, _ = split_frontmatter(_read(path))
+    scalars = parse_scalars(fm)
+    if not (scalars.get("instantiated_from") and scalars.get("source_reference")):
+        print(
+            f"advisory {path}: new artifact lacks provenance "
+            "(instantiated_from / source_reference) — stamp it before deliver/validate "
+            "(`provenance.py stamp …`). Not blocking a first draft.",
+            file=sys.stderr,
+        )
+        return 0
+    lr = scalars.get("last_reviewed", "")
+    if not (lr and DATE_RE.match(lr)):
+        today = datetime.date.today().isoformat()
+        new_text = stamp(_read(path), {"last_reviewed": today})
+        if not args.dry_run:
+            path.write_text(new_text, encoding="utf-8")
+        print(f"auto-stamped {path}: last_reviewed={today}", file=sys.stderr)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -221,6 +252,14 @@ def main(argv: list[str] | None = None) -> int:
     p_stamp.add_argument("--stamp-date", action="store_true", help="set last_reviewed=<today>")
     p_stamp.add_argument("--dry-run", action="store_true", help="print result, do not write")
     p_stamp.set_defaults(func=cmd_stamp)
+
+    p_auto = sub.add_parser(
+        "auto-stamp",
+        help="advisory (never fails): refresh last_reviewed when lineage present; warn when a new artifact lacks provenance",
+    )
+    p_auto.add_argument("path")
+    p_auto.add_argument("--dry-run", action="store_true", help="do not write; just report")
+    p_auto.set_defaults(func=cmd_auto_stamp)
 
     args = parser.parse_args(argv)
     return args.func(args)

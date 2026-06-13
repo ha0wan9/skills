@@ -278,6 +278,36 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bypass_record(args: argparse.Namespace) -> int:
+    """Record a deliberate single-context bypass of the mandatory-dispatch rule.
+
+    Lighter than `record`: no --worker (there is no worker — the conductor kept
+    the change in-context), non-gating (always exits 0). It appends a ledger row
+    (a valid lead/PASS row tagged task_type=bypass so `validate` accepts it) and
+    writes the `.harness/dispatch-ack` marker the Stop gate consumes one-shot.
+    The --reason MUST name the AP-COORD-* rule, mirroring the prose bypass rule."""
+    root = Path(args.target_root).expanduser().resolve()
+    rec = {
+        "utc": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+        "worker": "(single-context bypass)",
+        "reviewer": "",
+        "role": "lead",
+        "verdict": "PASS",
+        "brief_hash": "",
+        "comment": args.reason,
+        "task_type": "bypass",
+        "tier": "",
+    }
+    p = _ledger_path(root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    ack = root / ACK_MARKER
+    ack.write_text(args.reason + "\n", encoding="utf-8")
+    print(f"recorded single-context bypass to {LEDGER} and wrote {ACK_MARKER}")
+    return 0
+
+
 def cmd_claim(args: argparse.Namespace) -> int:
     """Atomically claim a task id for a worker.
 
@@ -548,6 +578,13 @@ def main(argv: list[str] | None = None) -> int:
 
     p_gate = sub.add_parser("gate", help="mandatory-dispatch Stop gate (>=2 harness files, no ack)")
     p_gate.set_defaults(func=cmd_gate)
+
+    p_bypass = sub.add_parser(
+        "bypass-record",
+        help="record a deliberate single-context bypass (no --worker, non-gating); writes the dispatch-ack the gate consumes",
+    )
+    p_bypass.add_argument("--reason", required=True, help="why dispatch is bypassed — MUST name the AP-COORD-* rule")
+    p_bypass.set_defaults(func=cmd_bypass_record)
 
     args = parser.parse_args(argv)
     return args.func(args)

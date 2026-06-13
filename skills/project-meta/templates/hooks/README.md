@@ -25,6 +25,7 @@ advisory legs only; invariant core gates always read `HARNESS_PROFILE` directly.
   hooks/
     load-agents-md.sh        # SessionStart
     format-on-edit.sh        # PostToolUse on Edit/Write/MultiEdit
+    provenance-on-edit.sh    # PostToolUse on Edit/Write/MultiEdit (D5; agents/*.md)
     verify-before-stop.sh    # Stop
     issue-tracker-reminder.sh # UserPromptSubmit (optional; issue-tracker capability)
 
@@ -97,9 +98,24 @@ The hook reads the edited path from `$CLAUDE_TOOL_USE_PATH`, falling back
 to `$TOOL_USE_PATH` and `$EDITED_PATH` for compatibility with other host
 conventions.
 
+### `provenance-on-edit.sh` — PostToolUse on Edit / Write / MultiEdit (D5)
+
+Advisory provenance pass on a freshly-edited `agents/*.md` topical file (the
+artifacts that carry provenance frontmatter); a no-op for any other path.
+Resolves `project-meta`'s `provenance.py` the same way the Stop hook resolves
+its scripts.
+
+- **new (untracked) file** → `provenance.py auto-stamp` — **never blocks** a
+  first draft: it refreshes `last_reviewed` when lineage is present and warns
+  (without failing) when `instantiated_from`/`source_reference` are missing.
+  The hard provenance check for new files lives at `deliver`/`validate`.
+- **pre-existing (tracked) file** → `provenance.py check` — a tracked artifact
+  must keep its provenance: advisory at `standard`, blocking at `strict`.
+- `minimal`: disabled; exits 0 immediately.
+
 ### `verify-before-stop.sh` — Stop
 
-Six responsibilities:
+Responsibilities (each self-skips when its artifact is absent):
 
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
@@ -143,6 +159,17 @@ Six responsibilities:
    round auto-expires after 72h, so a stale transaction never blocks
    unrelated work. Self-skips when no ledger exists — the gate
    enforces that a *claimed* audit converges; it never forces audits.
+7. **Lesson registry gate (D6)** via `lesson_registry.py` (elastic leg) —
+   see the lesson_registry section below.
+8. **Last-turn-meta gate (D5)** via `last_turn_meta.py check` (same resolved
+   path). The machine counterpart to the prose Output Footer: an editing recipe
+   must leave a valid `.harness/last-turn-meta.json` (keys `verb`, `review_tier`,
+   `read_pattern`, `files_written`, `files_read`, `memory_updated`,
+   `delivery_shown`). Fires only when the turn changed **≥1 harness file** (it
+   reuses the dispatch gate's harness-file definition), so read-only verbs are a
+   no-op. File-derived — it never greps the transcript. The write side is the
+   `last_turn_meta.py write` call editing recipes make at completion (SKILL.md
+   Output Footer).
 
 - `minimal`: invariant/core checks are disabled on raw `HARNESS_PROFILE=minimal`
   (the write-back and dispatch gates also self-disable there); elastic D6 lesson
