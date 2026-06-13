@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "bb4c947eea848c0a8f3a7375a39a8f288e022a06575bc51fa50f11ce09801ff3",
-    "next_decision_id": 2,
-    "rev": 96,
+    "items_sha256": "1cbde3f2d8fb0289eafe296f16f4625e871ddd89936e5ee00c5cea3bad268b18",
+    "next_decision_id": 3,
+    "rev": 107,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-06-13T10:48:20Z"
+    "updated_at": "2026-06-13T14:49:16Z"
   },
   "milestones": [
     {
@@ -125,6 +125,37 @@
       "status": "done",
       "title": "Lesson registry + elastic harness",
       "version": "v0.7"
+    },
+    {
+      "decisions": [
+        {
+          "blocks": [
+            "DASH-55"
+          ],
+          "created_at": "2026-06-13T14:45:29Z",
+          "id": "DEC-002",
+          "options": [
+            "per-artifact provenance 'version' frontmatter vs skill marketplace version",
+            "shipped components manifest (components.json) listing component->version, latest = installed manifest vs marketplace manifest",
+            "git-describe/commit pin on the marketplace remote"
+          ],
+          "question": "DASH-55: how is per-component version + 'latest-on-git' resolved? (marketplace.json versions only at plugin level; templates carry no version frontmatter; provenance.py has no version/merge logic)",
+          "recommendation": "shipped components manifest (components.json) listing component->version, latest = installed manifest vs marketplace manifest",
+          "resolution": {
+            "option": "shipped components manifest (components.json) listing component->version, latest = installed manifest vs marketplace manifest",
+            "resolved_at": "2026-06-13T14:49:16Z",
+            "resolver": "operator+L2-panel"
+          }
+        }
+      ],
+      "detail": "Self-audit & upgrade: the harness gains (1) a new dashboard Audit panel reporting its own health/usage/staleness + composing CLI recipes (DASH-54), and (2) the ability to upgrade its installed components to latest marketplace/git version (DASH-55, adds the net-new per-component version surface). 55 sequences before 54 (54's upgradable-health signal consumes 55's version surface). Both L; DASH-54 P3 reuse-discovery is a bounded spike. Fleet-hygiene CI + token-diet round-2 candidates remain pooled for v0.9.",
+      "items": [
+        "DASH-54",
+        "DASH-55"
+      ],
+      "status": "todo",
+      "title": "Harness self-audit + component upgrade",
+      "version": "v0.8"
     }
   ]
 }
