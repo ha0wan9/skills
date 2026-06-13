@@ -1,0 +1,7 @@
+*.js merge=mergiraf
+*.json merge=mergiraf
+*.yml merge=mergiraf
+*.yaml merge=mergiraf
+*.py merge=mergiraf
+*.html merge=mergiraf
+*.md merge=mergiraf

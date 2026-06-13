@@ -1,5 +1,22 @@
 {
-  "env": {
-    "HARNESS_PROFILE": "standard"
+  "env": { "HARNESS_PROFILE": "standard" },
+  "hooks": {
+    "SessionStart": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "bash .claude/hooks/load-agents-md.sh" } ] },
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "bash .claude/hooks/env-readiness-probe.sh" } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Edit|Write|MultiEdit", "hooks": [ { "type": "command", "command": "bash .claude/hooks/board-guard.sh" } ] },
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash .claude/hooks/pre-tool-guard.sh" } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write|MultiEdit", "hooks": [ { "type": "command", "command": "bash .claude/hooks/format-on-edit.sh" } ] }
+    ],
+    "Stop": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "bash .claude/hooks/verify-before-stop.sh" } ] }
+    ],
+    "UserPromptSubmit": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "bash .claude/hooks/issue-tracker-reminder.sh" } ] }
+    ]
   }
 }

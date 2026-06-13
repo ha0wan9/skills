@@ -43,3 +43,24 @@ Artifacts:
   review_policy: user review when goal or readiness changes; per-PR fresh-context review before land
   last_reviewed: 2026-06-12
   refresh_trigger: v0.6 milestone scope changes or critic-panel NO-GO
+- path: agents/phase-lock-contract.md
+  artifact_name: phase-lock-contract
+  instantiated_from: project-meta/templates/phase-lock-contract.md
+  source_reference: project-meta/templates/phase-lock-contract.md
+  owner: agent-facing
+  review_policy: user review before gate-policy changes
+  last_reviewed: 2026-06-13
+- path: agents/issue-tracking.md
+  artifact_name: issue-tracking
+  instantiated_from: project-meta/templates/issue-tracking.md
+  source_reference: project-meta/references/issue-tracking-integration.md
+  owner: agent-facing
+  review_policy: user review before tracker binding changes
+  last_reviewed: 2026-06-13
+- path: agents/land-queue.md
+  artifact_name: land-queue
+  instantiated_from: project-meta/templates/land-queue.md
+  source_reference: project-meta/references/land-queue-integration.md
+  owner: agent-facing
+  review_policy: user review before base-branch or test-command changes
+  last_reviewed: 2026-06-13

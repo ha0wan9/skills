@@ -64,6 +64,18 @@ Do not commit `USER.md`. The repo's top-level `.gitignore` and the project-meta 
 - `scripts/derive_profile.py` — advisory elastic `HARNESS_PROFILE` resolver for opt-in floor/ceiling bounds; writes `.harness/effective-profile` for elastic hook legs only, while invariant core gates keep reading `HARNESS_PROFILE` directly. See `templates/hooks/README.md` and `recipes/settings.md`.
 - `scripts/test_integrity_diff.py` — assertion-weakening detector (advisory in `ship validate`, strict-profile hard gate in `land`); flags removed assertions and added skips across a diff. See `references/harness-engineering.md`.
 
+## Topic Routing
+
+Load only the relevant topical file per task.
+
+| Topic | File | Purpose |
+|---|---|---|
+| Phase-lock gates | [`agents/phase-lock-contract.md`](agents/phase-lock-contract.md) | Phase-lock workflow gates (brainstorm → plan → implement → review → finish); runtime state in `.harness/phase-state.json`, committed gate stubs in `.harness/gates/*.sh`. |
+| Issue tracking | [`agents/issue-tracking.md`](agents/issue-tracking.md) | Linear mirror Track Loop (team ArkProjection/ARK, project hw-skills); repo stays canonical, issues link back. |
+| Land queue | [`agents/land-queue.md`](agents/land-queue.md) | Deterministic parallel-branch landing (rerere + mergiraf merge driver + `scripts/land.sh`; base=main). |
+
+Hooks pack active (HARNESS_PROFILE=standard): SessionStart (load-agents-md, env-readiness-probe), PreToolUse (board-guard, pre-tool-guard), PostToolUse (format-on-edit), Stop (verify-before-stop), UserPromptSubmit (issue-tracker-reminder).
+
 ## Session Start: Worktree Trim Contract
 
 This repo accumulates `.claude/worktrees/*` from agent runs. Near session start, before substantive work, run the Worktree Trim Contract:
