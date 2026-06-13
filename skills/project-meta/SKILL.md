@@ -208,6 +208,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 - Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:
   - load [`references/pressure-testing.md`](references/pressure-testing.md). Use [`templates/pressure-test-scenarios.json`](templates/pressure-test-scenarios.json) as a starting fixture; run `python3 scripts/pressure_test_skill.py SKILL_DIR SCENARIOS_FILE` to walk a verdict pass.
+- Scoring a plan or milestone's risk at plan time (the 7-dim rubric that derives a review-tier floor + plan-readiness recommendation), or stamping `risk_score`/`risk_band` into a build-plan's frontmatter:
+  - load [`references/review-tier.md`](references/review-tier.md) "Plan-time risk rubric"; run `python3 scripts/risk_score.py --scope N … --reversibility N [--json] [--write-context]`. Advisory: it raises the review tier / recommends `strict`, never lowers a keyword-set readiness.
 
 ## Output Footer
 

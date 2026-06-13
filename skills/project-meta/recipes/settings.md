@@ -93,7 +93,10 @@ Load lazily, only for the operation requested:
      SessionStart derives `.harness/effective-profile` from model tier,
      `.harness/risk-context.json`, dispatch history, and lesson effectiveness;
      only elastic legs read that file. Invariant core gates keep reading
-     `HARNESS_PROFILE` directly.
+     `HARNESS_PROFILE` directly. Set **both** bounds together: an unset bound
+     defaults to the configured `HARNESS_PROFILE`, so a lone `…_FLOOR` stricter
+     than that profile fail-statics (returns the configured profile + a warning)
+     rather than relaxing anything.
 
 4. **enable** operation:
    - Run the matching `recipes/init.md` step-6 install for that capability

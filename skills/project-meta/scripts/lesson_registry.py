@@ -455,7 +455,10 @@ def cmd_watermark(args: argparse.Namespace) -> int:
 
     try:
         rows = read_store(root)
-    except Exception as exc:
+    except (Exception, SystemExit) as exc:
+        # Advisory leg: a corrupt store must NOT wedge the turn. read_store raises
+        # SystemExit on bad JSON (a BaseException, not caught by `except Exception`),
+        # so catch it explicitly here. `validate` (the gate) still fails closed.
         print(f"[lesson_registry] watermark: store parse error: {exc}", file=sys.stderr)
         return 0
 
@@ -488,7 +491,9 @@ def cmd_inject(args: argparse.Namespace) -> int:
 
     try:
         rows = read_store(root)
-    except Exception as exc:
+    except (Exception, SystemExit) as exc:
+        # Advisory leg: fail OPEN on a corrupt store (read_store raises SystemExit on
+        # bad JSON, a BaseException). The gate is `validate`, not inject.
         print(f"[lesson_registry] inject: store parse error: {exc}", file=sys.stderr)
         return 0
 
