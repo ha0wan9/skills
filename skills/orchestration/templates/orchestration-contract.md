@@ -1,6 +1,6 @@
 ---
 template_name: orchestration-contract
-description: "Seed for a committed, reviewable orchestration contract: per-task model tier, parallelization, orchestrator effort, human checkpoints, review level, and a non-predictive budget hint. Signed ahead of a run, then emitted to the engine."
+description: "Seed for a committed, reviewable orchestration contract: run context, elastic harness snapshot, per-task model tier, parallelization, orchestrator effort, human checkpoints, review level, and a non-predictive budget hint. Signed ahead of a run, then emitted to the engine."
 source_reference: references/orchestration-contract.md
 intended_project_path: docs/plans/<milestone>-orchestration-contract.md
 owner: shared-user-facing
@@ -39,6 +39,16 @@ orchestrates_plan: docs/plans/<milestone>-build-plan.md
 **Orchestrates:** `<build plan>` — milestone `<vX>`. Policy signed ahead of the run; the engine
 (see `orchestration/references/engine-handoff.md`) is the mechanism. AP-COORD-7.
 
+## Run context
+
+| Field | Value |
+|---|---|
+| operating_loop | foreground |
+| harness_profile_snapshot | HARNESS_PROFILE=<profile>; bounds=<floor>..<ceiling> or disabled; effective=<profile> or n/a |
+| artifact_review_surface | <repo path, local URL, or none> |
+| state_writeback_target | <board item, issue id, memory artifact, or none> |
+| verification_oracle | <command, checklist, rendered-artifact inspection, or human approval gate> |
+
 ## Per-task contract
 One row per task in the build plan's build order. `budget_hint` = the tier:class:fanout line.
 
@@ -61,6 +71,7 @@ Every before/after/both checkpoint as an explicit stop-and-log point.
 
 ## Sign-off  (status: signed only when ALL hold)
 - [ ] every build-order task has a row
+- [ ] run context complete; long-running Codex loops name an artifact surface, writeback target, and oracle
 - [ ] review levels set; escalations stated with reason
 - [ ] human checkpoints enumerated
 - [ ] budget hint computed + reviewed

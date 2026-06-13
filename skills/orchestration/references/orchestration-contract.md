@@ -12,7 +12,21 @@ should be run*; the engine ([`engine-handoff.md`](engine-handoff.md)) executes i
 ## What a contract covers
 
 One contract per **chosen milestone / build plan**. It has a small **header** (provenance + which
-plan it orchestrates) and a **per-task table** — one row per task in the build plan's build order.
+plan it orchestrates), a **run context** section, and a **per-task table** — one row per task in
+the build plan's build order.
+
+## Run context schema
+
+The run context is header-level policy for the whole run. It captures the elastic harness and
+artifact loop that the engine must preserve without making this skill own the harness.
+
+| Field | Values | Meaning |
+|---|---|---|
+| `operating_loop` | `foreground` · `codex-long-running` · `heartbeat-monitor` · `goal-run` | how the run is expected to persist. `foreground` is the default. The Codex values cite `project-meta/references/codex-operating-loop.md`; they do not copy its rules. |
+| `harness_profile_snapshot` | `HARNESS_PROFILE=<p>; bounds=<floor>..<ceiling>|disabled; effective=<p>|n/a` | the profile state at signing time. This is a snapshot for reviewability, not a new strictness dial. Invariant gates keep reading raw `HARNESS_PROFILE`. |
+| `artifact_review_surface` | repo path / local URL / `none` | the inspectable artifact or app surface the operator will review in the side panel/browser when the output is visual, tabular, slide-like, or interactive. |
+| `state_writeback_target` | board item / issue id / memory artifact / `none` | where run outcomes, open loops, and durable lessons are written back. Do not use `AGENTS.md` as a task log. |
+| `verification_oracle` | command / checklist / human approval gate | the finish line for the run. A long-running Goal without an oracle is unsigned. |
 
 ## Per-task schema
 
@@ -70,5 +84,8 @@ every editing recipe).
   run-journal format, retry loops). `parallelization` is a *requested shape*, handed to the engine.
 - **Names, not copies.** `review_level` names review-tier levels; `model_tier` names the canon tiers.
   The contract does not restate those tables.
+- **Elastic harness snapshot, not authority.** `harness_profile_snapshot` records the state used at
+  signing. It does not authorize writes, sends, installs, network calls, dependency changes, public
+  API changes, or merges.
 - **Traceable.** Every task row maps back to a build-plan item, so the contract is checkable against
   the plan it orchestrates.
