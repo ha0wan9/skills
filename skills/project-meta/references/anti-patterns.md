@@ -217,9 +217,10 @@ shortfall from scratch. The mirror failure is the one-way ratchet: a tier that
 only ever climbs and never demotes, paying for capability the task no longer
 needs (the cost-side AP-COORD-5).
 
-**Symptom**: the same kind of subagent task burns a Sonnet trial, fails, gets
-retried on Opus, and ships — then next session repeats the exact sequence; or
-every task-type has silently crept to (Opus, max) and no one can say which
+**Symptom**: the same kind of subagent task burns a fleet-tier trial
+(Sonnet/GPT-5.4), fails, gets retried on the escalation tier (Opus/GPT-5.5),
+and ships — then next session repeats the exact sequence; or
+every task-type has silently crept to (Opus/GPT-5.5, max) and no one can say which
 promotion is still earning its cost.
 
 **Fix**: retro-inspect, per `multi-agent-protocols.md` "Retro-inspect
@@ -228,7 +229,7 @@ as durable harness state via the Memory Contract — the dispatch ledger
 (`scripts/dispatch_ledger.py`, fields `task_type`/`tier`/`verdict`) is the
 evidence; repo memory is the learned policy. Start the next dispatch of that
 task-type at the promoted tier; climb the cheap axis (effort) before the
-expensive one (model); cap at (Opus, max); record the *cause* so a stale
+expensive one (model); cap at (Opus/GPT-5.5, max); record the *cause* so a stale
 promotion can be demoted. Evidence-gated always — never a precautionary promote.
 
 ### AP-COORD-7 — Re-implementing orchestration the engine provides

@@ -7,7 +7,7 @@ Use this reference when syncing canonical repo memory into tool-specific mirrors
 Which file is canonical depends on which agent tool is the primary consumer. Detect the tool context before assigning canonical/mirror roles:
 
 - **Claude Code is primary**: `CLAUDE.md` is the canonical entrypoint — Claude Code auto-loads it from the project root and parent directories. `AGENTS.md` is the mirror for non-Claude tools (Codex, Copilot, etc.).
-- **Codex / GPT-5.4 is primary**: `AGENTS.md` is the canonical entrypoint. `CLAUDE.md` is the mirror.
+- **Codex / GPT-5.x is primary**: `AGENTS.md` is the canonical entrypoint. `CLAUDE.md` is the mirror.
 - **Both tools are used**: pick one canonical entrypoint consistent with the repo's actual usage, keep both files as thin routing loaders pointing to the same topical files, and keep them in sync on bootstrap order and global guardrails.
 
 ## Canonical Sources
