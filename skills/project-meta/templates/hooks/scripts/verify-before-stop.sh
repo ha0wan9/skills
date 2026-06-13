@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stop hook: run repo-defined verification before the agent ends a turn.
 #
-# Six responsibilities (each self-skips when its artifact is absent):
+# Responsibilities (each self-skips when its artifact is absent):
 #   1. Phase-lock check (when phase-lock contract installed) — verify the
 #      current phase's gate has passed at least once since started_utc.
 #   2. Project verifier — run the project's own verification command if
@@ -11,6 +11,9 @@
 #   5. Project Board store integrity — board.py tx.
 #   6. Audit convergence gate — audit_ledger.py gate (final audits are
 #      multi-round; an open+red audit transaction must converge before ship).
+#   8. Last-turn-meta gate — last_turn_meta.py check (an editing recipe must
+#      leave a valid .harness/last-turn-meta.json; fires only on harness change).
+#   (elastic leg) 7. Lesson registry — lesson_registry.py validate/watermark.
 #
 # Profile-aware via $HARNESS_PROFILE:
 #   minimal   — disabled; never run
@@ -188,6 +191,24 @@ if [[ -f .harness/audit-ledger.jsonl ]]; then
       cat "$TMPD/ag.out" >&2
       advisory_exit "audit convergence gate: see above."
     fi
+  fi
+fi
+
+# 8) Last-turn metadata gate (D5). The machine counterpart to the prose Output
+#    Footer: an editing recipe must leave a valid .harness/last-turn-meta.json.
+#    last_turn_meta.py fires only when this turn changed >=1 harness file (it
+#    reuses dispatch_ledger's harness-file definition), so read-only turns are a
+#    no-op. File-derived — never greps the transcript.
+pm_ltm=""
+if [[ -n "$pm_dir" ]]; then pm_ltm="$pm_dir/scripts/last_turn_meta.py"; fi
+if [[ -z "$pm_ltm" || ! -f "$pm_ltm" ]]; then
+  pm_ltmdir="$(resolve_project_meta scripts/last_turn_meta.py)" || pm_ltmdir=""
+  if [[ -n "$pm_ltmdir" ]]; then pm_ltm="$pm_ltmdir/scripts/last_turn_meta.py"; fi
+fi
+if [[ -n "$pm_ltm" && -f "$pm_ltm" ]]; then
+  if ! python3 "$pm_ltm" --target-root . check >"$TMPD/ltm.out" 2>&1; then
+    cat "$TMPD/ltm.out" >&2
+    advisory_exit "last-turn-meta gate: see above."
   fi
 fi
 

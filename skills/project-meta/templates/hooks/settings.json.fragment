@@ -60,6 +60,16 @@
             "command": "bash .claude/hooks/format-on-edit.sh"
           }
         ]
+      },
+      {
+        "_comment": "provenance-on-edit (D5): advisory provenance pass on edited agents/*.md — auto-stamp last_reviewed for new files (never blocks a first draft), hard-check tracked files (advisory at standard, blocking at strict). Off at minimal.",
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/provenance-on-edit.sh"
+          }
+        ]
       }
     ],
     "Stop": [

@@ -28,6 +28,7 @@ HOOK_SOURCE_DIR = SKILL_DIR / "templates" / "hooks" / "scripts"
 HOOK_SCRIPTS = {
     "load-agents-md.sh": "SessionStart",
     "format-on-edit.sh": "PostToolUse",
+    "provenance-on-edit.sh": "PostToolUse",
     "verify-before-stop.sh": "Stop",
 }
 
