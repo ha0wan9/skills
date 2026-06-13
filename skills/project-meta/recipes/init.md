@@ -12,7 +12,7 @@ Cold-start or repair a project's agent harness.
 
 **editing** — creates or repairs canonical memory files, mirrors, templates, and (when opted in) hooks / phase-lock contracts.
 
-`init` is the recipe that **owns the subagent dispatch protocol** for multi-file harness edits (`deliver` is read-only and only assembles the result). When the edit set touches ≥2 of the file classes in [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) Mandatory Subagent Dispatch, dispatch per-file Worker + Reviewer; the conductor never edits once dispatch triggers.
+`init` is the recipe that **owns the subagent dispatch protocol** for multi-file harness edits (`deliver` is read-only and only assembles the result). When the edit set touches ≥2 of the file classes in [`references/dispatch-card.md`](../references/dispatch-card.md), dispatch per-file Worker + Reviewer; the conductor never edits once dispatch triggers. (Full mechanics — roles, context package, reviewer loop — load on demand from [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md#mandatory-subagent-dispatch).)
 
 ### Orchestration escalation (opt-in, higher bar)
 
@@ -25,15 +25,20 @@ The 2-file case stays cheap subagent dispatch; do not auto-launch the engine on 
 
 ## Required references
 
-Load these in order, only when the corresponding step fires:
+**Base** — loaded when the verb runs:
 
-1. [`references/project-lifecycle.md`](../references/project-lifecycle.md) — questionnaire, presets, project-type classification, artifact instantiation rules
-2. [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — monolith vs loader+topical decision, READ ORDER conventions
-3. [`references/repo-memory-crud.md`](../references/repo-memory-crud.md) — file CRUD operations
-4. [`references/documentation-delivery.md`](../references/documentation-delivery.md) — pre-commit delivery contract
-5. [`references/execution-policy.md`](../references/execution-policy.md) — only when the target will host bounded-execution agents (Codex-class workers)
+- [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — monolith vs loader+topical decision, READ ORDER conventions
+- [`references/repo-memory-crud.md`](../references/repo-memory-crud.md) — file CRUD operations
 
-Optional, when the user passes feature flags:
+**Lazy-load** — only when the named step needs it:
+
+- [`references/project-lifecycle.md`](../references/project-lifecycle.md) — step 1 Detect / step 3 Questionnaire: questionnaire, presets, project-type classification, artifact instantiation rules (load only here)
+- [`references/documentation-delivery.md`](../references/documentation-delivery.md) — step 9 pre-commit delivery: pre-commit delivery contract (load only here)
+- [`references/execution-policy.md`](../references/execution-policy.md) — only when the target will host bounded-execution agents (Codex-class workers) (load only here)
+- [`references/dispatch-card.md`](../references/dispatch-card.md) — dispatch trigger reminder for init editing work: when to dispatch Workers vs stay inline (load only here)
+- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — only when actually dispatching: deeper mechanics (roles, context package, reviewer loop, L2 panel, context-mapping) (load only here)
+
+**Optional** — feature flags:
 
 - `--workflow phase-lock`: load [`templates/phase-lock-contract.md`](../templates/phase-lock-contract.md)
 - `--hooks`: load [`templates/hooks/README.md`](../templates/hooks/README.md)

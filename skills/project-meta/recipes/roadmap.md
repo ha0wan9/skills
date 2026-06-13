@@ -22,10 +22,16 @@ The L2 review panel below delegates to the fleet tier (Claude: Sonnet; Codex: GP
 
 ## Required references
 
+**Base** — loaded when the verb runs:
+
 - [`references/review-tier.md`](../references/review-tier.md) — the co-review is an **L2** instance (multi-expert panel).
-- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — how to dispatch the parallel L2 panel on clean context.
+- [`references/dispatch-card.md`](../references/dispatch-card.md) — dispatch trigger + bypass quick-reference for deciding when to dispatch the L2 panel.
 - [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — shared command rules, including **deliver before commit** for editing recipes.
 - [`recipes/refine.md`](refine.md) — the item-prep sub-workflow (`fuzzy → refined`) this session calls when a candidate item is not yet concrete.
+
+**Lazy-load** — only when the named step needs it:
+
+- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — step 4: deeper mechanics for dispatching the parallel L2 panel (roles, context package, reviewer loop, L2 panel, context-mapping); load only when dispatching the panel.
 
 ## Workflow — one co-review transaction (DASH-08), not two phases
 
