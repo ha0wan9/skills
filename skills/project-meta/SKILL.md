@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.18.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.19.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -49,6 +49,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/mirrors-and-updates.md`](references/mirrors-and-updates.md)
    - [`references/harness-engineering.md`](references/harness-engineering.md)
    - [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
+   - [`references/codex-operating-loop.md`](references/codex-operating-loop.md)
    - [`references/anti-patterns.md`](references/anti-patterns.md)
    - [`references/writing-skills.md`](references/writing-skills.md)
    - [`references/multi-host-manifests.md`](references/multi-host-manifests.md)
@@ -200,6 +201,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`references/code-graph-integration.md`](references/code-graph-integration.md), then instantiate [`templates/code-graph.md`](templates/code-graph.md). Install via `/project-meta init --code-graph` or `/project-meta settings enable code-graph`.
 - Wiring a repo's parallel-branch integration to the deterministic landing pipeline (land-queue capability: repo-local `git rerere` + syntax-aware merge driver + `scripts/land.sh` + sequential landing rule), installing/auditing it, or diagnosing merge-tax token burn from parallel agent branches:
   - load [`references/land-queue-integration.md`](references/land-queue-integration.md), then instantiate [`templates/land-queue.md`](templates/land-queue.md) and copy [`templates/land/land.sh`](templates/land/land.sh). Install via `/project-meta init --land-queue` or `/project-meta settings enable land-queue`.
+- Designing a Codex-primary operating loop for durable threads, disk-backed memory, steering, side-panel/browser artifact review, Goals/Heartbeats, or remote check-ins:
+  - load [`references/codex-operating-loop.md`](references/codex-operating-loop.md), then instantiate [`templates/codex-operating-loop.md`](templates/codex-operating-loop.md) when the repo needs a persistent `agents/codex-operating-loop.md` policy. Pair it with `AGENTS.md`, session receipts, board/issue tracking, hooks, and explicit verification oracles.
 - Adding/reading/updating/deleting Project Board items, or wiring board enforcement (the store is CLI-managed; the dashboard + Harness tab are derived):
   - load [`references/project-board-crud.md`](references/project-board-crud.md) — the CRUD contract (`board.py` is the only writer; verb→CRUD map; integrity invariants; the optional `board-guard` hook). Scaffold via `/project-meta init --board`.
 - Mirroring Project Board rows to Linear:

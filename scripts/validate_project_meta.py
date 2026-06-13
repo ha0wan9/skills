@@ -38,6 +38,7 @@ REQUIRED_REFERENCES = {
     "references/multi-agent-protocols.md",
     "references/review-tier.md",
     "references/code-graph-integration.md",
+    "references/codex-operating-loop.md",
 }
 
 REQUIRED_TEMPLATES = {
@@ -48,6 +49,7 @@ REQUIRED_TEMPLATES = {
     "templates/project-artifact-manifest.md": "references/documentation-delivery.md",
     "templates/readme-structure-map.md": "references/repo-memory-structure.md",
     "templates/user-preferences.md": "references/project-lifecycle.md",
+    "templates/codex-operating-loop.md": "references/codex-operating-loop.md",
 }
 
 LOCAL_USER_TEMPLATE = "templates/user-preferences.md"

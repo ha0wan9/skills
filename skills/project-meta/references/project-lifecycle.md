@@ -32,7 +32,8 @@ The init command must not depend on existing `USER.md`, because an empty project
 7. Render only the selected preset, checked preferences, and explicit free-form preferences into ignored local `USER.md`.
 8. Instantiate project-specific artifacts from skill-level `templates/*.md` when the project needs repeatable agent-facing artifacts.
 9. When the target repo will host bounded-execution agents (Codex-class workers, automated execution flows), offer to instantiate `agents/execution-rules.md` from `templates/execution-rules.md` and add the AGENTS.md insert. Skip this for documentation or content-only repos unless the user requests it.
-10. Run available validation, including `python3 skill/scripts/validate_target_harness.py <target-repo>` when the target repo path is known, and present a delivery before any commit.
+10. When Codex is the primary host and the work is expected to persist across long threads, remote check-ins, side-panel artifact review, Goals, or Heartbeats, offer to instantiate `agents/codex-operating-loop.md` from `templates/codex-operating-loop.md`. This is optional policy, not a mandatory init artifact.
+11. Run available validation, including `python3 skill/scripts/validate_target_harness.py <target-repo>` when the target repo path is known, and present a delivery before any commit.
 
 If the user asks for init in a repo that already has coherent conventions, preserve those conventions and only fill missing pieces.
 
@@ -117,6 +118,7 @@ Use this default map during `/project-meta init`. Preserve coherent project conv
 | data, research, or evaluation project | `delegation`, `memory-writeback-check`, `pre-commit-delivery`, `execution-rules`, `project-artifact-manifest` | Emphasize reproducibility, dataset boundaries, eval commands, and result provenance. |
 | infrastructure, automation, or tooling repo | `delegation`, `pre-commit-delivery`, `memory-writeback-check`, `execution-rules`, `project-artifact-manifest` | Emphasize safety gates, rollback, dry-run validation, secrets boundaries, and operator handoff. `execution-rules` is highest-priority here. |
 | standalone skill or agent-harness repo | all canonical templates | Emphasize progressive disclosure, artifact provenance, validation coverage, and cross-tool metadata. |
+| Codex-primary long-running workstream | `codex-operating-loop`, `memory-writeback-check`, `project-artifact-manifest`; add `execution-rules`, `project-board`, `issue-tracker`, and hooks when edits or monitors are active | Part of the elastic harness ecosystem: record `HARNESS_PROFILE` / optional bounds, durable threads backed by reviewable files, side-panel/browser artifact review, explicit Goals/Heartbeats oracles, and human-reviewed memory diffs. |
 
 `user-preferences` is special: use it to render local `USER.md` when user preferences are needed, but do not commit the generated local file and do not create a target-repo `USER.template.md` unless the user explicitly asks for a sanitized shared preference artifact.
 
