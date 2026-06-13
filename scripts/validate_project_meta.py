@@ -1167,11 +1167,13 @@ def check_board_cli() -> None:
         html = dashboard.read_text(encoding="utf-8")
         require("Smoke item" in html, "dashboard must include rendered item data")
         require("docs/backlog/items.jsonl" in html, "dashboard must point to canonical item store")
-        require("showSaveFilePicker" in html, "dashboard must offer File System Access API edit-back")
+        require("showDirectoryPicker" in html, "dashboard must offer pickerless repo-folder edit-back")
+        require("indexedDB" in html, "dashboard must persist the repo folder handle across reloads")
+        require("showSaveFilePicker" in html, "dashboard must keep the save-picker edit-back fallback")
         require("items.patched.jsonl" in html, "dashboard must include download-patched-store fallback")
         require("roadmap.patched.json" in html, "dashboard must include patched roadmap fallback")
         require("items_sha256" in html, "dashboard must patch roadmap items_sha256 for edit-back")
-        require("Experimental browser edit-back" in html, "dashboard must mark browser edit-back experimental")
+        require("Browser edit-back" in html, "dashboard must surface the browser edit-back banner")
         require("CLI remains canonical" in html, "dashboard must state the CLI stays canonical")
 
         mirror = run_python_script_result("scripts/board.py", "mirror-linear", "--root", str(target_root))
@@ -1264,8 +1266,9 @@ def check_board_cli() -> None:
         require('data-tab="settings"' in template, "template must expose the Harness settings tab")
         require("renderSettings" in template, "template must render the harness settings panel")
         require("Enforcement profile" in template, "template must include the enforcement profile selector")
-        # Direct profile write-back (File System Access) + the capability command planner.
-        require("showOpenFilePicker" in template, "settings page must offer direct profile write-back")
+        # Direct profile write-back (File System Access, via the connected repo folder) +
+        # the capability command planner.
+        require("connectRepoDir" in template, "settings page must offer direct profile write-back via the repo folder")
         require("writeProfile" in template, "settings page must write HARNESS_PROFILE into .claude/settings.json")
         require("data-cap-toggle" in template, "settings page must stage capability changes via toggles")
         require("Pending changes" in template, "settings page must surface a staged command plan")

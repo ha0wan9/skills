@@ -187,7 +187,7 @@ The dashboard is not only a status board — it **hosts the project's user-facin
 - **Derived, canonical-backed.** Source of truth = the repo's user-facing Markdown (README + `docs/*.md`, per `documentation-delivery.md`: purpose / usage / architecture / reviewed-behavior). `board render` (DASH-04) renders MD→HTML and embeds it; the wiki is a **derived view**, never a second canonical store (same source-of-truth discipline as the rest of the board).
 - **v0.2 scope:** read-only docs index + rendered Markdown pages + simple links from docs to backlog/roadmap IDs. No wikilink graph, directives, citations, or browser edit-back.
 - **v0.3+ scope:** richer ArkWiki / ArkDisplay render idiom (wikilink / directive / citation) and bidirectional cross-links: wiki pages ↔ backlog items ↔ roadmap versions. A feature's wiki page shows its current version + linked issues; a backlog item links to its wiki page; `[[wikilinks]]` resolve to in-panel navigation.
-- **Edit-back (optional, v0.3+):** via the File System Access API (DASH-13), editing a wiki page writes back to its Markdown **source** (canonical), then re-renders — same experimental edit model as the board.
+- **Edit-back (optional, v0.3+):** via the File System Access API (DASH-13), editing a wiki page writes back to its Markdown **source** (canonical), then re-renders — same edit-back model as the board (once-granted repo-root directory handle, persisted in IndexedDB; no per-save path picking).
 
 ### DASH-14 — Render pipeline  → **folded into DASH-04**
 `infra · target: v0.1`
