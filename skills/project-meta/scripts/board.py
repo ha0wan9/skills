@@ -32,7 +32,7 @@ DISPOSITION_VALUES = {"active", "deferred", "trimmed", "wontfix"}
 
 
 def utc_now() -> str:
-    return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def today() -> str:
@@ -147,7 +147,7 @@ def _lock_is_stale(lock: Path) -> bool:
     if m and not _pid_alive(int(m.group(1))):
         return True
     try:
-        age = dt.datetime.now(dt.UTC).timestamp() - lock.stat().st_mtime
+        age = dt.datetime.now(dt.timezone.utc).timestamp() - lock.stat().st_mtime
     except FileNotFoundError:
         return True
     return age > STALE_LOCK_SECONDS
@@ -191,7 +191,15 @@ def text_hash(text: str) -> str:
 
 
 def initial_roadmap() -> dict[str, Any]:
-    return {"_meta": {"rev": 1, "created_at": utc_now(), "updated_at": utc_now()}, "milestones": []}
+    return {
+        "_meta": {
+            "rev": 1,
+            "created_at": utc_now(),
+            "updated_at": utc_now(),
+            "next_decision_id": 1,
+        },
+        "milestones": [],
+    }
 
 
 def initial_provenance() -> dict[str, Any]:
@@ -302,6 +310,120 @@ def validate_item(row: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_decisions(milestone: dict[str, Any], all_ids: set[str]) -> list[str]:
+    """Validate a milestone's decisions list. Returns error strings."""
+    errors: list[str] = []
+    version = milestone.get("version", "<unknown>")
+    decisions = milestone.get("decisions", [])
+    if not isinstance(decisions, list):
+        errors.append(f"milestone {version}: decisions must be a list")
+        return errors
+    required_keys = {"id", "question", "options", "recommendation", "blocks", "resolution", "created_at"}
+    seen_dec_ids: set[str] = set()
+    for dec in decisions:
+        if not isinstance(dec, dict):
+            errors.append(f"milestone {version}: decision entry must be an object")
+            continue
+        dec_id = str(dec.get("id", "<missing>"))
+        if dec_id in seen_dec_ids:
+            errors.append(f"milestone {version}: duplicate decision id {dec_id}")
+        seen_dec_ids.add(dec_id)
+        for key in required_keys:
+            if key not in dec:
+                errors.append(f"milestone {version} {dec_id}: missing key {key!r}")
+        if not isinstance(dec.get("options"), list):
+            errors.append(f"milestone {version} {dec_id}: options must be a list")
+        if not isinstance(dec.get("blocks"), list):
+            errors.append(f"milestone {version} {dec_id}: blocks must be a list")
+        else:
+            for bid in dec.get("blocks", []):
+                if bid not in all_ids:
+                    errors.append(
+                        f"milestone {version} {dec_id}: blocks references unknown item id {bid!r}"
+                    )
+    return errors
+
+
+def _id_sort_key(item_id: str) -> tuple[str, int, str]:
+    """Sort key for item ids: numeric suffix first (so DASH-001 < DASH-010), then lexical."""
+    m = re.match(r"^([A-Za-z]+)-(\d+)$", str(item_id))
+    if m:
+        return (m.group(1), int(m.group(2)), "")
+    return ("", 0, str(item_id))
+
+
+def _sync_milestone_membership(rows: list[dict[str, Any]], roadmap: dict[str, Any]) -> None:
+    """Recompute each milestone's items list from item.version fields.
+
+    For each milestone m, set m["items"] to the sorted list of item ids whose
+    version == m.version.  Items whose version has no matching milestone object
+    (bare release-tag versions like "1.13.0") are untouched — they appear in no
+    milestone.items, which is correct.
+
+    This is called inside mutate_items after validation and before the atomic write,
+    so every verb that can change item.version (add/move/edit) keeps membership correct.
+    Recomputing from scratch is simpler and less error-prone than incremental add/remove.
+    """
+    milestone_versions: set[str] = {
+        str(m.get("version", "")) for m in roadmap.get("milestones", [])
+    }
+    # Build a mapping: version -> sorted list of ids
+    version_to_ids: dict[str, list[str]] = {v: [] for v in milestone_versions if v}
+    for row in rows:
+        v = row.get("version")
+        if v and v in version_to_ids:
+            version_to_ids[v].append(str(row.get("id", "")))
+    # Sort each list by id sort key for stable, readable order
+    for v in version_to_ids:
+        version_to_ids[v].sort(key=_id_sort_key)
+    # Write back into milestone objects
+    for milestone in roadmap.get("milestones", []):
+        v = str(milestone.get("version", ""))
+        if v in version_to_ids:
+            milestone["items"] = version_to_ids[v]
+
+
+def _scheduling_gate_violation(rows: list[dict[str, Any]], roadmap: dict[str, Any]) -> list[str]:
+    """Return human-readable violation strings for items in a final state of 'scheduled'
+    that are blocked by an unresolved decision on their target milestone.
+
+    A violation occurs when:
+      - item.status == 'scheduled'
+      - item.version == vX
+      - milestone vX exists with status != 'done'
+      - milestone vX has >= 1 unresolved decision whose blocks is [] (whole-milestone)
+        OR contains this item's id
+    Done milestones are exempt (retro decisions are records, not gates).
+    """
+    violations: list[str] = []
+    milestone_map: dict[str, dict[str, Any]] = {
+        m.get("version", ""): m for m in roadmap.get("milestones", [])
+    }
+    for row in rows:
+        if row.get("status") != "scheduled":
+            continue
+        version = row.get("version")
+        if not version:
+            continue
+        milestone = milestone_map.get(version)
+        if milestone is None:
+            continue
+        if milestone.get("status") == "done":
+            continue
+        item_id = str(row.get("id", ""))
+        for dec in milestone.get("decisions", []):
+            if dec.get("resolution") is not None:
+                continue  # resolved — not blocking
+            blocks = dec.get("blocks", [])
+            if isinstance(blocks, list) and (len(blocks) == 0 or item_id in blocks):
+                dec_id = dec.get("id", "<unknown>")
+                violations.append(
+                    f"item {item_id} is scheduled into milestone {version} which has unresolved "
+                    f"decision {dec_id} (blocks={'whole milestone' if not blocks else item_id})"
+                )
+    return violations
+
+
 def validate_store(root: Path) -> tuple[list[dict[str, Any]], dict[str, Any], list[str]]:
     p = paths(root)
     rows = read_jsonl(p["items"])
@@ -314,10 +436,43 @@ def validate_store(root: Path) -> tuple[list[dict[str, Any]], dict[str, Any], li
             errors.append(f"duplicate id: {item_id}")
         ids.add(item_id)
         errors.extend(validate_item(row))
+    # Check for duplicate milestone versions
+    milestone_versions: list[str] = []
+    seen_versions: set[str] = set()
     for milestone in roadmap.get("milestones", []):
+        v = str(milestone.get("version", ""))
+        if v in seen_versions:
+            errors.append(f"duplicate milestone version: {v}")
+        seen_versions.add(v)
+        milestone_versions.append(v)
         for item_id in milestone.get("items", []):
             if item_id not in ids:
                 errors.append(f"roadmap references missing item: {item_id}")
+        # Validate decisions (treat absent decisions key as [])
+        errors.extend(_validate_decisions(milestone, ids))
+    # Milestone membership invariant: for each milestone m,
+    # set(m.items) must equal {id : item.version == m.version}.
+    # Items with a version matching no milestone (bare release tags like "1.13.0") are exempt.
+    version_to_ids: dict[str, set[str]] = {
+        str(m.get("version", "")): set() for m in roadmap.get("milestones", [])
+    }
+    for row in rows:
+        v = row.get("version")
+        if v and v in version_to_ids:
+            version_to_ids[v].add(str(row.get("id", "")))
+    for milestone in roadmap.get("milestones", []):
+        v = str(milestone.get("version", ""))
+        expected_ids = version_to_ids.get(v, set())
+        actual_ids = set(milestone.get("items", []))
+        if expected_ids != actual_ids:
+            missing = sorted(expected_ids - actual_ids, key=_id_sort_key)
+            extra = sorted(actual_ids - expected_ids, key=_id_sort_key)
+            parts = []
+            if missing:
+                parts.append(f"missing from items list: {missing}")
+            if extra:
+                parts.append(f"extra in items list (no matching version): {extra}")
+            errors.append(f"milestone {v} membership mismatch — " + "; ".join(parts))
     meta = roadmap.get("_meta", {})
     expected_hash = meta.get("items_sha256")
     actual_hash = file_hash(p["items"])
@@ -325,7 +480,47 @@ def validate_store(root: Path) -> tuple[list[dict[str, Any]], dict[str, Any], li
         errors.append("roadmap _meta.items_sha256 is missing")
     elif expected_hash != actual_hash:
         errors.append(f"roadmap _meta.items_sha256 is stale: {expected_hash} != {actual_hash}")
+    # Scheduling gate backstop — catches hand-edits that bypass tx
+    errors.extend(_scheduling_gate_violation(rows, roadmap))
     return rows, roadmap, errors
+
+
+def mutate_roadmap(root: Path, mutate_fn: Any, *, template: Path) -> None:
+    """Atomic roadmap-only write path (for milestone/decision CRUD).
+
+    Unlike write_items_and_roadmap_atomic this path does NOT write items — items
+    are read only, but their hash is re-stamped so the sha256 stays honest.
+    """
+    init_store(root)
+    with board_lock(root):
+        p = paths(root)
+        rows = read_jsonl(p["items"])
+        roadmap = read_json(p["roadmap"], initial_roadmap())
+        # Lazily initialize next_decision_id on old stores
+        meta = roadmap.setdefault("_meta", {})
+        if "next_decision_id" not in meta:
+            meta["next_decision_id"] = 1
+        mutate_fn(roadmap)
+        # Validate after mutation
+        ids: set[str] = {str(r.get("id", "")) for r in rows}
+        errors: list[str] = []
+        seen_versions: set[str] = set()
+        for milestone in roadmap.get("milestones", []):
+            v = str(milestone.get("version", ""))
+            if v in seen_versions:
+                errors.append(f"duplicate milestone version: {v}")
+            seen_versions.add(v)
+            errors.extend(_validate_decisions(milestone, ids))
+        # Scheduling gate
+        errors.extend(_scheduling_gate_violation(rows, roadmap))
+        if errors:
+            raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
+        # Bump meta and re-stamp items hash (items unchanged, keep stamp honest)
+        meta["rev"] = int(meta.get("rev", 0)) + 1
+        meta["updated_at"] = utc_now()
+        meta["items_sha256"] = file_hash(p["items"])
+        write_json_atomic(p["roadmap"], roadmap)
+    render_dashboard(root, template)
 
 
 def write_items_and_roadmap_atomic(root: Path, rows: list[dict[str, Any]], roadmap: dict[str, Any], before_hash: str) -> None:
@@ -357,10 +552,126 @@ def mutate_items(root: Path, mutate: Any, *, template: Path) -> None:
                 errors.append(f"duplicate id: {row.get('id')}")
             ids.add(str(row.get("id")))
             errors.extend(validate_item(row))
+        # Scheduling gate — catches any add/move/edit that would place an item into
+        # a milestone blocked by an unresolved decision
+        gate_violations = _scheduling_gate_violation(rows, roadmap)
+        if gate_violations:
+            raise SystemExit("scheduling gate:\n  - " + "\n  - ".join(gate_violations))
         if errors:
             raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
+        # Resync milestone membership from item.version fields so every milestone's
+        # items list stays consistent with the items store (DASH-milestone-sync fix).
+        # Items with a version that matches no milestone (bare release tags) are left alone.
+        _sync_milestone_membership(rows, roadmap)
         write_items_and_roadmap_atomic(root, rows, roadmap, before)
     render_dashboard(root, template)
+
+
+def cmd_milestone_add(args: argparse.Namespace) -> int:
+    def mutate_fn(roadmap: dict[str, Any]) -> None:
+        milestones = roadmap.setdefault("milestones", [])
+        if any(m.get("version") == args.version for m in milestones):
+            raise SystemExit(f"milestone {args.version!r} already exists")
+        milestones.append(
+            {
+                "version": args.version,
+                "title": args.title,
+                "detail": args.detail or "",
+                "status": args.status,
+                "items": [],
+                "decisions": [],
+            }
+        )
+
+    mutate_roadmap(args.root, mutate_fn, template=args.template)
+    print(f"added milestone {args.version}: {args.title}")
+    return 0
+
+
+def cmd_milestone_edit(args: argparse.Namespace) -> int:
+    def mutate_fn(roadmap: dict[str, Any]) -> None:
+        milestone = next(
+            (m for m in roadmap.get("milestones", []) if m.get("version") == args.version),
+            None,
+        )
+        if milestone is None:
+            raise SystemExit(f"milestone {args.version!r} not found")
+        if args.title is not None:
+            milestone["title"] = args.title
+        if args.detail is not None:
+            milestone["detail"] = args.detail
+        if args.status is not None:
+            milestone["status"] = args.status
+
+    mutate_roadmap(args.root, mutate_fn, template=args.template)
+    print(f"edited milestone {args.version}")
+    return 0
+
+
+def _next_decision_id(roadmap: dict[str, Any]) -> str:
+    meta = roadmap.setdefault("_meta", {})
+    n = int(meta.get("next_decision_id", 1))
+    meta["next_decision_id"] = n + 1
+    return f"DEC-{n:03d}"
+
+
+def cmd_decision_add(args: argparse.Namespace) -> int:
+    dec_id_holder: list[str] = []
+
+    def mutate_fn(roadmap: dict[str, Any]) -> None:
+        milestone = next(
+            (m for m in roadmap.get("milestones", []) if m.get("version") == args.version),
+            None,
+        )
+        if milestone is None:
+            raise SystemExit(f"milestone {args.version!r} not found")
+        options = [opt.strip() for opt in args.options.split("|")]
+        blocks = [b.strip() for b in args.blocks.split(",")] if args.blocks else []
+        dec_id = _next_decision_id(roadmap)
+        dec_id_holder.append(dec_id)
+        milestone.setdefault("decisions", []).append(
+            {
+                "id": dec_id,
+                "question": args.question,
+                "options": options,
+                "recommendation": args.recommendation,
+                "blocks": blocks,
+                "resolution": None,
+                "created_at": utc_now(),
+            }
+        )
+
+    mutate_roadmap(args.root, mutate_fn, template=args.template)
+    dec_id = dec_id_holder[0] if dec_id_holder else "DEC-???"
+    print(f"added decision {dec_id} to milestone {args.version}")
+    return 0
+
+
+def cmd_decision_resolve(args: argparse.Namespace) -> int:
+    def mutate_fn(roadmap: dict[str, Any]) -> None:
+        milestone = next(
+            (m for m in roadmap.get("milestones", []) if m.get("version") == args.version),
+            None,
+        )
+        if milestone is None:
+            raise SystemExit(f"milestone {args.version!r} not found")
+        dec = next(
+            (d for d in milestone.get("decisions", []) if d.get("id") == args.dec_id),
+            None,
+        )
+        if dec is None:
+            raise SystemExit(f"decision {args.dec_id!r} not found in milestone {args.version!r}")
+        if dec.get("resolution") is not None:
+            raise SystemExit(f"decision {args.dec_id!r} is already resolved")
+        dec["resolution"] = {
+            "option": args.option,
+            "resolver": args.resolver,
+            "resolved_at": utc_now(),
+        }
+
+    mutate_roadmap(args.root, mutate_fn, template=args.template)
+    print(f"resolved {args.dec_id} in milestone {args.version}")
+    return 0
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -1212,6 +1523,39 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(p_promote)
     p_promote.add_argument("id", help="inbox item id to move into items.jsonl as fuzzy")
     p_promote.set_defaults(func=cmd_promote)
+
+    p_ms_add = sub.add_parser("milestone-add")
+    add_common(p_ms_add)
+    p_ms_add.add_argument("version", help="milestone version string, e.g. v0.7")
+    p_ms_add.add_argument("--title", required=True, help="short milestone title")
+    p_ms_add.add_argument("--detail", help="longer milestone description")
+    p_ms_add.add_argument("--status", default="todo", choices=["todo", "done"], help="milestone status (default: todo)")
+    p_ms_add.set_defaults(func=cmd_milestone_add)
+
+    p_ms_edit = sub.add_parser("milestone-edit")
+    add_common(p_ms_edit)
+    p_ms_edit.add_argument("version", help="milestone version to update")
+    p_ms_edit.add_argument("--title", help="new title")
+    p_ms_edit.add_argument("--detail", help="new detail")
+    p_ms_edit.add_argument("--status", choices=["todo", "done"], help="new status")
+    p_ms_edit.set_defaults(func=cmd_milestone_edit)
+
+    p_dec_add = sub.add_parser("decision-add")
+    add_common(p_dec_add)
+    p_dec_add.add_argument("version", help="milestone version to attach decision to")
+    p_dec_add.add_argument("--question", required=True, help="decision question")
+    p_dec_add.add_argument("--options", required=True, help='pipe-separated options, e.g. "a | b"')
+    p_dec_add.add_argument("--recommendation", required=True, help="recommended option")
+    p_dec_add.add_argument("--blocks", help="comma-separated item ids blocked; omit to block whole milestone")
+    p_dec_add.set_defaults(func=cmd_decision_add)
+
+    p_dec_resolve = sub.add_parser("decision-resolve")
+    add_common(p_dec_resolve)
+    p_dec_resolve.add_argument("version", help="milestone version")
+    p_dec_resolve.add_argument("dec_id", metavar="DEC-id", help="decision id, e.g. DEC-001")
+    p_dec_resolve.add_argument("--option", required=True, help="chosen option")
+    p_dec_resolve.add_argument("--resolver", required=True, help="who resolved this decision")
+    p_dec_resolve.set_defaults(func=cmd_decision_resolve)
 
     return parser
 

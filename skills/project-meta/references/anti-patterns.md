@@ -362,3 +362,25 @@ requires test target / data / threshold per item, mandatory even at the
 bug, AP-SKL-2). For hand-off / unattended plans, the `autopilot`/`goal`
 keyword sets `readiness: strict` and `audit`'s Goal-readiness dimension gates
 GO/NO-GO. Verify the plan against the real repo, not its own claims.
+
+### AP-PLAN-2 — Building on unsurfaced OPEN assumptions
+A plan or roadmap milestone is built on high-impact assumptions that were
+never surfaced or classified, or that remain OPEN at execution time — silently
+declaring a foundation it never verified. This is the roadmap/plan analog of
+an unfalsifiable §6 row (AP-PLAN-1): where AP-PLAN-1 skips the falsifiability
+contract for individual items, AP-PLAN-2 skips the foundation check for the
+plan as a whole. The failure is invisible at plan-time and surfaces only when
+the missing prerequisite blocks mid-run progress or the delivered result
+misses the real constraint.
+
+**Symptom**: mid-run blockers ("the API doesn't support this") that would
+have been obvious with a brief discovery sweep; a roadmap milestone declared
+done but failing on a constraint no one surfaced; retrospectives that say "we
+assumed X but X was never true".
+
+**Fix**: the §0 assumption ledger in `templates/building-plan.md` is the
+plan-level fix — enumerate every assumption before execution, classify each
+by type/tier/impact, and block hand-off to audit on any high-impact OPEN row.
+For roadmap milestones: run a co-build assumption pass and convert high-impact
+OPEN assumptions into explicit blocking decisions with owners. A high-impact
+OPEN assumption gates progression; it is not a backlog item to defer.

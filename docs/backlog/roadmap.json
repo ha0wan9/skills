@@ -1,10 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "1445a4757c6b766dabd27861887d933bc66fb901d15126a0eefd327a79fce960",
-    "rev": 74,
+    "items_sha256": "6397e7de4a6034e7b1bcdc8e0e005b4df68fed0e3dfe3e1d58233c6d59a13159",
+    "next_decision_id": 2,
+    "rev": 86,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-06-12T14:20:58Z"
+    "updated_at": "2026-06-13T02:27:04Z"
   },
   "milestones": [
     {
@@ -84,16 +85,46 @@
     {
       "detail": "Agentic-infra hardening from the 2026-06 bottleneck research (P1/P2/P4/P5/P6 + token-diet chore): dispatch-state spine (ledger v2), memory staleness lint, session receipt primitive, test-integrity gate, destructive-command guard + env-readiness probe, SKILL.md description trim. P3 (DASH-048) and P7 (DASH-052) deferred in pool: P3 wants its own milestone, P7 depends on DASH-028 + DASH-048.",
       "items": [
+        "DASH-031",
         "DASH-046",
         "DASH-047",
         "DASH-049",
         "DASH-050",
-        "DASH-051",
-        "DASH-031"
+        "DASH-051"
       ],
       "status": "done",
       "title": "Agentic-infra hardening",
       "version": "v0.6"
+    },
+    {
+      "decisions": [
+        {
+          "blocks": [
+            "DASH-048"
+          ],
+          "created_at": "2026-06-13T02:23:33Z",
+          "id": "DEC-001",
+          "options": [
+            "event-sourced fold, git-ignored",
+            "single-row locked-rewrite, git-tracked"
+          ],
+          "question": "lessons.jsonl store shape + git status?",
+          "recommendation": "single-row locked-rewrite, git-tracked",
+          "resolution": {
+            "option": "single-row locked-rewrite, git-tracked",
+            "resolved_at": "2026-06-13T02:23:39Z",
+            "resolver": "critic-panel+operator"
+          }
+        }
+      ],
+      "detail": "Round-2/3 bottleneck research (P3+P7): lesson_registry.py (capture→promote→enforce→measure, single-row store) + derive_profile.py (model-tier/risk/reliability-derived HARNESS_PROFILE within floor/ceiling, invariant core excluded). DASH-052 depended on DASH-028 (now shipped in v0.4).",
+      "items": [
+        "DASH-048",
+        "DASH-052"
+      ],
+      "status": "todo",
+      "title": "Lesson registry + elastic harness",
+      "version": "v0.7"
     }
   ]
 }

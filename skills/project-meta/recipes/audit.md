@@ -76,8 +76,13 @@ to completion without drifting or self-declaring victory on empty output?"* Veri
 the **real repo**, not the plan's claims. Run this dimension when the target is a build
 plan; required when its frontmatter is `readiness: strict`.
 
+- [ ] **§0 assumption ledger present and complete** — absent or empty on a multi-file
+      goal is a NO-GO; any high-impact OPEN assumption row unresolved is a NO-GO (AP-PLAN-2)
 - [ ] **Every §6 row is falsifiable** — has a test target + data + threshold; any row
       missing one is a NO-GO blocker (AP-PLAN-1)
+- [ ] `risk_band` / `readiness` consistency — MAJOR finding when `risk_band` ∈
+      {incremental, spike-first} is recorded in frontmatter but `readiness: floor`
+      (risk assessment recommended more care than the keyword set; visible tier misfire)
 - [ ] Named test data / fixtures **actually exist in the repo** (or are specced with a
       generation command), not assumed
 - [ ] Tiers are honest — no 🟢 item that actually needs a new dep / ops / live backend /
