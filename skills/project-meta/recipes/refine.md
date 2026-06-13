@@ -34,13 +34,13 @@ it cannot drift from intent.
    prior DASH-08 co-reviews (current direction, acceptance-shape patterns that passed, recurring
    trim/staleness reasons). This sharpens the draft. (Guidance lives here, **not** in
    `repo_memory` — that is a 30-item-capped entry-point CLI, not a queryable index.)
-3. **Draft (Sonnet sub-agent).** Dispatch a Sonnet sub-agent to draft the concrete requirement:
+3. **Draft (fleet-tier sub-agent).** Dispatch a fleet-tier sub-agent (Claude: Sonnet; Codex: GPT-5.4) to draft the concrete requirement:
    **scope · acceptance-shape · rough size**. It must **ask the operator** wherever ambiguous —
    never invent missing intent.
 4. **Confirm + apply.** On operator confirmation, apply:
    `python3 scripts/board.py refine <id> --acceptance-shape "<...>" --rough-size "<S|M|L>" [--body "<...>"]`
    (sets `maturity: refined`, re-renders the dashboard).
-5. **Optional L1 review.** For a non-trivial requirement, one fresh Sonnet reviewer checks it is
+5. **Optional L1 review.** For a non-trivial requirement, one fresh fleet-tier reviewer checks it is
    well-formed and testable before it enters the roadmap pool.
 
 ## Output contract

@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.17.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.17.1, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -59,7 +59,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
 
 ## Core Rules
 
-- Detect the primary agent tool before assigning canonical-vs-mirror roles. When Claude Code is the primary consumer, `CLAUDE.md` is the canonical entrypoint and `AGENTS.md` is the mirror. When Codex/GPT-5.4 is primary, `AGENTS.md` is canonical and `CLAUDE.md` is the mirror. In both cases, treat `.github/copilot-instructions.md` as secondary. See `references/mirrors-and-updates.md` for the tool-awareness policy.
+- Detect the primary agent tool before assigning canonical-vs-mirror roles. When Claude Code is the primary consumer, `CLAUDE.md` is the canonical entrypoint and `AGENTS.md` is the mirror. When Codex/GPT-5.x is primary, `AGENTS.md` is canonical and `CLAUDE.md` is the mirror. In both cases, treat `.github/copilot-instructions.md` as secondary. See `references/mirrors-and-updates.md` for the tool-awareness policy.
 - If the repo has no established convention, default to `AGENTS.md` for project memory and `USER.md` for stable user preferences.
 - Default: on first project init, or when the user asks to reset or change local preferences, use the installed `USER.template.md` as a questionnaire and target-config input. Ask which preset and checklist items to enable, then create or repair ignored local `USER.md` with only selected checked preferences. Prefer `scripts/render_user_preferences.py` when available. Do not copy or commit `USER.template.md` into a target repo by default.
 - Shared/user-facing docs are the primary project explanation, but primary does not mean eager full-context loading. Use selective reads unless the task requires the whole document.
