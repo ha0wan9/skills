@@ -14,14 +14,17 @@ Produce the pre-commit delivery for user review.
 
 ## Required references
 
+**Base** — loaded when the verb runs:
+
 - [`references/documentation-delivery.md`](../references/documentation-delivery.md) — the delivery contract: what each section must contain
 - [`templates/pre-commit-delivery.md`](../templates/pre-commit-delivery.md) — the seed for the per-project `agents/pre-commit-delivery.md`
 
-Lazy-load:
+**Lazy-load** — only when the named step needs it:
 
-- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — to verify the editing recipe's dispatch + review actually happened for a >1-file change (`deliver` verifies, never dispatches)
-- [`references/review-tier.md`](../references/review-tier.md) — the review level (L0–L3) the editing recipe's reviewer step should have used; `deliver` reports a WARN if the change was under-reviewed for its tier (`scripts/review_tier.py` derives the floor)
-- [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when mirrors are part of the change
+- [`references/dispatch-card.md`](../references/dispatch-card.md) — step 3: dispatch trigger/when-to-dispatch quick-reference; confirm the editing recipe dispatched before `deliver` runs (load only here)
+- [`references/multi-agent-protocols.md`](../references/multi-agent-protocols.md) — step 3: to verify the editing recipe's dispatch + review actually happened for a >1-file change (`deliver` verifies, never dispatches); deeper mechanics (roles, context package, reviewer loop, ordering barriers, synchronous gates) (load only here)
+- [`references/review-tier.md`](../references/review-tier.md) — step 3: the review level (L0–L3) the editing recipe's reviewer step should have used; `deliver` reports a WARN if the change was under-reviewed for its tier (`scripts/review_tier.py` derives the floor) (load only here)
+- [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — step 5: when mirrors are part of the change (load only here)
 
 ## Workflow
 

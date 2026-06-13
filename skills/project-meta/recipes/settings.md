@@ -53,17 +53,19 @@ distinct; if the user wants to change preferences, route to the reset path in
 
 ## Required references
 
-Load lazily, only for the operation requested:
+**Base** — loaded when the verb runs:
 
 - [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — route + shared rules (always, for the route contract)
-- [`references/documentation-delivery.md`](../references/documentation-delivery.md) — pre-commit delivery, before any write
-- When enabling/disabling a capability, load that capability's own reference and reuse `recipes/init.md` step 6 — **do not re-document install steps here**:
-  - hooks → [`templates/hooks/README.md`](../templates/hooks/README.md)
-  - phase-lock → [`templates/phase-lock-contract.md`](../templates/phase-lock-contract.md)
-  - multi-host → [`references/multi-host-manifests.md`](../references/multi-host-manifests.md)
-  - issue-tracker → [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md)
-  - code-graph → [`references/code-graph-integration.md`](../references/code-graph-integration.md)
-  - land-queue → [`references/land-queue-integration.md`](../references/land-queue-integration.md)
+
+**Lazy-load** — only when the named step needs it:
+
+- [`references/documentation-delivery.md`](../references/documentation-delivery.md) — step 7: pre-commit delivery, before any write (load only here)
+- [`templates/hooks/README.md`](../templates/hooks/README.md) — steps 4/5: enable/disable hooks capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
+- [`templates/phase-lock-contract.md`](../templates/phase-lock-contract.md) — steps 4/5: enable/disable phase-lock capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
+- [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — steps 4/5: enable/disable multi-host capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
+- [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md) — steps 4/5: enable/disable issue-tracker capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
+- [`references/code-graph-integration.md`](../references/code-graph-integration.md) — steps 4/5: enable/disable code-graph capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
+- [`references/land-queue-integration.md`](../references/land-queue-integration.md) — steps 4/5: enable/disable land-queue capability; reuse `recipes/init.md` step 6 — do not re-document install steps here (load only here)
 
 ## Workflow
 

@@ -22,8 +22,13 @@ it cannot drift from intent.
 
 ## Required references
 
-- [`references/review-tier.md`](../references/review-tier.md) — optional **L1** check (is the refined item well-formed / testable?).
+**Base** — loaded when the verb runs:
+
 - [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — shared command rules, including **deliver before commit** for editing recipes.
+
+**Lazy-load** — only when the named step needs it:
+
+- [`references/review-tier.md`](../references/review-tier.md) — step 5: optional **L1** check (is the refined item well-formed / testable?) (load only here)
 
 ## Workflow
 

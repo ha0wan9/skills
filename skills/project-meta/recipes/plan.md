@@ -45,10 +45,15 @@ separate run engine in this skill.
 
 ## Required references
 
-- `templates/building-plan.md` — the artifact seed (always)
-- `templates/project-artifact-manifest.md` — register the plan for provenance/discovery (always)
-- `references/execution-policy.md` — when the plan must cite the gate command / hard-stops
-- `references/cli-command-patterns.md` — the route + shared rules (delivery-before-commit)
+**Base** — loaded when the verb runs:
+
+- [`templates/building-plan.md`](../templates/building-plan.md) — the artifact seed (always)
+- [`templates/project-artifact-manifest.md`](../templates/project-artifact-manifest.md) — register the plan for provenance/discovery (always)
+- [`references/cli-command-patterns.md`](../references/cli-command-patterns.md) — the route + shared rules (delivery-before-commit)
+
+**Lazy-load** — only when the named step needs it:
+
+- [`references/execution-policy.md`](../references/execution-policy.md) — when the plan must cite the gate command / hard-stops (load only here)
 
 ## Workflow
 

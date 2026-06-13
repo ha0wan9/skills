@@ -15,17 +15,20 @@ Review harness health, layering, triggers, mirrors, and memory boundaries. Surfa
 
 ## Required references
 
-Load only the references relevant to the audit target:
+**Base** — loaded when the verb runs:
 
 - [`references/harness-engineering.md`](../references/harness-engineering.md) — audit checklist + redesign triggers (always)
-- [`references/anti-patterns.md`](../references/anti-patterns.md) — name failures by AP-XXX-N when they match (always)
-- [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — when memory layout is in scope
-- [`references/mirrors-and-updates.md`](../references/mirrors-and-updates.md) — when mirrors are in scope
-- [`references/writing-skills.md`](../references/writing-skills.md) — when auditing a skill (not a project)
-- [`references/skill-critics.md`](../references/skill-critics.md) — when auditing a skill/marketplace; the critic suite that feeds the authoring + enforcement dimensions
-- [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when host manifests are in scope
-- [`references/review-tier.md`](../references/review-tier.md) — pick the right review level (L0–L3) for the reviewer step; `scripts/review_tier.py` suggests a floor, the conductor escalates on judgment
-- [`templates/building-plan.md`](../templates/building-plan.md) — when the audit target is a build plan (the Goal-readiness dimension below)
+- [`references/anti-patterns.md`](../references/anti-patterns.md) — the AP-XXX-N catalog; the scoring rubric consulted while walking the dimensions (step 4) and naming findings (step 6) (always)
+
+**Lazy-load** — only when the named step needs it:
+
+- [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — when memory layout is in scope (load only here)
+- [`references/mirrors-and-updates.md`](../references/mirrors-and-updates.md) — when mirrors are in scope (load only here)
+- [`references/writing-skills.md`](../references/writing-skills.md) — when auditing a skill (not a project) (load only here)
+- [`references/skill-critics.md`](../references/skill-critics.md) — when auditing a skill/marketplace; the critic suite that feeds the authoring + enforcement dimensions (load only here)
+- [`references/multi-host-manifests.md`](../references/multi-host-manifests.md) — when host manifests are in scope (load only here)
+- [`references/review-tier.md`](../references/review-tier.md) — step 3 (dispatch reviewer critics) / step 8 (convergence loop): pick the right review level (L0–L3); `scripts/review_tier.py` suggests a floor, the conductor escalates on judgment (load only here)
+- [`templates/building-plan.md`](../templates/building-plan.md) — when the audit target is a build plan (the Goal-readiness dimension below) (load only here)
 
 ## Audit dimensions
 

@@ -14,6 +14,8 @@ Push-only, interactive mirror from the Project Board store to Linear (DASH-03). 
 
 ## Required references
 
+**Base** — loaded when the verb runs:
+
 - [`references/linear-mirror.md`](../references/linear-mirror.md) — Project Board push-only mirror contract.
 - [`references/issue-tracking-integration.md`](../references/issue-tracking-integration.md) — generic Track Loop and canonical-vs-mirror rules.
 

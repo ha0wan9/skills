@@ -14,10 +14,10 @@ Inspect the current harness state without editing files.
 
 ## Required references
 
-None by default. Lazy-load only when status detection surfaces something needing detail:
+**Lazy-load** — none loaded by default; pull only when status detection surfaces something needing detail:
 
-- `references/repo-memory-structure.md` — when reporting on memory layout
-- `references/mirrors-and-updates.md` — when reporting on canonical-vs-mirror state
+- [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — when reporting on memory layout
+- [`references/mirrors-and-updates.md`](../references/mirrors-and-updates.md) — when reporting on canonical-vs-mirror state
 
 ## Workflow
 

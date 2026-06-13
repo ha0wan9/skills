@@ -14,12 +14,12 @@ Run available validation checks against the current harness.
 
 ## Required references
 
-None by default. Lazy-load when a failed check needs context:
+**Lazy-load** — none loaded by default; pull only when a failed check needs context:
 
-- `references/harness-engineering.md` — the audit-checklist semantics
-- `references/repo-memory-structure.md` — when memory layout failures surface
-- `references/anti-patterns.md` — when a failure pattern matches a named AP-XXX-N
-- `references/skill-critics.md` — when validating a skill or the marketplace (the deterministic critic suite)
+- [`references/harness-engineering.md`](../references/harness-engineering.md) — the audit-checklist semantics
+- [`references/repo-memory-structure.md`](../references/repo-memory-structure.md) — when memory layout failures surface
+- [`references/anti-patterns.md`](../references/anti-patterns.md) — when a failure pattern matches a named AP-XXX-N
+- [`references/skill-critics.md`](../references/skill-critics.md) — when validating a skill or the marketplace (the deterministic critic suite)
 
 ## Workflow
 
