@@ -53,8 +53,8 @@ All verbs accept `--root <repo>` (defaults to cwd) and auto-render after a mutat
   `decision-resolve <version> <DEC-id> --option CHOSEN --resolver WHO`.
 - **Delete** — **deliberately friction-ful: there is no hard-delete verb.** Prefer a
   *disposition* (`wontfix` / `trimmed` / `defer`) so the item stays auditable. The dashboard's
-  experimental edit-back can splice a row out of `items.jsonl`, but the CLI stays canonical:
-  after applying patched store files you MUST review, then `board.py tx`, then `board.py
+  browser edit-back can splice a row out of `items.jsonl`, but the CLI stays canonical:
+  after a browser save you MUST review the diff, then `board.py tx`, then `board.py
   render`. True removal = edit `items.jsonl` by hand only as last-resort surgery, immediately
   followed by `board.py tx` to re-hash and re-validate.
 
@@ -99,8 +99,11 @@ check and will catch any remaining violation.
   artifacts (`.claude/settings.json`, hooks, `agents/…`, mirrors). There is no
   `.harness/settings.json` — settings are derived, never a new state file (AP-VAL-2). The
   canonical writer for harness settings is `/project-meta settings`, not the dashboard.
-- **Browser edit-back** (backlog cards, harness profile write) is experimental and optional.
-  It patches in memory and writes patched files for review; the CLI re-renders the truth.
+- **Browser edit-back** (backlog cards, harness profile write) is optional and Chromium-only.
+  It patches in memory and writes the store files directly through a once-granted repo-root
+  directory handle (File System Access API; the handle persists in IndexedDB, so no path
+  picking after the first grant — non-Chromium falls back to patched-file downloads). The
+  CLI re-renders the truth: after a browser save, review the diff, `board.py tx`, `render`.
 
 ## Enforcement (optional, profile-laddered)
 

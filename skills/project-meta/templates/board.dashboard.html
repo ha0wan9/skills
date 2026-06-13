@@ -135,6 +135,9 @@
     .edit-banner strong { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 600; color: var(--fg-1); }
     .edit-banner strong i { color: var(--warn-fg); font-size: 16px; }
     .edit-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+    /* Connect button: secondary look, but normalized to the primary Save button's size */
+    #repo-pick { display: inline-flex; align-items: center; gap: 7px; }
+    #repo-pick i { font-size: 16px; }
     .dirty { font-family: var(--font-mono); color: var(--warn-fg); font-size: 12px; }
     .edit-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-xs); display: none; }
     .edit-panel.open { display: block; }
@@ -480,10 +483,12 @@
       </section>
       <section>
         <div class="edit-banner">
-          <strong><i class="ri-flask-line"></i>Experimental browser edit-back</strong>
-          CLI remains canonical. Browser edits patch the embedded store data, then save patched `items.jsonl` and `roadmap.json` via the File System Access API (`showSaveFilePicker`) when supported or download patched-store fallbacks elsewhere. Review both files before replacing `docs/backlog/`, then run `board.py tx` and `board.py render`.
+          <strong><i class="ri-edit-box-line"></i>Browser edit-back</strong>
+          CLI remains canonical. Browser edits patch the embedded store data; <b>Save</b> writes `items.jsonl` and `roadmap.json` straight into the connected repo folder (File System Access API, Chromium). Connect the repo root <b>once</b> — the folder handle is remembered by the browser, so later saves need at most a permission re-grant, never path hunting. Non-Chromium browsers download patched-store fallbacks instead. After saving, review the diff, then run `board.py tx` and `board.py render`.
           <div class="edit-actions">
-            <button type="button" class="primary" id="save-items"><i class="ri-save-3-line"></i>Save patched store files</button>
+            <button type="button" class="primary" id="save-items"><i class="ri-save-3-line"></i>Save to repo</button>
+            <button type="button" id="repo-pick"><i class="ri-folder-open-line"></i>Connect repo folder…</button>
+            <span class="dirty" id="repo-state"></span>
             <span class="dirty" id="dirty-state">No browser edits yet.</span>
           </div>
         </div>
@@ -511,11 +516,11 @@
         <div class="set-banner">
           <strong><i class="ri-terminal-box-line"></i>Direct control — the CLI stays canonical</strong>
           The <b>enforcement profile</b> writes straight into <code>.claude/settings.json</code> from this
-          page (experimental, via the File System Access API — Chromium-only, asks permission each time,
-          like the Backlog edit-back). <b>Capability</b> changes are staged into a copy-to-run command
-          plan, because installing one wires several files and re-runs the validator — the job of
-          <code>/project-meta settings</code>, which stays the source of truth. After any change, re-run
-          <code>board.py render</code> to refresh the derived state shown here.
+          page via the connected repo folder (File System Access API, Chromium — one repo-root grant,
+          shared with the Backlog edit-back, no file picking). <b>Capability</b> changes are staged into
+          a copy-to-run command plan, because installing one wires several files and re-runs the
+          validator — the job of <code>/project-meta settings</code>, which stays the source of truth.
+          After any change, re-run <code>board.py render</code> to refresh the derived state shown here.
         </div>
         <div id="settings"></div>
       </section>
@@ -641,9 +646,147 @@
       downloadText("roadmap.patched.json", roadmapText);
     }
 
+    // ---- Repo folder connection (pickerless edit-back) ----
+    // One showDirectoryPicker grant on the repo root; the FileSystemDirectoryHandle is
+    // persisted in IndexedDB (keyed per dashboard location, so two repos never share a
+    // handle) and every file is then resolved by repo-relative path. After a reload the
+    // browser only re-asks for permission — never for the path.
+    const REPO_IDB = "pb-edit-back";
+    const REPO_IDB_STORE = "handles";
+    const REPO_IDB_KEY = "repo-root:" + location.pathname;
+    let repoDirHandle = null;
+
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(REPO_IDB, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(REPO_IDB_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbGet(key) {
+      try {
+        const db = await idbOpen();
+        return await new Promise((resolve, reject) => {
+          const req = db.transaction(REPO_IDB_STORE, "readonly").objectStore(REPO_IDB_STORE).get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (e) { return undefined; }   // IndexedDB unavailable — fall back to per-pageload memory
+    }
+    async function idbSet(key, value) {
+      try {
+        const db = await idbOpen();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(REPO_IDB_STORE, "readwrite");
+          tx.objectStore(REPO_IDB_STORE).put(value, key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {}
+    }
+
+    async function resolveFileHandle(dir, relPath, opts) {
+      const create = !!(opts && opts.create);
+      const parts = String(relPath).split("/").filter(Boolean);
+      let cur = dir;
+      for (const part of parts.slice(0, -1)) cur = await cur.getDirectoryHandle(part, {create});
+      return cur.getFileHandle(parts[parts.length - 1], {create});
+    }
+
+    // The repo folder name is recovered from this page's own on-disk location, so a wrong
+    // pick (or a handle from another repo) is rejected before anything is written.
+    function expectedRepoName() {
+      try {
+        const suffix = "/" + BOARD_DATA.store.dashboard;
+        const path = decodeURIComponent(location.pathname);
+        if (!path.endsWith(suffix)) return null;   // served/copied elsewhere — skip the name check
+        const parts = path.slice(0, -suffix.length).split("/");
+        return parts[parts.length - 1] || null;
+      } catch (e) { return null; }
+    }
+    async function verifyRepoDir(dir) {
+      const want = expectedRepoName();
+      if (want && dir.name !== want) {
+        throw new Error(`picked "${dir.name}" but this dashboard lives in "${want}" — pick that folder`);
+      }
+      try { await resolveFileHandle(dir, BOARD_DATA.store.items); }
+      catch (e) { throw new Error(`"${dir.name}" has no ${BOARD_DATA.store.items} — pick the repo root`); }
+    }
+
+    async function ensurePermission(handle) {
+      if (!handle) return false;
+      const desc = {mode: "readwrite"};
+      try {
+        if (handle.queryPermission && await handle.queryPermission(desc) === "granted") return true;
+        return handle.requestPermission ? (await handle.requestPermission(desc)) === "granted" : false;
+      } catch (e) { return false; }
+    }
+
+    async function connectRepoDir(forcePick) {
+      if (!window.showDirectoryPicker) return null;
+      if (!forcePick) {
+        if (repoDirHandle && await ensurePermission(repoDirHandle)) { updateRepoState(); return repoDirHandle; }
+        const stored = await idbGet(REPO_IDB_KEY);
+        if (stored && await ensurePermission(stored)) {
+          try {
+            await verifyRepoDir(stored);
+            repoDirHandle = stored;
+            updateRepoState();
+            return stored;
+          } catch (e) { /* repo moved/renamed since the grant — fall through to a fresh pick */ }
+        }
+      }
+      const picked = await window.showDirectoryPicker({id: "pb-repo-root", mode: "readwrite"});
+      await verifyRepoDir(picked);
+      repoDirHandle = picked;
+      await idbSet(REPO_IDB_KEY, picked);
+      updateRepoState();
+      return picked;
+    }
+
+    async function writeRepoFile(dir, relPath, text, opts) {
+      const handle = await resolveFileHandle(dir, relPath, opts);
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+    }
+
+    function updateRepoState(msg) {
+      const el = document.getElementById("repo-state");
+      if (!el) return;
+      if (msg !== undefined) { el.textContent = msg; return; }
+      if (!window.showDirectoryPicker) { el.textContent = "Folder connect needs Chromium — saves fall back to pickers/downloads."; return; }
+      el.textContent = repoDirHandle
+        ? `Repo folder connected: ${repoDirHandle.name}/`
+        : "No repo folder connected — first save asks once.";
+    }
+    async function initRepoState() {
+      if (!window.showDirectoryPicker) { updateRepoState(); return; }
+      const stored = await idbGet(REPO_IDB_KEY);
+      if (stored) {
+        repoDirHandle = stored;
+        let perm = "prompt";
+        try { if (stored.queryPermission) perm = await stored.queryPermission({mode: "readwrite"}); } catch (e) {}
+        updateRepoState(`Repo folder remembered: ${stored.name}/${perm === "granted" ? "" : " (re-grant on first save)"}`);
+        return;
+      }
+      updateRepoState();
+    }
+
     async function savePatchedItems() {
       const itemsText = itemJsonl();
       const roadmapText = roadmapJson(itemsText);
+      if (window.showDirectoryPicker) {
+        const dir = await connectRepoDir(false);
+        if (dir) {
+          await writeRepoFile(dir, BOARD_DATA.store.items, itemsText);
+          await writeRepoFile(dir, BOARD_DATA.store.roadmap, roadmapText);
+          document.getElementById("dirty-state").textContent = `Wrote ${BOARD_DATA.store.items} and ${BOARD_DATA.store.roadmap} in ${dir.name}/. Review the diff, then run board.py tx and board.py render.`;
+          browserEditDirty = false;
+          return;
+        }
+      }
       if (window.showSaveFilePicker) {
         await saveTextWithPicker("items.jsonl", "Project Board items JSONL", {"application/jsonl": [".jsonl"]}, itemsText);
         await saveTextWithPicker("roadmap.json", "Project Board roadmap JSON", {"application/json": [".json"]}, roadmapText);
@@ -1131,28 +1274,25 @@
       return "";
     }
 
-    // Direct write of the enforcement profile into .claude/settings.json (experimental edit-back).
-    // We read the real file first and merge env.HARNESS_PROFILE so nothing else is clobbered.
+    // Direct write of the enforcement profile into .claude/settings.json (browser edit-back).
+    // Resolves the file through the connected repo folder — no file picking — and reads the
+    // real file first, merging env.HARNESS_PROFILE so nothing else is clobbered.
+    const SETTINGS_PATH = ".claude/settings.json";
     async function writeProfile(profile) {
       const setState = (msg, cls) => {
         const el = document.getElementById("profile-write-state");
         if (el) { el.textContent = msg; el.className = "apply-hint" + (cls ? " " + cls : ""); }
       };
-      if (!window.showOpenFilePicker) { setState("Direct write needs a Chromium browser — copy the command instead.", "apply-err"); return; }
+      if (!window.showDirectoryPicker) { setState("Direct write needs a Chromium browser — copy the command instead.", "apply-err"); return; }
       try {
-        const [handle] = await window.showOpenFilePicker({
-          id: "claude-settings",
-          types: [{ description: "Claude Code settings.json", accept: { "application/json": [".json"] } }],
-        });
-        if (handle.requestPermission) {
-          const perm = await handle.requestPermission({ mode: "readwrite" });
-          if (perm !== "granted") throw new Error("write permission was not granted");
-        }
+        const dir = await connectRepoDir(false);
+        if (!dir) throw new Error("no repo folder connected");
+        const handle = await resolveFileHandle(dir, SETTINGS_PATH, {create: true});
         const file = await handle.getFile();
         const raw = (await file.text()).trim();
         let json;
         try { json = raw ? JSON.parse(raw) : {}; }
-        catch (e) { throw new Error(`${handle.name} is not valid JSON — fix it by hand or use the CLI`); }
+        catch (e) { throw new Error(`${SETTINGS_PATH} is not valid JSON — fix it by hand or use the CLI`); }
         if (typeof json !== "object" || json === null || Array.isArray(json)) throw new Error("settings root must be a JSON object");
         json.env = (json.env && typeof json.env === "object" && !Array.isArray(json.env)) ? json.env : {};
         json.env.HARNESS_PROFILE = profile;
@@ -1163,9 +1303,9 @@
         BOARD_DATA.harness.profile_source = ".claude/settings.json";
         selectedProfile = profile;
         renderSettings();
-        setState(`Wrote HARNESS_PROFILE=${profile} to ${handle.name}. Re-run board.py render to refresh derived state.`, "apply-ok");
+        setState(`Wrote HARNESS_PROFILE=${profile} to ${SETTINGS_PATH}. Re-run board.py render to refresh derived state.`, "apply-ok");
       } catch (err) {
-        if (err && (err.name === "AbortError")) return;   // user dismissed the picker
+        if (err && (err.name === "AbortError")) return;   // user dismissed the folder picker
         setState(`Write failed: ${err.message || err}`, "apply-err");
       }
     }
@@ -1192,7 +1332,7 @@
           <div class="profile-desc">${esc(HARNESS_PROFILE_DESC[p] || "")}</div>
         </button>`;
       }).join("");
-      const canWrite = !!window.showOpenFilePicker;
+      const canWrite = !!window.showDirectoryPicker;
       let profileApply;
       if (selectedProfile === null) {
         profileApply = `<div class="cmd-bar muted"><span class="cmd-prompt">!</span><code class="cmd-text">No profile set — pick a tier above to stage one</code></div>`;
@@ -1206,7 +1346,7 @@
           <div class="apply-row">
             ${canWrite ? `<button type="button" class="primary" id="profile-write"><i class="ri-save-3-line"></i>Write .claude/settings.json</button>` : ""}
             <span class="apply-hint" id="profile-write-state">${canWrite
-              ? `Sets HARNESS_PROFILE=${esc(selectedProfile)} directly (you'll pick the file + grant write).`
+              ? `Sets HARNESS_PROFILE=${esc(selectedProfile)} directly via the connected repo folder (no file picking).`
               : `Direct write needs a Chromium browser — copy the command instead.`}</span>
           </div>
           ${cmdBar(`/project-meta settings profile ${selectedProfile}`)}`;
@@ -1343,9 +1483,22 @@
 
     document.getElementById("save-items").addEventListener("click", () => {
       savePatchedItems().catch(err => {
+        if (err && err.name === "AbortError") return;   // user dismissed the folder picker
         document.getElementById("dirty-state").textContent = `Save failed: ${err.message || err}`;
       });
     });
+    const repoPick = document.getElementById("repo-pick");
+    if (window.showDirectoryPicker) {
+      repoPick.addEventListener("click", () => {
+        connectRepoDir(true).catch(err => {
+          if (err && err.name === "AbortError") return;
+          updateRepoState(`Connect failed: ${err.message || err}`);
+        });
+      });
+    } else {
+      repoPick.style.display = "none";
+    }
+    initRepoState();
 
     render();
 

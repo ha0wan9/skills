@@ -7,8 +7,8 @@ Shared infra inside `project-meta` — **not** a separate skill. Consumed by `au
 | Level | When | Mode | Cost |
 |---|---|---|---|
 | **L0 self-check** | trivial/mechanical: tiny diff, no behavior change, no MUST-rule, single file | conductor self-review vs a checklist + deterministic linters only — no dispatch | ~free |
-| **L1 single reviewer** | ordinary bounded change (bug fix, small feature) | one fresh **Sonnet** reviewer on diff+brief, single-vote (AP-COORD-2 default) | 1× Sonnet |
-| **L2 multi-expert panel** | design plan / roadmap / cross-subsystem / harness-path change | **N parallel reviewers, distinct lenses** (feasibility·robustness·usefulness·usability, or correctness·security·repro), synthesized; majority where it gates — this IS the fleet-panel mechanism described in the model-tier canon (`multi-agent-protocols.md#model-tier`); no separate panel system exists | 3–4× Sonnet (+opt Opus synth) |
+| **L1 single reviewer** | ordinary bounded change (bug fix, small feature) | one fresh **fleet-tier** reviewer (Claude: Sonnet; Codex: GPT-5.4) on diff+brief, single-vote (AP-COORD-2 default) | 1× fleet |
+| **L2 multi-expert panel** | design plan / roadmap / cross-subsystem / harness-path change | **N parallel reviewers, distinct lenses** (feasibility·robustness·usefulness·usability, or correctness·security·repro), synthesized; majority where it gates — this IS the fleet-panel mechanism described in the model-tier canon (`multi-agent-protocols.md#model-tier`); no separate panel system exists | 3–4× fleet (+opt escalation/synth: Opus or GPT-5.5) |
 | **L3 adversarial + pressure** | highest stakes: new skill · MUST-rule change · security · irreversible · public contract | L2 + adversarial refuters (refute-by-default, majority-kill) + `pressure_test_skill` + full critic suite; loop-until-dry opt | most expensive, reserved |
 
 Reviewers run on **clean context** (diff + brief only — AP-COORD-2); L2/L3 panels run **in parallel** for speed.

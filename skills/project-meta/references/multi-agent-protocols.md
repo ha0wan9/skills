@@ -73,32 +73,32 @@ A dispatched agent is **not** the Lead. The Lead owns framing, synthesis, and th
 
 Three tiers govern a pipeline run:
 
-| tier | model (2026) | role |
-|---|---|---|
-| **fleet** (default) | Sonnet 4.6 | every dispatched bounded role: Workers, Reviewers, Explorers, scouts, finders, verifiers, extract/summarize/lint-adjacent judgment |
-| **escalation/synth** | Opus 4.8 | (a) the single escalate-on-demonstrated-shortfall agent; (b) cross-agent synthesis where one context reconciles many fleet outputs; (c) adversarial/security review where a miss is expensive |
-| **conductor** | the **active session model** (Fable 5 when available) | Lead/session only: framing, contract signing, architecture forks, final canon gate; plus at most **one** dispatched "unblock" call after an Opus escalation already failed |
+| tier | Claude Code model (2026) | Codex model tier (2026) | role |
+|---|---|---|---|
+| **fleet** (default) | Sonnet 4.6 | GPT-5.4 | every dispatched bounded role: Workers, Reviewers, Explorers, scouts, finders, verifiers, extract/summarize/lint-adjacent judgment |
+| **escalation/synth** | Opus 4.8 | GPT-5.5 | (a) the single escalate-on-demonstrated-shortfall agent; (b) cross-agent synthesis where one context reconciles many fleet outputs; (c) adversarial/security review where a miss is expensive |
+| **conductor** | the **active session model** (Fable 5 when available) | the **active session model** (GPT-5.5 when available) | Lead/session only: framing, contract signing, architecture forks, final canon gate; plus at most **one** dispatched "unblock" call after an Opus/GPT-5.5 escalation already failed |
 
 Rules:
 
-- **Default every dispatched agent to the fleet tier (Sonnet).** This is the floor for all spawned roles on both the model-driven and scripted backings (`agent(prompt, {model: 'sonnet'})` in a Workflow; the equivalent role-base on Codex).
-- **Escalate a *single* agent to the escalation tier (Opus) only on a demonstrated fleet shortfall** — it already failed, or returned low-quality output at fleet — **never precautionarily.** Opus is never a fan-out tier; at most twice per pipeline run (one escalation slot + one synthesis slot).
-- **Fable is never dispatched in fan-out.** It is the session conductor. Any non-zero dispatched Fable count must be individually justified (at most one unblock call after Opus already failed). Conductor = Fable is a *target*, not a guarantee: on a Sonnet session the conductor is Sonnet — the contract must say so.
-- **The fleet panel (opt-in, L2).** N diverse-lens Sonnet reviewers with a majority verdict is the *same mechanism* as `review-tier.md` L2 (3–4× Sonnet + opt Opus synth) — not a new mandatory rung. Choose it at contract time for high-volume bounded judgments where a single reviewer's failure signal is ambiguous. Cost claim, stated honestly: a panel is cheaper than an Opus retry **only when** panel output tokens ≪ retry output tokens (typical for bounded verdicts); same-model panels do not decorrelate systematic failure modes — diversity comes from lens prompts. A capability-ceiling failure (e.g. a missed subtle security bug) skips the panel and escalates directly. Never chain panel-then-Opus-escalate-the-panel: cap the combined path at one escalation.
-- **Tier-mix target:** ≥80 % of *estimated output tokens* (from `budget_hint.py` totals at signing) on the fleet tier — token-share, not agent-count. Each Opus slot is justified individually in the contract's review section. Promotion records via `dispatch_ledger.py record --tier --verdict`.
+- **Default every dispatched agent to the fleet tier (Sonnet / GPT-5.4).** This is the floor for all spawned roles on both the model-driven and scripted backings (`agent(prompt, {model: 'sonnet'})` in a Workflow; GPT-5.4 role seeds or equivalent Codex agent config).
+- **Escalate a *single* agent to the escalation tier (Opus / GPT-5.5) only on a demonstrated fleet shortfall** — it already failed, or returned low-quality output at fleet — **never precautionarily.** Opus/GPT-5.5 is never a fan-out tier; at most twice per pipeline run (one escalation slot + one synthesis slot).
+- **Fable / GPT-5.5 conductor is never dispatched in fan-out.** It is the session conductor. Any non-zero dispatched conductor-tier count must be individually justified (at most one unblock call after the escalation tier already failed). Conductor = Fable/GPT-5.5 is a *target*, not a guarantee: on a Sonnet/GPT-5.4 session the conductor is Sonnet/GPT-5.4 — the contract must say so.
+- **The fleet panel (opt-in, L2).** N diverse-lens Sonnet/GPT-5.4 reviewers with a majority verdict is the *same mechanism* as `review-tier.md` L2 (3–4× fleet + opt Opus/GPT-5.5 synth) — not a new mandatory rung. Choose it at contract time for high-volume bounded judgments where a single reviewer's failure signal is ambiguous. Cost claim, stated honestly: a panel is cheaper than an Opus/GPT-5.5 retry **only when** panel output tokens ≪ retry output tokens (typical for bounded verdicts); same-model panels do not decorrelate systematic failure modes — diversity comes from lens prompts. A capability-ceiling failure (e.g. a missed subtle security bug) skips the panel and escalates directly. Never chain panel-then-escalate-the-panel: cap the combined path at one escalation.
+- **Tier-mix target:** ≥80 % of *estimated output tokens* (from `budget_hint.py` totals at signing) on the fleet tier — token-share, not agent-count. Each Opus/GPT-5.5 slot is justified individually in the contract's review section. Promotion records via `dispatch_ledger.py record --tier --verdict`.
 
 Why: precautionary top-tier dispatch is the cost-side sibling of AP-COORD-4 (over-orchestration) — paying for capability a bounded subtask does not need, multiplied across a fan-out. The escalate-on-signal direction is symmetric: keeping a genuinely hard subtask on fleet *after* it already produced bad output wastes the round-trip. Both are mis-sizing; the default is cheap, the correction is per-agent and evidence-gated.
 
-Runtime mapping: on Codex (or any other runtime) map to that runtime's equivalent capability tiers. The *rule* — fleet default, escalate-one-on-signal — is runtime-agnostic; only the tier names differ. Downstream skills cite this section rather than restating the rule.
+Runtime mapping: Codex mirrors Claude's three-tier structure directly: GPT-5.4 corresponds to Sonnet/fleet, while GPT-5.5 corresponds to both Opus/escalation and Fable/conductor. The *rule* — fleet default, escalate-one-on-signal, conductor outside fan-out — is runtime-agnostic; only the concrete model names differ. Downstream skills cite this section rather than restating the rule.
 
 ### Tier is two axes (model × effort)
 
 A tier is not just the model — it is the pair **(model level, thinking effort)**:
 
-- **Model level** — Sonnet/fleet (default) → Opus/escalation → Fable/conductor; a trivial extraction may sit at CLI (no model).
+- **Model level** — Sonnet/GPT-5.4 fleet (default) → Opus/GPT-5.5 escalation → Fable/GPT-5.5 conductor; a trivial extraction may sit at CLI (no model).
 - **Thinking effort** — low → medium → high → max, the reasoning-depth dial on a *given* model.
 
-The default dispatched tier is the *cheapest viable point* — Sonnet at low–medium effort, **not** Sonnet at max. Promotion (below) climbs this two-axis space, and the **cheap lever moves before the expensive one**: raising effort on the same model costs less than a model jump, so try it first unless the failure is clearly a capability ceiling rather than a depth shortfall.
+The default dispatched tier is the *cheapest viable point* — fleet at low–medium effort, **not** fleet at max. Promotion (below) climbs this two-axis space, and the **cheap lever moves before the expensive one**: raising effort on the same model costs less than a model jump, so try it first unless the failure is clearly a capability ceiling rather than a depth shortfall.
 
 ### Retro-inspect promotion (cross-run, per task-type)
 
@@ -112,7 +112,7 @@ The escalate-on-signal rule above is *within-run* and *per-agent*: one agent fai
    - *shallow / truncated / ran out of reasoning depth* → bump **effort** (same model);
    - *wrong approach / capability ceiling / effort already at max* → bump **model**.
 
-4. **Still evidence-gated, bounded, and not a one-way ratchet.** A promotion requires a *recorded* failure, never a hunch — the precautionary ban from the within-run rule still holds. Cap at (Opus, max). The record carries its *cause* so a later run can demote back toward the default once the cause is gone (the task changed, the fixture got fixed); a tier that only ever climbs is the cost-side AP-COORD-5 mis-sizing — paying for capability the task no longer needs. This is the same `record → predict → adjust` active-learning shape project-meta uses for preferences, specialized to tier selection. Amnesiac re-payment of the same failed first trial every run is **AP-COORD-6**.
+4. **Still evidence-gated, bounded, and not a one-way ratchet.** A promotion requires a *recorded* failure, never a hunch — the precautionary ban from the within-run rule still holds. Cap at (Opus/GPT-5.5, max). The record carries its *cause* so a later run can demote back toward the default once the cause is gone (the task changed, the fixture got fixed); a tier that only ever climbs is the cost-side AP-COORD-5 mis-sizing — paying for capability the task no longer needs. This is the same `record → predict → adjust` active-learning shape project-meta uses for preferences, specialized to tier selection. Amnesiac re-payment of the same failed first trial every run is **AP-COORD-6**.
 
 ## Mandatory Subagent Dispatch
 

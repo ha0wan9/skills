@@ -249,7 +249,8 @@ def cmd_record(args: argparse.Namespace) -> int:
         "comment": args.comment or "",
         # Retro-inspect evidence (multi-agent-protocols.md "Retro-inspect promotion"):
         # task_type keys cross-run tier promotion; tier is the (model, effort) attempted,
-        # e.g. "sonnet/medium" or "opus/max". Both optional + free-form so the ledger
+        # e.g. "sonnet/medium", "opus/max", "gpt-5.4/medium", or "gpt-5.5/max".
+        # Both optional + free-form so the ledger
         # stays decoupled from any specific tier vocabulary.
         "task_type": args.task_type or "",
         "tier": args.tier or "",
@@ -509,7 +510,13 @@ def main(argv: list[str] | None = None) -> int:
     p_rec.add_argument("--brief-hash")
     p_rec.add_argument("--comment")
     p_rec.add_argument("--task-type", help="retro-inspect key: the kind of subtask (e.g. 'reviewer:methodology')")
-    p_rec.add_argument("--tier", help="the (model, effort) attempted, e.g. 'sonnet/medium' or 'opus/max'")
+    p_rec.add_argument(
+        "--tier",
+        help=(
+            "the (model, effort) attempted, e.g. 'sonnet/medium', "
+            "'opus/max', 'gpt-5.4/medium', or 'gpt-5.5/max'"
+        ),
+    )
     # v2 fields
     p_rec.add_argument("--touch-set", help="comma-separated list of files this dispatch touches")
     p_rec.add_argument("--capsule", help="context package as a JSON object (overrides --capsule-* args)")
