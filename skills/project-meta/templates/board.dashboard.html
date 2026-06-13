@@ -135,6 +135,9 @@
     .edit-banner strong { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 600; color: var(--fg-1); }
     .edit-banner strong i { color: var(--warn-fg); font-size: 16px; }
     .edit-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+    /* Connect button: secondary look, but normalized to the primary Save button's size */
+    #repo-pick { display: inline-flex; align-items: center; gap: 7px; }
+    #repo-pick i { font-size: 16px; }
     .dirty { font-family: var(--font-mono); color: var(--warn-fg); font-size: 12px; }
     .edit-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-xs); display: none; }
     .edit-panel.open { display: block; }
@@ -484,7 +487,7 @@
           CLI remains canonical. Browser edits patch the embedded store data; <b>Save</b> writes `items.jsonl` and `roadmap.json` straight into the connected repo folder (File System Access API, Chromium). Connect the repo root <b>once</b> — the folder handle is remembered by the browser, so later saves need at most a permission re-grant, never path hunting. Non-Chromium browsers download patched-store fallbacks instead. After saving, review the diff, then run `board.py tx` and `board.py render`.
           <div class="edit-actions">
             <button type="button" class="primary" id="save-items"><i class="ri-save-3-line"></i>Save to repo</button>
-            <button type="button" class="small" id="repo-pick"><i class="ri-folder-open-line"></i>Connect repo folder…</button>
+            <button type="button" id="repo-pick"><i class="ri-folder-open-line"></i>Connect repo folder…</button>
             <span class="dirty" id="repo-state"></span>
             <span class="dirty" id="dirty-state">No browser edits yet.</span>
           </div>
