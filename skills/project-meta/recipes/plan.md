@@ -54,20 +54,38 @@ separate run engine in this skill.
 
 1. **Capture the Goal** — one statement of done. Under `strict`, also capture the
    **non-goals** (the drift fence) before anything else.
-2. **Derive the readiness tier** from the keyword (above) and record it in frontmatter.
-3. **Instantiate** `templates/building-plan.md` at `docs/plans/<goal>-build-plan.md` with
+2. **Surface and classify assumptions (§0)** — enumerate every assumption the plan rests
+   on; assign each a type (stated / inferred / assumed / uncertain), a tier (ESTABLISHED /
+   WORKING / OPEN), and an impact (high / low). Record the result in §0 of the plan
+   artifact. **A high-impact OPEN assumption blocks hand-off to audit until resolved** —
+   building on it is AP-PLAN-2.
+3. **Discovery sweep** — run a read-only Explorer fan-out (fleet tier) over the affected
+   codebase before decomposing the work. This is the Context Mapping Phase instantiated
+   for plan-time; see `references/multi-agent-protocols.md#context-mapping-phase` for the
+   four constraints (pointers not conclusions; feeds Lead not Workers; does not replace
+   per-worker minimal reads; write-back judgement stays with Lead). Lenses to cover:
+   affected modules · API/component patterns · test locations + fixtures · reference
+   implementations. Set `discovery: full` in frontmatter.
+   **§6 rows MUST cite real fixture paths / commands surfaced by discovery.** A row with
+   a placeholder path is a named AP-PLAN-1 instance; surface the gap, do not omit the
+   row.
+   **Skip rule**: a single-file / trivial goal may set `discovery: skipped (<reason>)` in
+   frontmatter (mirrors the minimal read-pattern derivation; avoids over-reading AP-COORD-5).
+4. **Derive the readiness tier** from the keyword (above) and record it in frontmatter.
+5. **Instantiate** `templates/building-plan.md` at `docs/plans/<goal>-build-plan.md` with
    full provenance frontmatter (`artifact_name`, `instantiated_from`, `source_reference`,
-   `project_scope`, `owner`, `review_policy`, `last_reviewed`, `readiness`, `goal`).
-4. **Fill §6 for every item** — test target (exact command/assertion) + data (real
+   `project_scope`, `owner`, `review_policy`, `last_reviewed`, `readiness`, `goal`,
+   `discovery`).
+6. **Fill §6 for every item** — test target (exact command/assertion) + data (real
    fixture path or mock) + threshold (objective, self-checkable). This is mandatory at
    both tiers. A row you cannot fill is a gap to surface, not a row to omit.
-5. **Under `strict`**, also complete §1 non-goals, §3 tiers, §4 fixtures, §7 checkpoints.
-6. **Register** the plan in `agents/project-artifacts.md`.
-7. **Hand off to readiness review**: tell the user to run `/project-meta audit` on the
+7. **Under `strict`**, also complete §1 non-goals, §3 tiers, §4 fixtures, §7 checkpoints.
+8. **Register** the plan in `agents/project-artifacts.md`.
+9. **Hand off to readiness review**: tell the user to run `/project-meta audit` on the
    plan (its Goal-readiness dimension emits GO / NO-GO + the requirement-gap categories).
    `plan` writes; `audit` judges — never self-certify here.
-8. **Delivery before commit** — show the build plan as a delivery (per the `deliver`
-   contract) before any commit, since it is a shared-user-facing artifact.
+10. **Delivery before commit** — show the build plan as a delivery (per the `deliver`
+    contract) before any commit, since it is a shared-user-facing artifact.
 
 ## Output contract
 
@@ -79,6 +97,10 @@ separate run engine in this skill.
 
 - **Unfalsifiable plan (AP-PLAN-1).** Any §6 row missing test target / data / threshold.
   Floor or strict, this is the failure the recipe exists to prevent.
+- **Building on unsurfaced OPEN assumptions (AP-PLAN-2).** A plan that proceeds without
+  surfacing or classifying its assumptions, or that carries a high-impact OPEN assumption
+  into execution, silently builds on a foundation it never verified. Fill §0 and resolve
+  every high-impact OPEN row before hand-off.
 - **Gating the floor behind the keyword.** The §6 matrix is mandatory at `floor` too;
   `strict` adds gates, it does not *enable* falsifiability (AP-SKL-2).
 - **Self-certifying.** `plan` is editing; it must not declare a plan run-ready. Readiness

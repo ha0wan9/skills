@@ -9,10 +9,13 @@ __pycache__/
 .harness/meta-debug/
 .harness/phase-state.json
 .harness/dispatch-log.jsonl
+.harness/dispatch-claims.jsonl
 .harness/session-receipt.json
 .harness/dispatch-ack
 .harness/writeback-ack
 .harness/audit-ledger.jsonl
+.harness/risk-context.json
+.harness/effective-profile
 
 # Project Board mutation lock (board.py); transient, never committed.
 .board.lock

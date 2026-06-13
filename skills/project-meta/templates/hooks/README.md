@@ -13,7 +13,9 @@ review_policy: user-review-when-hooks-change-behavior
 Three-hook starter pack for Claude Code project hooks and Codex global
 hooks. Hooks are bash for portability — no Python venv, no npm dependency.
 Each hook is profile-aware: `HARNESS_PROFILE` toggles between `minimal` /
-`standard` / `strict`.
+`standard` / `strict`. Optional elastic bounds (`HARNESS_PROFILE_FLOOR` /
+`HARNESS_PROFILE_CEILING`) may derive `.harness/effective-profile` for elastic
+advisory legs only; invariant core gates always read `HARNESS_PROFILE` directly.
 
 ## Layout
 
@@ -142,8 +144,9 @@ Six responsibilities:
    unrelated work. Self-skips when no ledger exists — the gate
    enforces that a *claimed* audit converges; it never forces audits.
 
-- `minimal`: hook disabled (the write-back and dispatch gates also
-  self-disable on `HARNESS_PROFILE=minimal`)
+- `minimal`: invariant/core checks are disabled on raw `HARNESS_PROFILE=minimal`
+  (the write-back and dispatch gates also self-disable there); elastic D6 lesson
+  validation may still run when `.harness/effective-profile` is `standard` or `strict`.
 - `standard`: runs all checks; warns on failure but exits 0 (advisory)
 - `strict`: exits non-zero on failure (blocks the agent's turn end)
 
@@ -193,6 +196,153 @@ Add it with:
 
 ```
 .harness/session-receipt.json
+```
+
+### lesson_registry — Stop + SessionStart (D6)
+
+`lesson_registry.py` (in `skills/project-meta/scripts/`) is the backing CLI for a durable
+per-repo learned-policy store at `.harness/lessons.jsonl`. Unlike session-grained transient
+artifacts (receipt, dispatch log), this file is **git-TRACKED** — it is durable learned policy
+that survives session boundaries and is intended to be code-reviewed alongside code.
+
+**Store:** `.harness/lessons.jsonl` — one JSON row per lesson. Single writer; full-file
+atomic rewrite on each mutation (board.py-style O_EXCL lock + temp-file rename).
+
+**Row schema:**
+```
+{id, statement, status, target, target_path, applies_below,
+ helpful_count, harmful_count, notes, created_at, updated_at,
+ source_session, last_validated}
+```
+
+- `target`: `null | "memory" | "hook" | "linter"` — where the lesson is wired
+- `target_path`: `null | str` — repo-relative path to the file that implements/enforces the lesson
+- `applies_below`: `null | "haiku" | "sonnet" | "opus" | "fable"` — tier filter; a lesson with
+  `applies_below=sonnet` is shown only when the session tier is BELOW sonnet (tier order:
+  haiku < sonnet < opus < fable). `null` = always show.
+
+**Status ladder (legal transitions only):**
+
+```
+candidate → recorded → promoted → enforced
+any → retired
+enforced → promoted   (demotion; requires --note)
+promoted → recorded   (demotion; requires --note)
+```
+
+- `promoted` and `enforced` REQUIRE `target` AND `target_path` to be set (on transition or supplied now).
+- Upward skips (e.g. `candidate → enforced`) are illegal — exit 1 with a clear message.
+- Demotions are legal but require `--note` to record the cause.
+
+**Subcommands (all accept `--target-root`, default cwd):**
+
+- `add --statement S [--source-session X] [--applies-below T]` — allocates LES-NNN
+  (`candidate`, counts 0). Prints the id.
+- `status <id> <to> [--target T] [--target-path P] [--note N]` — enforces the legal ladder.
+- `outcome <id> --helpful | --harmful [--note N]` — increments the ACE-style effectiveness count.
+- `validate` — hard gate: checks row structure, legal status fields, required fields for
+  `promoted`/`enforced`, and whether `target_path` resolves in the repo tree. Warns (exit 0)
+  on `applies_below` + universal-keyword mismatch; exits 1 on hard errors.
+- `watermark` — advisory visibility: candidate count + stale targets. **Always exits 0.**
+  Hook legs call this for informational output only.
+- `inject [--model-tier T]` — SessionStart reminder: lists unprocessed candidates + stale
+  promoted/enforced lessons, hard-capped at **20 lines**. Filtered by `applies_below` if
+  `--model-tier` is given. Prints nothing + exits 0 when `HARNESS_PROFILE=minimal` or store
+  absent/empty.
+- `effectiveness` — print helpful/harmful table per lesson.
+- `trim-candidates [--apply]` — identify zero-value or stale-target promoted/enforced lessons;
+  with `--apply`, write board inbox captures for operator review. Does NOT hard-delete.
+- `promote-draft <id>` — run `trigger_collision_check.py` + `cross_skill_redundancy.py` over
+  the statement (degrade gracefully if not resolvable), then print a board inbox draft for
+  operator approval. Does not auto-promote.
+
+**validate vs watermark — the split:**
+
+| Subcommand | Purpose | Exit on error | Called by |
+|---|---|---|---|
+| `validate` | **Hard gate** — structural + path resolution correctness | exit 1 | Stop hook (D6, step 7) |
+| `watermark` | **Visibility** — candidate count + stale targets | exit 0 always | Stop hook (advisory) |
+
+`validate` is the enforcement leg. `watermark` is the observation leg. They are separate
+subcommands so a stale target that is merely advisory (not yet classified) doesn't wedge a
+turn — but once a lesson is `promoted` or `enforced`, its `target_path` resolving is a hard
+requirement.
+
+**Fail directions:**
+
+- Direct CLI invocation → **fail CLOSED** (exit 1 on bad input, bad transition, missing fields).
+- Hook legs (`watermark`, `inject`) → **fail OPEN** (corrupt/missing store → warn to stderr + exit 0;
+  never wedge a turn).
+
+**Profile gating:**
+
+- `minimal`: `inject` prints nothing and exits 0. When elastic profile derivation is enabled,
+  SessionStart passes the derived effective profile into `inject`, and the Stop hook gates only
+  the D6 lesson step on `.harness/effective-profile`; invariant core checks still use raw
+  `HARNESS_PROFILE`.
+- `standard`: `validate` failure emits a warning but exits 0 (advisory).
+- `strict`: `validate` failure exits non-zero (blocks the turn end).
+
+**Hook wiring:**
+
+- **Stop** (`verify-before-stop.sh`, step 7, delimited `# --- D6: lesson registry ---`):
+  When `.harness/lessons.jsonl` exists, resolve `lesson_registry.py` via `resolve_project_meta`,
+  run `validate` (the hard gate, routed through `advisory_exit`), then run `watermark` (advisory
+  output to stderr). Self-skips when the store is absent.
+- **SessionStart** (`load-agents-md.sh`, delimited `# --- D6: lesson inject ---`):
+  After the session receipt inject, resolve `lesson_registry.py` and run `inject` (passes
+  `--model-tier` when `$CLAUDE_MODEL` is discoverable from the environment). Self-gates (prints
+  nothing when store absent or `minimal`).
+
+**git-TRACKED rationale:** unlike `.harness/session-receipt.json` and `.harness/dispatch-log.jsonl`
+(session-grained transient evidence), `lessons.jsonl` records durable operator-approved policy.
+It belongs in version history so the team can audit when lessons were promoted, who approved them,
+and what the current enforcement state is. Add it to `.gitignore` only if you intentionally want
+lessons to be ephemeral (not recommended).
+
+### derive_profile — Elastic Advisory Profile (D7)
+
+`derive_profile.py` (in `skills/project-meta/scripts/`) derives an **effective** profile
+for elastic advisory hook legs. It is opt-in and bounded:
+
+- With neither `HARNESS_PROFILE_FLOOR` nor `HARNESS_PROFILE_CEILING` configured, it prints
+  the configured `HARNESS_PROFILE` unchanged. `load-agents-md.sh` deletes any stale
+  `.harness/effective-profile` in this static mode.
+- With either bound configured, SessionStart runs `derive_profile.py --root .` and writes
+  `.harness/effective-profile` when the result is `minimal`, `standard`, or `strict`.
+- `HARNESS_PROFILE_FLOOR > HARNESS_PROFILE_CEILING` fails static: the script emits the
+  configured profile and a stderr error.
+
+Inputs are external evidence only:
+
+- model tier from `--model-id`, `$CLAUDE_MODEL`, or `$ANTHROPIC_MODEL` (unknown → static unless
+  other evidence escalates);
+- `.harness/risk-context.json` from `risk_score.py --write-context`;
+- `.harness/dispatch-log.jsonl` verdict history;
+- `.harness/lessons.jsonl` helpful/harmful counts.
+
+Derivation rules:
+
+- scale **up** one step, bounded by ceiling, when risk band is `spike-first` or the last
+  ten dispatch records have a BLOCKER rate ≥20%;
+- scale **down** one step, bounded by floor, only for `opus`/`fable` tier with at least ten
+  dispatch records and zero BLOCKERs in the last ten, and no harmful lesson-effectiveness signal;
+- unreadable or absent inputs fail static, with a warning.
+
+Elastic legs resolve `cat .harness/effective-profile 2>/dev/null || $HARNESS_PROFILE`. Current
+elastic legs are SessionStart verbosity (`load-agents-md.sh`, including receipt and lesson
+inject) and the D6 lesson-registry Stop step.
+
+**Invariant core exclusion:** these gates deliberately do **not** read
+`.harness/effective-profile`: `pre-tool-guard.sh` destructive-command guard,
+`board-guard.sh`, `verify-before-stop.sh` steps 4–6 (dispatch gate, board `tx`,
+audit convergence), and the `ship_plugin.sh land` / test-integrity gates. They read
+`HARNESS_PROFILE` directly so elasticity cannot weaken blast-radius or ship blockers.
+
+The derived state is transient and git-ignored:
+
+```gitignore
+.harness/effective-profile
 ```
 
 ### `issue-tracker-reminder.sh` — UserPromptSubmit (optional)
@@ -353,6 +503,23 @@ runs `board.py tx` to catch a stale/corrupt store before the turn ends.
 
 Switch profiles by editing `settings.json` `env.HARNESS_PROFILE`. No
 script changes required.
+
+To enable bounded elasticity for advisory legs, add one or both bounds to
+`settings.json` `env`:
+
+```json
+{
+  "env": {
+    "HARNESS_PROFILE": "standard",
+    "HARNESS_PROFILE_FLOOR": "standard",
+    "HARNESS_PROFILE_CEILING": "strict"
+  }
+}
+```
+
+If both bounds are absent, the hook pack is fully static. Use a floor equal to the
+minimum profile you are willing to run for advisory friction and a ceiling equal to the
+maximum advisory friction you want the evidence resolver to choose.
 
 For Codex installs, switch profiles by re-running
 `install_codex_hooks.py --profile <minimal|standard|strict>` or by editing

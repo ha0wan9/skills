@@ -31,6 +31,7 @@ lives:
 | Setting | Source of truth |
 |---|---|
 | `HARNESS_PROFILE` | `.claude/settings.json` `env.HARNESS_PROFILE` (Codex: the `HARNESS_PROFILE=` prefix in `~/.codex/hooks.json`) |
+| elastic profile bounds | optional `.claude/settings.json` `env.HARNESS_PROFILE_FLOOR` / `env.HARNESS_PROFILE_CEILING`; absent means fully static |
 | hooks | `.claude/hooks/*.sh` + their wiring in `.claude/settings.json` |
 | phase-lock | `agents/phase-lock-contract.md` + `.harness/phase-state.json` + `.harness/gates/*.sh` |
 | multi-host | generated mirror files (`.cursor/`, `.opencode/`, `gemini-extension.json`, `.codex/`) |
@@ -85,6 +86,17 @@ Load lazily, only for the operation requested:
    - Guard rail: warn before setting `strict` if the repo has not been running
      `standard` cleanly (per `templates/hooks/README.md` Profile Selection). Do
      not silently jump to strict.
+   - Optional elasticity is bounded by `HARNESS_PROFILE_FLOOR` and
+     `HARNESS_PROFILE_CEILING`. If both are absent, `derive_profile.py` returns
+     the configured `HARNESS_PROFILE` unchanged and `load-agents-md.sh` deletes
+     any stale `.harness/effective-profile`. When either bound is present,
+     SessionStart derives `.harness/effective-profile` from model tier,
+     `.harness/risk-context.json`, dispatch history, and lesson effectiveness;
+     only elastic legs read that file. Invariant core gates keep reading
+     `HARNESS_PROFILE` directly. Set **both** bounds together: an unset bound
+     defaults to the configured `HARNESS_PROFILE`, so a lone `…_FLOOR` stricter
+     than that profile fail-statics (returns the configured profile + a warning)
+     rather than relaxing anything.
 
 4. **enable** operation:
    - Run the matching `recipes/init.md` step-6 install for that capability
@@ -147,6 +159,9 @@ Load lazily, only for the operation requested:
 ```bash
 # current profile (Claude Code)
 jq -r '.env.HARNESS_PROFILE // "unset"' .claude/settings.json 2>/dev/null
+
+# optional elastic bounds (Claude Code)
+jq -r '.env | {HARNESS_PROFILE_FLOOR, HARNESS_PROFILE_CEILING}' .claude/settings.json 2>/dev/null
 
 # capability presence
 ls .claude/hooks/*.sh 2>/dev/null            # hooks

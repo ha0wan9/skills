@@ -23,8 +23,8 @@ plan must be. **The keyword sets it; `audit` reads it.**
 
 | `readiness` | When | What it requires |
 |---|---|---|
-| `floor` (default) | any `/project-meta plan` | §6 per-item verification matrix is **mandatory** — every item has test target + data + threshold. Nothing gates it; forgetting a keyword never drops below this floor. |
-| `strict` | request contains `autopilot` / `goal` / `unattended` (the self-directed discipline switch) | floor **plus** §1 non-goals fence, §3 tiers, §4 fixtures committed-or-specced, §7 🔴 checkpoints — all required. `audit`'s Goal-readiness dimension runs a **GO / NO-GO** gate before the plan is considered run-ready. |
+| `floor` (default) | any `/project-meta plan` | §0 assumption ledger **and** §6 per-item verification matrix are **mandatory** — every item has test target + data + threshold. Nothing gates it; forgetting a keyword never drops below this floor. |
+| `strict` | request contains `autopilot` / `goal` / `unattended` (the self-directed discipline switch) | floor **plus** §0 assumption ledger, §1 non-goals fence, §3 tiers, §4 fixtures committed-or-specced, §7 🔴 checkpoints — all required. `audit`'s Goal-readiness dimension runs a **GO / NO-GO** gate before the plan is considered run-ready. |
 
 ## Project Artifact Frontmatter
 
@@ -39,17 +39,38 @@ review_policy: user review when goal or readiness changes
 last_reviewed: YYYY-MM-DD
 readiness: floor            # floor | strict  — `strict` set by the autopilot/goal keyword
 goal: "<one-line statement of done>"
+discovery: full            # full | skipped (<reason>)  — the plan-time discovery sweep state
+# Advisory risk fields (optional) — stamped from `scripts/risk_score.py` when run; audit's
+# Goal-readiness flags a misfire when the band recommends more care than `readiness` set.
+risk_score:                 # 7–21 total (risk_score.py)
+risk_band:                  # proceed | incremental | spike-first
+risk_readiness_recommendation:   # floor | strict  (advisory; the keyword stays authoritative)
 ---
 ```
+
+A single-file / trivial goal may set `discovery: skipped (<reason>)`; the reason is auditable.
 
 Register the instantiated plan in the project artifact manifest (`agents/project-artifacts.md`)
 so `audit` and `status` can discover it and check provenance.
 
 ## Required sections
 
-`floor` requires §5, §6, §8. `strict` requires all nine. `audit` scores each
+`floor` requires §0, §5, §6, §8. `strict` requires all ten. `audit` scores each
 ABSENT / PARTIAL / ENFORCED; under `strict`, any §6 row missing test-target / data /
 threshold is a **NO-GO blocker**.
+
+0. **Assumption ledger** — surface and classify all assumptions before execution begins.
+   *(floor + strict: required)*
+
+   | id | statement | type | tier | impact | evidence / resolution |
+   |---|---|---|---|---|---|
+   | A-1 | <assumption> | <type> | <tier> | <impact> | <evidence or resolution path> |
+
+   Legend: type ∈ {stated, inferred, assumed, uncertain} (immutable origin); tier ∈
+   {ESTABLISHED, WORKING, OPEN} (mutable confidence); impact ∈ {high, low}. A row
+   claiming ESTABLISHED or WORKING MUST cite evidence in the last cell; an OPEN row
+   names what would resolve it. **A high-impact OPEN row blocks hand-off to audit
+   until resolved.**
 
 1. **Goal & non-goals** — one statement of done, plus the **non-goals** (the drift
    fence: what this run must *not* wander into). *(strict: required)*

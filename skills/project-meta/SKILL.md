@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.17.1, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.18.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -25,7 +25,7 @@ Use this skill for any of these triggers:
 - Iteration trigger: a project lesson, failure, review finding, or recurring workflow should become durable guidance.
 - Coordination trigger: the user explicitly asks for multi-agent work, or task complexity warrants planning, delegated execution, and review.
 - User-preference trigger: the user asks to create, reset, or change local `USER.md` options.
-- Settings trigger: the user asks to view or change the harness enforcement profile (`HARNESS_PROFILE`) or to enable/disable an optional capability (hooks, phase-lock, multi-host, issue-tracker, code-graph, land-queue) after init — route to `settings`, not a full `init`.
+- Settings trigger: the user asks to view or change the harness enforcement profile (`HARNESS_PROFILE`), bounded elastic profile knobs (`HARNESS_PROFILE_FLOOR` / `HARNESS_PROFILE_CEILING`), or to enable/disable an optional capability (hooks, phase-lock, multi-host, issue-tracker, code-graph, land-queue) after init — route to `settings`, not a full `init`.
 
 Do not use the skill for ordinary implementation work that does not touch project memory, operating rules, coordination, or durable knowledge.
 
@@ -188,12 +188,12 @@ Detail for each step lives in the artifact owning that step:
   - load [`references/writing-skills.md`](references/writing-skills.md) and [`references/skill-critics.md`](references/skill-critics.md). The audit checklist in writing-skills.md plus the deterministic critic suite in skill-critics.md are the gate before publishing.
 - Installing or configuring an opt-in phase-lock workflow (brainstorm → plan → implement → review → finish gates), or diagnosing a phase-lock failure:
   - load [`templates/phase-lock-contract.md`](templates/phase-lock-contract.md). Run `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` to verify gates locally; the script is also the Stop-hook payload.
-- Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), or switching `HARNESS_PROFILE` between minimal/standard/strict:
-  - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the three hook scripts at `templates/hooks/scripts/*.sh`.
+- Installing or tuning the Claude Code hooks pack (SessionStart bootstrap, PostToolUse formatting, Stop verification), switching `HARNESS_PROFILE` between minimal/standard/strict, or configuring bounded elastic profile resolution:
+  - load [`templates/hooks/README.md`](templates/hooks/README.md). The settings fragment lives at `templates/hooks/settings.json.fragment`; the hook scripts live at `templates/hooks/scripts/*.sh`. Elastic resolution uses `scripts/derive_profile.py` and transient `.harness/effective-profile`; invariant core gates keep reading `HARNESS_PROFILE`.
 - Need to lint canonical memory for stale citations (paths in AGENTS.md or memory files that no longer exist):
   - run `python3 scripts/memory_staleness.py --target-root <repo>` (advisory leg of `validate`/`audit`; OK/STALE/UNKNOWN per cited path).
-- Need session-receipt hook payloads, destructive-command-guard, or env-readiness-probe hook payloads:
-  - load [`templates/hooks/README.md`](templates/hooks/README.md) — the hooks pack now documents `session_receipt.py`, the `pre-tool-guard.sh` destructive-command guard, and the `env-readiness-probe.sh` SessionStart check.
+- Need session-receipt hook payloads, lesson-registry hook payloads, destructive-command-guard, env-readiness-probe hook payloads, or elastic profile derivation:
+  - load [`templates/hooks/README.md`](templates/hooks/README.md) — the hooks pack documents `session_receipt.py`, `lesson_registry.py`, `derive_profile.py`, the `pre-tool-guard.sh` destructive-command guard, and the `env-readiness-probe.sh` SessionStart check.
 - Wiring a repo to an external issue tracker (Linear/GitHub/Jira) so feature work is mirrored — check-first / write-progress-back / open-if-missing — or installing/auditing the `issue-tracker` capability and its advisory reminder hook:
   - load [`references/issue-tracking-integration.md`](references/issue-tracking-integration.md), then instantiate [`templates/issue-tracking.md`](templates/issue-tracking.md). Install via `/project-meta init --issue-tracker <tracker>` or `/project-meta settings enable issue-tracker`.
 - Wiring a repo to an external code-knowledge-graph engine for token-efficient code navigation (code-graph capability), or installing/auditing it:
@@ -208,6 +208,8 @@ Detail for each step lives in the artifact owning that step:
   - load [`references/multi-host-manifests.md`](references/multi-host-manifests.md). Run `python3 scripts/render_host_manifests.py --target-root <repo>` to regenerate; `--dry-run` previews.
 - Validating that a skill's MUST-rules hold under adversarial pressure (time pressure, sunk-cost, authority flips, plausible exceptions, silent omission), or designing scenarios for a new MUST-rule:
   - load [`references/pressure-testing.md`](references/pressure-testing.md). Use [`templates/pressure-test-scenarios.json`](templates/pressure-test-scenarios.json) as a starting fixture; run `python3 scripts/pressure_test_skill.py SKILL_DIR SCENARIOS_FILE` to walk a verdict pass.
+- Scoring a plan or milestone's risk at plan time (the 7-dim rubric that derives a review-tier floor + plan-readiness recommendation), or stamping `risk_score`/`risk_band` into a build-plan's frontmatter:
+  - load [`references/review-tier.md`](references/review-tier.md) "Plan-time risk rubric"; run `python3 scripts/risk_score.py --scope N … --reversibility N [--json] [--write-context]`. Advisory: it raises the review tier / recommends `strict`, never lowers a keyword-set readiness.
 
 ## Output Footer
 

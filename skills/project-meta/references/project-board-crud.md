@@ -24,6 +24,12 @@ rendered `docs/dashboard.html`. The CLI holds `.board.lock`, writes atomically, 
 mutation. A hand edit silently breaks those invariants (stale hash → `tx` fails; a clobbered
 `dashboard.html` is overwritten on the next render anyway).
 
+This rule extends to roadmap milestones and blocking decisions: use `milestone-add`,
+`milestone-edit`, `decision-add`, and `decision-resolve` rather than editing `roadmap.json`
+directly. Items writes go through `mutate_items`; roadmap-only writes (milestones, decisions)
+go through `mutate_roadmap` — a separate atomic write path that re-stamps `items_sha256` from
+the current items file without modifying it.
+
 The dashboard is *iterated user-facing documentation*: humans read it, the store is the
 source of truth, and the HTML is always reproducible from the store.
 
@@ -40,12 +46,38 @@ All verbs accept `--root <repo>` (defaults to cwd) and auto-render after a mutat
   `move <id> <status> [--version <v>]`, `edit <id> --<field> …`, and the disposition verbs
   `defer` / `trim` / `wontfix`. Issue mirror: `mirror-linear` (dry-run/export) then record the
   returned id with `edit <id> --linear-id <LIN-…>`.
+  Milestone CRUD: `milestone-add <version> --title T [--detail D] [--status todo|done]`,
+  `milestone-edit <version> [--title T] [--detail D] [--status todo|done]`.
+  Decision CRUD: `decision-add <version> --question Q --options "a | b" --recommendation R
+  [--blocks DASH-x,DASH-y]` (omit `--blocks` to block the whole milestone),
+  `decision-resolve <version> <DEC-id> --option CHOSEN --resolver WHO`.
 - **Delete** — **deliberately friction-ful: there is no hard-delete verb.** Prefer a
   *disposition* (`wontfix` / `trimmed` / `defer`) so the item stays auditable. The dashboard's
   browser edit-back can splice a row out of `items.jsonl`, but the CLI stays canonical:
   after a browser save you MUST review the diff, then `board.py tx`, then `board.py
   render`. True removal = edit `items.jsonl` by hand only as last-resort surgery, immediately
   followed by `board.py tx` to re-hash and re-validate.
+
+## Scheduling gate
+
+`board.py` enforces a **final-state rule** on every item mutation (add, move, edit, refine,
+disposition): an item whose status would become (or remain) `"scheduled"` in milestone vX is
+**blocked** if vX exists with `status != "done"` AND has at least one unresolved decision
+(resolution is null) whose `blocks` list is empty (whole-milestone block) or contains that item's
+id.
+
+- **Done milestones are exempt** — decisions on a `done` milestone are retro records, not gates.
+- **No `--force` / bypass flag.** The only path past a gate is `decision-resolve`.
+- The gate runs inside `mutate_items` (covering add/move/edit/refine/disposition/promote) and
+  inside `mutate_roadmap` (covering milestone-edit that marks a milestone done while items remain
+  scheduled into it via blocking decisions).
+- `board.py tx` also calls the gate as a backstop, so a hand-edit that bypasses the CLI will
+  fail `tx` before the turn ends.
+
+**Recovery path**: if the store is stuck (e.g. a hand edit left it in violation), the last-resort
+path is hand surgery on `docs/backlog/roadmap.json` (resolve the decision or remove the block),
+immediately followed by `board.py tx` to re-hash and re-validate. `board.py tx` is the Stop-hook
+check and will catch any remaining violation.
 
 ## Integrity invariants
 

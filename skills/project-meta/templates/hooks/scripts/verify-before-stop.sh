@@ -23,7 +23,14 @@
 set -euo pipefail
 
 PROFILE="${HARNESS_PROFILE:-standard}"
-[[ "$PROFILE" == "minimal" ]] && exit 0
+EFFECTIVE_PROFILE="$PROFILE"
+if [[ -f .harness/effective-profile ]]; then
+  _effective="$(tr -d '\r\n' < .harness/effective-profile 2>/dev/null || true)"
+  case "$_effective" in
+    minimal|standard|strict) EFFECTIVE_PROFILE="$_effective" ;;
+  esac
+fi
+[[ "$PROFILE" == "minimal" && "$EFFECTIVE_PROFILE" == "minimal" ]] && exit 0
 
 # Per-invocation temp dir: fixed /tmp names collide across concurrent sessions
 # (routine in multi-worktree fleet runs) and corrupt the diagnostics the agent
@@ -45,6 +52,8 @@ advisory_exit() {
   fi
   exit 0
 }
+
+pm_dir=""
 
 # Resolve project-meta's install dir containing the sentinel script $1. Probes
 # in priority order (first match wins):
@@ -73,6 +82,11 @@ resolve_project_meta() {
   done
   return 1
 }
+
+# Invariant/core gates read raw HARNESS_PROFILE only. A derived effective profile
+# can scale elastic advisory legs below, but it must not enable or disable the
+# core verification path.
+if [[ "$PROFILE" != "minimal" ]]; then
 
 # 1) Phase-lock check, if installed.
 if [[ -f .harness/phase-state.json ]]; then
@@ -176,5 +190,35 @@ if [[ -f .harness/audit-ledger.jsonl ]]; then
     fi
   fi
 fi
+
+fi # end raw HARNESS_PROFILE-gated invariant/core checks
+
+# --- D6: lesson registry (begin) ---
+# 7) Lesson registry gate (D6). Runs validate (hard gate) + watermark (advisory)
+#    when .harness/lessons.jsonl exists. Self-skips when the store is absent.
+#    Delegates to project-meta's lesson_registry.py (resolve-don't-vendor).
+if [[ "$EFFECTIVE_PROFILE" != "minimal" && -f .harness/lessons.jsonl ]]; then
+  pm_les=""
+  if [[ -n "$pm_dir" ]]; then pm_les="$pm_dir/scripts/lesson_registry.py"; fi
+  if [[ -z "$pm_les" || ! -f "$pm_les" ]]; then
+    pm_ldir="$(resolve_project_meta scripts/lesson_registry.py)" || pm_ldir=""
+    pm_les=""
+    if [[ -n "$pm_ldir" ]]; then pm_les="$pm_ldir/scripts/lesson_registry.py"; fi
+  fi
+  if [[ -n "$pm_les" && -f "$pm_les" ]]; then
+    # validate: hard gate for the elastic lesson leg. Invariant core gates above
+    # intentionally keep reading HARNESS_PROFILE directly.
+    if ! python3 "$pm_les" --target-root . validate >"$TMPD/lr.out" 2>&1; then
+      cat "$TMPD/lr.out" >&2
+      echo "[harness] lesson registry validate failed; see above." >&2
+      if [[ "$EFFECTIVE_PROFILE" == "strict" ]]; then
+        exit 1
+      fi
+    fi
+    # watermark: advisory only — always runs, output goes to stderr
+    python3 "$pm_les" --target-root . watermark 2>&1 | sed 's/^/[harness] /' >&2 || true
+  fi
+fi
+# --- D6: lesson registry (end) ---
 
 exit 0
