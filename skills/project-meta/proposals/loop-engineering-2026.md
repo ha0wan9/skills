@@ -17,7 +17,7 @@ engineering" consensus (bounded budgets, generator≠verifier, file-based state 
 iterations, append-only lessons) is already implemented here in at least five places.
 The real gaps are **uniformity and enforcement**: each skill hand-rolls its own loop
 contract, one loop has no resume story, one prose gate has no mechanical floor, one cron
-loop has no circuit breaker, and two shipped mechanisms are still stubs/unwired in this repo.
+loop has no circuit breaker, and this repo's own phase-lock gates are still exit-0 stubs.
 
 What the 2025–2026 literature converged on (primary sources; hype flagged):
 
@@ -78,8 +78,10 @@ What the 2025–2026 literature converged on (primary sources; hype flagged):
 | orchestration 0.3.0 | none by design (policy, not engine — AP-COORD-7) | sign-before-emit; synchronous checkpoints | signed contract | **correct as-is** |
 | global-meta / calendar / sketch-asset | one-shot verbs / single-pass with human or validator gate | emit-fix dry-run; batch-confirm; `validate_asset_pack.py` | snapshots / manifest | **correct as-is** — no loop needed |
 
-Cross-cutting: the token-diet proposal's **D6 CI token-coverage gate is fixture-only**
-(`skills/*/evals/triggers.json` exist; nothing in `.github/workflows/ci.yml` consumes them) → L5.
+Cross-cutting: an initial audit finding claimed the token-diet D6 CI token-coverage gate
+was fixture-only; fresh-review verification **refuted this** — `check_trigger_coverage()`
+in `validate_project_meta.py` consumes `evals/triggers.json` (80% floor) and runs as a
+blocking CI step since 2026-06-10. L5 is withdrawn (kept below for the record).
 
 ## 2. Proposals (priority order)
 
@@ -140,15 +142,16 @@ flock) but not *repetition* — repeated failures rely on human bug-panel review
 `resume` (or a successful manual `sanity`) clears the streak. Pure extension of
 `openclaw_devops.py`; no new store.
 
-### L5 — Wire the D6 token-coverage CI gate (chore, repo CI — finishes shipped work)
+### L5 — ~~Wire the D6 token-coverage CI gate~~ (WITHDRAWN — premise refuted on review)
 
-**Evidence:** token-diet proposal D6 specified a deterministic CI gate over
-`skills/*/evals/triggers.json`; fixtures shipped, gate never wired (only
-`trigger_collision_check.py` runs in CI). A verification asset that no loop reads is the
-"fixture-only gate" anti-pattern this proposal otherwise argues against.
-
-**Scope:** small runner script + one `ci.yml` step: for each skill with `evals/triggers.json`,
-assert description-token ceiling + trigger-phrase coverage; fail the build on regression.
+The draft audit claimed the D6 gate was never wired. The fresh-context review of this
+proposal's own PR (#68) verified the opposite: `check_trigger_coverage()` in
+`scripts/validate_project_meta.py` loads `evals/triggers.json`, enforces an 80%
+should-trigger coverage floor, and runs in the **blocking** "project-meta dev validator"
+CI step (introduced 2026-06-10). project-meta is the only skill with an `evals/` dir, so
+per-skill generalization is currently a no-op. Board item DASH-063 → wontfix. Kept here
+as a worked example of the proposal's own ¶2: the finder's claim died under an
+independent verifier — grader separation earning its keep on this very document.
 
 ### L6 — Fill this repo's phase-lock gate stubs (chore, repo-local — not plugin content)
 
@@ -197,11 +200,12 @@ entry point post-D4 staged reads), consumed by two new hook payloads; profile-la
 1. Operator reviews; suggested slice for the next loop-milestone: **L1+L2+L3** (the
    contract, the checkpoint primitive, and the one honor-system gate — smallest coherent
    set that makes every loop in the marketplace declared, resumable, and externally
-   verified). L5+L6 are independent chores that can ride along; L4 is a self-contained
-   openclaw-devops minor; L7 waits for appetite.
+   verified). L6 is an independent repo-local chore that can ride along; L4 is a
+   self-contained openclaw-devops minor; L7 waits for appetite; L5 withdrawn.
 2. Per `critic-before-build-canon`: dispatch a fresh adversarial critic panel against the
    chosen L's *plan* before any canon/code edit.
 3. Implement via validated-edit → ship → reload; board items track state.
 
 Board items filed (source: this proposal): L1–L7 → **DASH-059…DASH-065**, maturity refined,
-status unscheduled — scheduling is a roadmap decision with the operator.
+status unscheduled — scheduling is a roadmap decision with the operator. DASH-063 (L5)
+subsequently marked **wontfix** after the fresh review refuted its premise.
