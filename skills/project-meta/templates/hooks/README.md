@@ -469,6 +469,55 @@ false positives):
 
 Fails open — any payload it cannot parse yields exit 0. It never wedges the session.
 
+### `dispatch-tier-guard.sh` — PreToolUse on Task|Agent
+
+Advisory dispatch-tier guard. Fires on the `Agent` tool (`Task` is the historical
+alias — a dead regex alternative, harmless, covers older runtimes) and surfaces
+silent session-model inheritance at dispatch time, per
+[`docs/plans/model-tier-routing-build-plan.md`](../../../../docs/plans/model-tier-routing-build-plan.md)
+§2 decision #4.
+
+**Branches (first match wins; all exit 0):**
+
+| # | Condition | Result |
+|---|---|---|
+| 1 | `model` present, haiku/sonnet-class (substring match) | silent |
+| 2 | `model` present, opus-class | one-line notice — escalation-tier dispatch (sanctioned ≤2/run) |
+| 3 | `model` present, fable/conductor-class | one-line notice — conductor-tier dispatch (≤1 unblock call/run) |
+| 4 | `model` absent, `subagent_type` ∈ {general-purpose, claude} or absent/empty | WARN — dispatch inherits the session model |
+| 5 | `model` absent, any other `subagent_type` (Explore/Plan/custom/plugin) | short notice — the type likely pins its own model in frontmatter |
+
+A present-but-non-string `model`, or a non-string `subagent_type`, is treated as
+custom/unknown and routed down the same notice/WARN paths above (never a crash).
+An unrecognized non-empty model string (no haiku/sonnet/opus/fable/conductor
+substring) gets its own one-line "unrecognized model tier" notice.
+
+**Advisory-only rationale (no deny path in v1):** the PreToolUse payload for
+`Agent`/`Task` is `{prompt, description, subagent_type, model?}` only — it cannot
+see the agent-definition frontmatter `model:` field or the session-default
+resolution chain the tool falls back to when `model` is omitted. A hard deny would
+false-positive on legitimate flows, including the built-in `Explore`/`Plan` agent
+types, which may resolve a model internally without ever surfacing it here. A
+strict deny is a possible v2, but only behind evidence that `tool_input.model` is
+a reliable signal (tracked as a backlog item, not built).
+
+**Coverage gap — Workflow-internal fan-out is invisible:** `agent()` calls made
+*inside* a Workflow script do not pass through the PreToolUse `Agent`/`Task`
+matcher — only the top-level `Workflow` tool call is hook-visible. This hook
+therefore covers direct Agent-tool dispatch only; the scripted-engine path is
+governed by the orchestration contract's per-task tier table and `budget_hint`
+tier-mix, not by this hook (see `skills/orchestration`).
+
+The hook is **stateless** — it never queries `dispatch_ledger.py`; the "≤2/run"
+and "≤1/run" figures in the notice text are contract-reviewed conventions, not
+counts this hook tracks.
+
+- `minimal`: silent pass-through; exit 0 always. No check runs.
+- `standard` / `strict`: emits the matched branch's message to stderr; exit 0
+  always (advisory at every profile — there is no block path in v1).
+
+Fails open — any payload it cannot parse yields exit 0. It never wedges the session.
+
 ### `env-readiness-probe.sh` — SessionStart (DASH-051)
 
 Runs at session start and reports two classes of environment problems. **Always exits 0**

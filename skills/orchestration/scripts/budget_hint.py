@@ -15,7 +15,7 @@ has no token/runtime fields; adding them + collecting actuals is a separate late
 Usage:
     budget_hint.py --task <tier>:<class>:<fanout>[:<label>] [--task ...] [--json] [--dollars]
 
-    <tier>   = cli | sonnet | opus | fable  (cli = no model = 0 tokens)
+    <tier>   = cli | haiku | sonnet | opus | fable  (cli = no model = 0 tokens)
     <class>  = mechanical | lint | edit | review | research | plan | hard | scaffold
                (lint≈mechanical, hard≈plan; any other value → default band, flagged with *)
     <fanout> = positive int (parallel copies of this task); default 1
@@ -24,6 +24,7 @@ Examples:
     budget_hint.py --task cli:lint:1
     budget_hint.py --task opus:hard:1 --task sonnet:review:4 --json
     budget_hint.py --task fable:plan:1 --task sonnet:edit:3 --dollars
+    budget_hint.py --task haiku:lint:8 --task sonnet:edit:2 --task opus:plan:1
 """
 from __future__ import annotations
 
@@ -51,12 +52,26 @@ DEFAULT_BAND = 8_000
 # and emit more output per task. All values are uncalibrated heuristics (no cost corpus
 # exists yet); they are never pricing ratios. cli runs no model (0 tokens). Fable's
 # adaptive thinking (always on) raises emission above Opus — factor is a rough heuristic.
-TIER_FACTOR: dict[str, float] = {"cli": 0.0, "sonnet": 1.0, "opus": 2.5, "fable": 3.0}
+# haiku is the opt-in utility rung below fleet (bounded high-fanout judgment) — it emits
+# less per task than Sonnet.
+TIER_FACTOR: dict[str, float] = {
+    "cli": 0.0,
+    "haiku": 0.6,
+    "sonnet": 1.0,
+    "opus": 2.5,
+    "fable": 3.0,
+}
 
 # Output price in $/MTok for the --dollars flag only. Never used in token estimation.
 # Source: Anthropic API pricing (2026-06). Separated from TIER_FACTOR intentionally —
 # pricing and emission volume are independent dimensions.
-TIER_PRICE: dict[str, float] = {"cli": 0.0, "sonnet": 15.0, "opus": 25.0, "fable": 50.0}
+TIER_PRICE: dict[str, float] = {
+    "cli": 0.0,
+    "haiku": 5.0,
+    "sonnet": 15.0,
+    "opus": 25.0,
+    "fable": 50.0,
+}
 
 # Order-of-magnitude envelope around the expected value (the critic's non-predictive finding).
 LOW_MULT = 0.3
@@ -85,7 +100,7 @@ def parse_task(spec: str) -> dict:
     if len(parts) >= 4:
         label = ":".join(parts[3:]).strip()
     if tier not in TIER_FACTOR:
-        raise ValueError(f"unknown tier '{tier}' in '{spec}' (cli|sonnet|opus|fable)")
+        raise ValueError(f"unknown tier '{tier}' in '{spec}' (cli|haiku|sonnet|opus|fable)")
     band_known = cls in CLASS_BANDS
     band = CLASS_BANDS.get(cls, DEFAULT_BAND)
     expected = band * TIER_FACTOR[tier] * fanout
@@ -108,6 +123,8 @@ def hint(tasks: list[dict]) -> dict:
     rows = []
     total_tokens = 0.0
     total_cost = 0.0
+    tier_totals: dict[str, float] = {}
+    tier_counts: dict[str, int] = {}
     for t in tasks:
         expected_cost = _cost_usd(t["expected"], t["tier"])
         rows.append(
@@ -123,6 +140,14 @@ def hint(tasks: list[dict]) -> dict:
         )
         total_tokens += t["expected"]
         total_cost += expected_cost
+        tier_totals[t["tier"]] = tier_totals.get(t["tier"], 0.0) + t["expected"]
+        tier_counts[t["tier"]] = tier_counts.get(t["tier"], 0) + 1
+
+    # Tier-mix: fleet share = (haiku + sonnet) expected tokens / total expected tokens.
+    # cli is excluded from the concept — it is "no model", contributes 0 anyway.
+    fleet_tokens = tier_totals.get("haiku", 0.0) + tier_totals.get("sonnet", 0.0)
+    fleet_share = (fleet_tokens / total_tokens) if total_tokens > 0 else 0.0
+
     return {
         "tasks": rows,
         "low_tokens": round100(total_tokens * LOW_MULT),
@@ -134,6 +159,9 @@ def hint(tasks: list[dict]) -> dict:
         "disclaimer": DISCLAIMER,
         "predictive": False,
         "drives_engine_budget": False,
+        "fleet_share": round(fleet_share, 4),
+        "tier_totals": {k: round100(v) for k, v in tier_totals.items()},
+        "tier_counts": tier_counts,
     }
 
 
@@ -164,6 +192,22 @@ def render(result: dict, dollars: bool = False) -> str:
     lines.append("")
     lines.append("This is a HINT to set expectations before signing, NOT a forecast and NOT")
     lines.append("the engine `budget` (a skill cannot control the engine — AP-COORD-7).")
+
+    tier_counts = result.get("tier_counts", {})
+    n_opus = tier_counts.get("opus", 0)
+    n_fable = tier_counts.get("fable", 0)
+    n_cli = tier_counts.get("cli", 0)
+    n_haiku = tier_counts.get("haiku", 0)
+    fleet_pct = round(result.get("fleet_share", 0.0) * 100)
+    footer = f"tier-mix: {fleet_pct}% fleet / {n_opus}×opus / {n_fable}×fable / {n_cli}×cli"
+    if n_haiku:
+        footer += f" / {n_haiku}×haiku"
+    lines.append(footer)
+    if result["expected_tokens"] > 0 and result.get("fleet_share", 0.0) < 0.8:
+        lines.append(
+            "WARN: fleet token-share below 80% target (advisory — mistagged tiers are not "
+            "detectable here; review the per-task model_tier column)"
+        )
     return "\n".join(lines)
 
 

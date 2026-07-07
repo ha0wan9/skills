@@ -8,7 +8,8 @@ Agents-SDK / the prose loop. This script does the two deterministic halves:
 
   - record/validate/query  — the auditable dispatch chain (Reviewer-Between-
     Subtasks "Logging": worker id, reviewer id, brief hash, verdict, comment),
-    plus retro-inspect evidence (task_type + tier) for cross-run tier promotion
+    plus retro-inspect evidence (task_type + tier) for cross-run tier promotion;
+    `query --tiers` / `query --task-type <t>` render that evidence per task_type
   - gate                   — the "Mandatory Subagent Dispatch" rule: a turn that
     edited >=2 harness files without dispatching is the AP-COORD-1 failure mode
 
@@ -31,6 +32,10 @@ Usage:
         --brief-hash 9f2c --comment "edited AGENTS.md"
     python3 dispatch_ledger.py validate --target-root .
     python3 dispatch_ledger.py query --target-root .
+
+    # retro-inspect evidence read leg (task_type + tier aggregation)
+    python3 dispatch_ledger.py query --target-root . --tiers
+    python3 dispatch_ledger.py query --target-root . --task-type reviewer:methodology
 
     # atomic task claim (v2)
     python3 dispatch_ledger.py --target-root . claim --task T1 --worker w1
@@ -74,6 +79,13 @@ CLAIMS = ".harness/dispatch-claims.jsonl"
 ACK_MARKER = ".harness/dispatch-ack"
 VERDICTS = {"PASS", "BLOCKER", "SUGGEST", "pending"}
 REQUIRED_FIELDS = ("worker", "role", "verdict")
+
+# Soft tier vocabulary (multi-agent-protocols.md#model-tier). `--tier` stays a
+# free-form field in the schema (see the decoupling comment on cmd_record) —
+# these sets are only used to WARN on out-of-vocabulary tokens at record time
+# and are never enforced as a hard validation.
+TIER_IDS = {"cli", "haiku", "sonnet", "opus", "fable", "gpt-5.4", "gpt-5.5"}
+EFFORT_IDS = {"low", "medium", "high", "xhigh", "max"}
 
 # v2 capsule sub-fields required when schema_version >= 2
 CAPSULE_FIELDS = ("goal", "constraints", "decisions", "out_of_scope")
@@ -223,6 +235,26 @@ def _parse_checkpoint_arg(args: argparse.Namespace) -> dict | None:
     return obj
 
 
+def _normalize_tier(raw: str) -> str:
+    """Lowercase/trim a `--tier` value and WARN (never fail) on out-of-
+    vocabulary tokens. Format: `<tier-id>[/<effort>]` (§2.3). The field stays
+    free-form in the schema — this is a soft normalization pass only: the
+    normalized value is always recorded, whether or not it validates.
+    """
+    tier = raw.strip().lower()
+    if not tier:
+        return tier
+    if "/" in tier:
+        tier_id, effort = tier.split("/", 1)
+    else:
+        tier_id, effort = tier, ""
+    if tier_id not in TIER_IDS:
+        print(f"WARN --tier: unrecognized tier id {tier_id!r} (recorded as-is)", file=sys.stderr)
+    if effort and effort not in EFFORT_IDS:
+        print(f"WARN --tier: unrecognized effort {effort!r} (recorded as-is)", file=sys.stderr)
+    return tier
+
+
 def cmd_record(args: argparse.Namespace) -> int:
     root = Path(args.target_root).expanduser().resolve()
     if args.verdict not in VERDICTS:
@@ -250,10 +282,11 @@ def cmd_record(args: argparse.Namespace) -> int:
         # Retro-inspect evidence (multi-agent-protocols.md "Retro-inspect promotion"):
         # task_type keys cross-run tier promotion; tier is the (model, effort) attempted,
         # e.g. "sonnet/medium", "opus/max", "gpt-5.4/medium", or "gpt-5.5/max".
-        # Both optional + free-form so the ledger
-        # stays decoupled from any specific tier vocabulary.
+        # Both optional + free-form so the ledger stays decoupled from any specific
+        # tier vocabulary — --tier is soft-normalized (lowercase/trim, WARN on
+        # out-of-vocabulary tokens) but never rejected; see _normalize_tier.
         "task_type": args.task_type or "",
-        "tier": args.tier or "",
+        "tier": _normalize_tier(args.tier) if args.tier else "",
     }
 
     # v2 fields — only emit when provided to keep v1-produced rows clean
@@ -477,6 +510,45 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _tier_effort_key(raw: str) -> str:
+    """Normalize a legacy/free-form ledger `tier` value for display grouping.
+
+    Lowercases the whole token (tolerating mixed-case legacy rows like
+    'Sonnet/Medium'); missing effort renders as '-'; free-text tier ids are
+    bucketed as-is (after lowercasing) rather than rejected.
+    """
+    tier = raw.strip().lower()
+    if "/" in tier:
+        tier_id, effort = tier.split("/", 1)
+        effort = effort.strip() or "-"
+    else:
+        tier_id, effort = tier, "-"
+    return f"{tier_id}/{effort}"
+
+
+def _print_tier_block(task_type: str, group: list[dict]) -> None:
+    """Print one §2.9-shaped block for a task_type: header (record count over
+    the WHOLE group, so rows without a tier still count), per-(tier/effort)
+    verdict counts, a `latest:` line. Rows without a tier are skipped from the
+    tier lines but still counted in the header's record count.
+    """
+    tiered = [r for r in group if r.get("tier")]
+    print(f"[tiers] {task_type} — {len(group)} record(s)")
+    counts: dict[str, dict[str, int]] = {}
+    for r in tiered:
+        key = _tier_effort_key(r["tier"])
+        verdict = r.get("verdict", "?")
+        counts.setdefault(key, {})
+        counts[key][verdict] = counts[key].get(verdict, 0) + 1
+    for key in sorted(counts):
+        verdict_str = " ".join(f"{v}={n}" for v, n in sorted(counts[key].items()))
+        print(f"  {key:<15} {verdict_str}")
+    if tiered:
+        latest = tiered[-1]
+        latest_key = _tier_effort_key(latest["tier"])
+        print(f"  latest: {latest.get('utc','?')}  {latest_key}  {latest.get('verdict','?')}")
+
+
 def cmd_query(args: argparse.Namespace) -> int:
     root = Path(args.target_root).expanduser().resolve()
     try:
@@ -484,6 +556,25 @@ def cmd_query(args: argparse.Namespace) -> int:
     except ValueError as exc:
         print(f"FAIL {exc}", file=sys.stderr)
         return 1
+
+    if getattr(args, "tiers", False) or getattr(args, "task_type", None):
+        # Read leg (decision #9): aggregate by task_type, then by (tier/effort).
+        # Rows without a tier are skipped from the tier lines but still counted
+        # in the record count (rows without task_type land in "(untyped)").
+        by_type: dict[str, list[dict]] = {}
+        for r in rows:
+            key = r.get("task_type") or "(untyped)"
+            by_type.setdefault(key, []).append(r)
+
+        if getattr(args, "task_type", None):
+            keys = [args.task_type] if args.task_type in by_type else []
+        else:
+            keys = list(by_type.keys())
+
+        for key in keys:
+            _print_tier_block(key, by_type[key])
+        return 0
+
     blockers = [r for r in rows if r.get("verdict") == "BLOCKER"]
     print(f"[dispatch] {len(rows)} record(s); {len(blockers)} BLOCKER(s)")
     for r in rows[-args.last :] if args.last else rows:
@@ -574,6 +665,15 @@ def main(argv: list[str] | None = None) -> int:
 
     p_q = sub.add_parser("query", help="summarize the dispatch chain")
     p_q.add_argument("--last", type=int, default=0, help="show only the last N records")
+    p_q.add_argument(
+        "--tiers",
+        action="store_true",
+        help="aggregate view: one block per task_type with per-(tier/effort) verdict counts (retro-inspect evidence)",
+    )
+    p_q.add_argument(
+        "--task-type",
+        help="filter the --tiers view to one task_type (implies --tiers); use '(untyped)' for rows without a task_type",
+    )
     p_q.set_defaults(func=cmd_query)
 
     p_gate = sub.add_parser("gate", help="mandatory-dispatch Stop gate (>=2 harness files, no ack)")

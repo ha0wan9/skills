@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "a5c66847a7bd55a96436506647572898c385bc37b90fc44be0686fc6bede617a",
+    "items_sha256": "9b9df7630a45aa71333f05617df48130340412c4b5473e34cfb33dcd4f75c582",
     "next_decision_id": 3,
-    "rev": 147,
+    "rev": 153,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-07-07T01:25:30Z"
+    "updated_at": "2026-07-07T01:34:03Z"
   },
   "milestones": [
     {

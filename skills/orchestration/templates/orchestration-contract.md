@@ -58,13 +58,13 @@ One row per task in the build plan's build order. `budget_hint` = the tier:class
 | <task — ITEM> | opus | serial | high | both | L2 | opus:plan:1 |
 | <task — ITEM> | cli | serial | low | none | L0 | cli:lint:1 |
 
-(`model_tier` values: `cli` · `sonnet` · `opus` · `fable` — see schema for usage rules.)
+(`model_tier` values: `cli` · `haiku` · `sonnet` · `opus` · `fable` — see schema for usage rules.)
 
 ## Budget hint (non-predictive — "estimate, not a guarantee")
     python3 skills/orchestration/scripts/budget_hint.py --task sonnet:edit:1 --task opus:plan:1 --task cli:lint:1
 - low: <n> · expected: <n> · high: <n> tokens — coarse heuristic, NOT a forecast, NOT the engine budget.
 
-**tier-mix:** <tok-share>% fleet / <n>×opus / 0×fable / <n>×cli  ← compute from budget_hint totals; target ≥80% fleet token-share
+**tier-mix:** <tok-share>% fleet / <n>×opus / 0×fable / <n>×cli  ← paste budget_hint's computed tier-mix line (it prints one); target ≥80% fleet token-share
 
 ## Human checkpoints (🔴)
 Every before/after/both checkpoint as an explicit stop-and-log point.

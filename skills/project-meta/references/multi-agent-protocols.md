@@ -71,42 +71,56 @@ Rules for backings:
 
 A dispatched agent is **not** the Lead. The Lead owns framing, synthesis, and the final answer (Roles); a spawned Worker / Reviewer / Explorer / scout runs a *bounded, context-isolated* subtask. Size the model to that bound, not to the importance of the parent task.
 
-Three tiers govern a pipeline run:
+**Canonical tier ids:** `cli | haiku | sonnet | opus | fable`. The table below is the **single
+mapping point** from tier id → concrete model version across the routing-policy docs (this
+reference plus the orchestration skill's contract/recipe docs). Every other routing doc uses
+tier ids and cites this section rather than naming a model version itself.
+
+Three tiers govern a pipeline run; an optional utility rung (**haiku**) sits below fleet for
+high-fanout bounded judgment:
 
 | tier | Claude Code model (2026) | Codex model tier (2026) | role |
 |---|---|---|---|
+| **utility** (opt-in, below fleet) | Haiku 4.5 | closest small tier, or "—" if none | high-fanout bounded judgment: extract/classify/label/summarize; never code edits, reviews, or security surfaces |
 | **fleet** (default) | Sonnet 4.6 | GPT-5.4 | every dispatched bounded role: Workers, Reviewers, Explorers, scouts, finders, verifiers, extract/summarize/lint-adjacent judgment |
 | **escalation/synth** | Opus 4.8 | GPT-5.5 | (a) the single escalate-on-demonstrated-shortfall agent; (b) cross-agent synthesis where one context reconciles many fleet outputs; (c) adversarial/security review where a miss is expensive |
 | **conductor** | the **active session model** (Fable 5 when available) | the **active session model** (GPT-5.5 when available) | Lead/session only: framing, contract signing, architecture forks, final canon gate; plus at most **one** dispatched "unblock" call after an Opus/GPT-5.5 escalation already failed |
 
 Rules:
 
-- **Default every dispatched agent to the fleet tier (Sonnet / GPT-5.4).** This is the floor for all spawned roles on both the model-driven and scripted backings (`agent(prompt, {model: 'sonnet'})` in a Workflow; GPT-5.4 role seeds or equivalent Codex agent config).
+- **Default every dispatched agent to the fleet tier (Sonnet / GPT-5.4).** This is the floor for all spawned roles on both the model-driven and scripted backings (`agent(prompt, {model: 'sonnet'})` in a Workflow; GPT-5.4 role seeds or equivalent Codex agent config). The advisory `dispatch-tier-guard.sh` hook (`templates/hooks`) is this rule's dispatch-time visibility backing on the Agent-tool path — it WARNs when a dispatch omits `model` on a generic subagent type, since that silently inherits the session model rather than the fleet default. The hook is advisory only: it cannot see frontmatter model resolution, and Workflow-internal fan-out is not covered.
+- **Haiku is an opt-in utility rung, not a fourth peer tier.** Use it for bounded, high-fanout judgment — extract/classify/label/summarize — never for code edits, reviews, or security surfaces. Haiku sits **outside the promotion/demotion ladder** below: it is chosen up front by task classification, not reached by climbing from fleet. A haiku failure **promotes to sonnet** — a one-way entry into the normal fleet→escalation ladder, never haiku→opus directly. Symmetrically, retro-inspect (below) never demotes a sonnet task-type down to haiku; re-classing a task-type to haiku is a Lead classification decision made up front, not a ladder move.
 - **Escalate a *single* agent to the escalation tier (Opus / GPT-5.5) only on a demonstrated fleet shortfall** — it already failed, or returned low-quality output at fleet — **never precautionarily.** Opus/GPT-5.5 is never a fan-out tier; at most twice per pipeline run (one escalation slot + one synthesis slot).
 - **Fable / GPT-5.5 conductor is never dispatched in fan-out.** It is the session conductor. Any non-zero dispatched conductor-tier count must be individually justified (at most one unblock call after the escalation tier already failed). Conductor = Fable/GPT-5.5 is a *target*, not a guarantee: on a Sonnet/GPT-5.4 session the conductor is Sonnet/GPT-5.4 — the contract must say so.
 - **The fleet panel (opt-in, L2).** N diverse-lens Sonnet/GPT-5.4 reviewers with a majority verdict is the *same mechanism* as `review-tier.md` L2 (3–4× fleet + opt Opus/GPT-5.5 synth) — not a new mandatory rung. Choose it at contract time for high-volume bounded judgments where a single reviewer's failure signal is ambiguous. Cost claim, stated honestly: a panel is cheaper than an Opus/GPT-5.5 retry **only when** panel output tokens ≪ retry output tokens (typical for bounded verdicts); same-model panels do not decorrelate systematic failure modes — diversity comes from lens prompts. A capability-ceiling failure (e.g. a missed subtle security bug) skips the panel and escalates directly. Never chain panel-then-escalate-the-panel: cap the combined path at one escalation.
-- **Tier-mix target:** ≥80 % of *estimated output tokens* (from `budget_hint.py` totals at signing) on the fleet tier — token-share, not agent-count. Each Opus/GPT-5.5 slot is justified individually in the contract's review section. Promotion records via `dispatch_ledger.py record --tier --verdict`.
+- **Tier-mix target:** ≥80 % of *estimated output tokens* (from `budget_hint.py` totals at signing) on the fleet tier — token-share, not agent-count. **Fleet share counts sonnet PLUS haiku utility tokens** (haiku is below fleet, not outside the share): this is the same computation `budget_hint.py`'s `fleet_share` produces, so canon and the tool cannot fork. Each Opus/GPT-5.5 slot is justified individually in the contract's review section. Promotion records via `dispatch_ledger.py record --tier --verdict`.
 
 Why: precautionary top-tier dispatch is the cost-side sibling of AP-COORD-4 (over-orchestration) — paying for capability a bounded subtask does not need, multiplied across a fan-out. The escalate-on-signal direction is symmetric: keeping a genuinely hard subtask on fleet *after* it already produced bad output wastes the round-trip. Both are mis-sizing; the default is cheap, the correction is per-agent and evidence-gated.
 
-Runtime mapping: Codex mirrors Claude's three-tier structure directly: GPT-5.4 corresponds to Sonnet/fleet, while GPT-5.5 corresponds to both Opus/escalation and Fable/conductor. The *rule* — fleet default, escalate-one-on-signal, conductor outside fan-out — is runtime-agnostic; only the concrete model names differ. Downstream skills cite this section rather than restating the rule.
+Runtime mapping: Codex mirrors Claude's tier structure directly: GPT-5.4 corresponds to Sonnet/fleet, while GPT-5.5 corresponds to both Opus/escalation and Fable/conductor; haiku/utility maps to Codex's closest small tier, or "—" if the runtime has none. The *rule* — fleet default, escalate-one-on-signal, conductor outside fan-out, haiku outside the ladder — is runtime-agnostic; only the concrete model names differ. Downstream skills cite this section rather than restating the rule.
 
 ### Tier is two axes (model × effort)
 
 A tier is not just the model — it is the pair **(model level, thinking effort)**:
 
-- **Model level** — Sonnet/GPT-5.4 fleet (default) → Opus/GPT-5.5 escalation → Fable/GPT-5.5 conductor; a trivial extraction may sit at CLI (no model).
+- **Model level** — Haiku/small-tier utility (opt-in, below fleet) → Sonnet/GPT-5.4 fleet (default) → Opus/GPT-5.5 escalation → Fable/GPT-5.5 conductor; a trivial extraction may sit at CLI (no model).
 - **Thinking effort** — low → medium → high → max, the reasoning-depth dial on a *given* model.
 
 The default dispatched tier is the *cheapest viable point* — fleet at low–medium effort, **not** fleet at max. Promotion (below) climbs this two-axis space, and the **cheap lever moves before the expensive one**: raising effort on the same model costs less than a model jump, so try it first unless the failure is clearly a capability ceiling rather than a depth shortfall.
+
+Effort is set per backing, not uniformly:
+
+- **Claude Code Workflow `agent()`** — native `opts.effort`.
+- **Claude Code Agent tool** — no effort parameter; encode depth in the brief wording instead.
+- **Codex** — reasoning-effort config.
 
 ### Retro-inspect promotion (cross-run, per task-type)
 
 The escalate-on-signal rule above is *within-run* and *per-agent*: one agent fails now, you retry that agent higher this run. It does not persist — the next run re-dispatches the same kind of task at the default and re-pays the identical failed first trial. Close the loop with a **retro-inspection keyed by task-type** (the role + the kind of subtask), not by agent instance:
 
-1. **Record the failure as durable harness state.** When a dispatched agent of a given task-type fails or returns low-quality output at its tier, the Lead writes a *promotion record* to **repo memory** (via the Memory Contract — cite [`repo-memory-crud.md#memory-contract`](repo-memory-crud.md#memory-contract), do not restate it): the task-type, the tier attempted `(model, effort)`, the failure signal, and the date. The **dispatch ledger** (`.harness/dispatch-log.jsonl`, `scripts/dispatch_ledger.py`) is the *evidence* — it records `task_type` + `tier` + `verdict` per dispatch so retro-inspect reads structured history, not recalled vibes. **Ledger = transient evidence; repo memory = the durable learned policy** (the same split as "ledger is audit, `AGENTS.md` is canon"). Distilling evidence → durable record is Lead judgement (Roles: the Lead owns write-back), so a fresh agent cannot self-certify a promotion.
+1. **Record the failure as durable harness state.** When a dispatched agent of a given task-type fails or returns low-quality output at its tier, the Lead writes a *promotion record* to **repo memory** (via the Memory Contract — cite [`repo-memory-crud.md#memory-contract`](repo-memory-crud.md#memory-contract), do not restate it): the task-type, the tier attempted `(model, effort)`, the failure signal, and the date. The **dispatch ledger** (`.harness/dispatch-log.jsonl`, `scripts/dispatch_ledger.py`) is the *evidence* — it records `task_type` + `tier` + `verdict` per dispatch so retro-inspect reads structured history, not recalled vibes; `dispatch_ledger.py query --tiers` is the mechanical read leg for this step, grouping recorded evidence by task-type. **Ledger = transient evidence; repo memory = the durable learned policy** (the same split as "ledger is audit, `AGENTS.md` is canon"). Distilling evidence → durable record is Lead judgement (Roles: the Lead owns write-back), so a fresh agent cannot self-certify a promotion.
 
-2. **Promote on the next dispatch.** Before dispatching a task-type, the Lead consults its promotion record and *starts* at the recorded tier instead of the default — converting a repeated first-trial failure into a one-time cost.
+2. **Promote on the next dispatch.** Before dispatching a task-type, the Lead consults its promotion record and *starts* at the recorded tier instead of the default — converting a repeated first-trial failure into a one-time cost. This ladder governs sonnet↔opus promotion/demotion only — haiku sits outside it (see the rules above): a haiku failure promotes to sonnet one-way, and retro-inspect never demotes a sonnet task-type back down to haiku.
 
 3. **Match the lever to the failure mode** (climb the cheap axis first):
    - *shallow / truncated / ran out of reasoning depth* → bump **effort** (same model);

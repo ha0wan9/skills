@@ -74,7 +74,7 @@ Load only the relevant topical file per task.
 | Issue tracking | [`agents/issue-tracking.md`](agents/issue-tracking.md) | Linear mirror Track Loop (team ArkProjection/ARK, project hw-skills); repo stays canonical, issues link back. |
 | Land queue | [`agents/land-queue.md`](agents/land-queue.md) | Deterministic parallel-branch landing (rerere + mergiraf merge driver + `scripts/land.sh`; base=main). |
 
-Hooks pack active (HARNESS_PROFILE=standard): SessionStart (load-agents-md, env-readiness-probe), PreToolUse (board-guard, pre-tool-guard), PostToolUse (format-on-edit), Stop (verify-before-stop), UserPromptSubmit (issue-tracker-reminder).
+Hooks pack active (HARNESS_PROFILE=standard): SessionStart (load-agents-md, env-readiness-probe), PreToolUse (board-guard, pre-tool-guard, dispatch-tier-guard), PostToolUse (format-on-edit), Stop (verify-before-stop), UserPromptSubmit (issue-tracker-reminder).
 
 ## Session Start: Worktree Trim Contract
 
