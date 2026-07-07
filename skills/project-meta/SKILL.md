@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.21.1, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.22.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -48,6 +48,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
    - [`references/repo-memory-crud.md`](references/repo-memory-crud.md)
    - [`references/mirrors-and-updates.md`](references/mirrors-and-updates.md)
    - [`references/harness-engineering.md`](references/harness-engineering.md)
+   - [`references/loop-contract.md`](references/loop-contract.md)
    - [`references/multi-agent-protocols.md`](references/multi-agent-protocols.md)
    - [`references/codex-operating-loop.md`](references/codex-operating-loop.md)
    - [`references/anti-patterns.md`](references/anti-patterns.md)
@@ -78,7 +79,7 @@ Do not use the skill for ordinary implementation work that does not touch projec
 - Make the harness agent-legible: a concise map, versioned sources of truth, selective loading, behavior guardrails, and rules that can be verified or promoted into tooling.
 - Preserve the existing agent-facing documentation framework and pair it with user-facing documentation prepared for user review.
 - **MUST** dispatch via the multi-agent protocol when its conditions match (see `references/multi-agent-protocols.md`); editing recipes dispatch, read-only verbs never edit; escalate to a scripted engine only on opt-in/scope, never raw file count (AP-COORD-4).
-- **MUST converge final audits — they are multi-round.** When an audit gates a ship/release and fixes were applied for any BLOCKER or MAJOR finding (out of band, by the editing verb or the operator — audit itself stays read-only), re-audit the changed scope with fresh reviewer context; loop fix → re-audit until a round reports **zero BLOCKER and zero MAJOR**, capped at **3 re-audit rounds** (Round 1 = initial pass; cap triggers at Round 4). At the cap with findings still open, do not ship — surface the residuals to the operator. MUST record every round and run `audit_ledger.py gate` (enforced by the Stop hook step 6 and the `ship_plugin.sh land` hard gate). See `recipes/audit.md` (Convergence loop).
+- **MUST converge final audits — they are multi-round.** When an audit gates a ship/release and fixes were applied for any BLOCKER or MAJOR finding (out of band, by the editing verb or the operator — audit itself stays read-only), re-audit the changed scope with fresh reviewer context; loop fix → re-audit until a round reports **zero BLOCKER and zero MAJOR**, capped at **3 re-audit rounds** (Round 1 = initial pass; cap triggers at Round 4). At the cap with findings still open, do not ship — surface the residuals to the operator. MUST record every round and run `audit_ledger.py gate` (enforced by the Stop hook step 6 and the `ship_plugin.sh land` hard gate). See `recipes/audit.md` (Convergence loop), which conforms to [`references/loop-contract.md`](references/loop-contract.md).
 - Before committing harness changes, present a concise delivery for user review that separates user-facing documentation from agent-facing documentation.
 
 ## Skill Arbitration

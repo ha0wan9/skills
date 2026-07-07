@@ -10,6 +10,7 @@ human-readable backing + the recovery path when automation is blocked.
 - [Update procedure (what `update` automates)](#update-procedure)
 - [Rollback](#rollback)
 - [Repair action catalog](#repair-action-catalog)
+- [Circuit breaker](#circuit-breaker)
 - [Failure modes](#failure-modes)
 - [OpenClaw cron recipe](#openclaw-cron-recipe)
 - [Passwordless sudo for system-copy updates](#passwordless-sudo)
@@ -19,12 +20,13 @@ human-readable backing + the recovery path when automation is blocked.
 
 | Verb | Mutates? | What it does |
 |---|---|---|
-| `sanity` | no | services, gateway health, config validate, version alignment, cron scheduler, stale-plugin count, disk, update-available. |
+| `sanity` | no | services, gateway health, config validate, version alignment, cron scheduler, stale-plugin count, disk, update-available. A passing sanity also clears a tripped circuit breaker (see below). |
 | `repair` | yes (bounded) | restart dead/failed services, daemon-reload, `doctor --fix`, re-align version skew. `--dry-run` plans. |
 | `update` | yes | transactional upgrade: snapshot → install all copies → restart → `verify` → auto-rollback on fail. |
 | `verify` | no | integrity gate: config validate + health + cron list + version aligned. Exit 1 if any gate fails. |
 | `rollback` | yes | reinstall recorded previous version on all copies + restore config backup + restart. |
-| `cycle` | yes | sanity → repair (if degraded) → update (if newer & policy) → verify/rollback. Lock-guarded. Cron entry. |
+| `cycle` | yes | sanity → repair (if degraded) → update (if newer & policy) → verify/rollback. Lock-guarded. Cron entry. Exit **2** if the circuit breaker is tripped/paused (see below) — never 0 while paused. |
+| `resume` | no (state only) | clears the circuit breaker: `fail_streak` → 0, `paused` → false. Use after fixing the underlying issue. |
 
 ## Update procedure
 
@@ -68,6 +70,37 @@ Only bounded, reversible actions run unattended:
 Out of scope for auto-repair (recommend to a human instead): deleting state,
 editing secrets, removing channels/agents, force-reinstalling plugins.
 
+## Circuit breaker
+
+`cycle` persists a consecutive-**FAIL**-cycle streak in `state.json` (`fail_streak`),
+alongside the update-snapshot fields already stored there:
+
+- Only `overall == fail` increments the streak. `warn` leaves it unchanged
+  (a degraded-but-limping system shouldn't burn down the breaker). Any other
+  outcome (`ok`) resets it to `0`.
+- At `fail_streak >= FAIL_STREAK_LIMIT` (constant in `openclaw_devops.py`,
+  default **3**), the cycle sets `paused: true` in `state.json`, files a
+  bugs-backlog entry via the existing `bugs --add` API (severity `sev2`,
+  source `openclaw-devops-cycle`, tags `circuit-breaker,cycle`), and prints
+  the one-line message:
+
+  ```
+  paused: operator needed (resume or passing sanity clears)
+  ```
+
+  From that point on, **every** `cycle` run while paused re-probes sanity
+  (read-only) and takes **no repair or update actions** — it will not retry
+  the same failing remediation forever. It exits **2** (distinct from the
+  normal 0=ok/1=fail codes) specifically so a cron/monitor keyed on exit
+  codes cannot mistake a paused breaker for a passing or merely-degraded run
+  — a silent exit-0 here was flagged as the failure mode to avoid.
+- **Clearing the breaker** (either one resets both `fail_streak` and `paused`):
+  - `openclaw_devops.py resume --state-dir <dir>` — explicit operator action.
+  - A standalone `sanity` call that comes back `ok` also clears it, as does a
+    `cycle` run whose fresh sanity probe comes back `ok` even while paused.
+- flock semantics (`devops.lock`) are unchanged — the breaker only gates what
+  `cycle` *does* once it holds the lock, not whether it acquires the lock.
+
 ## Failure modes
 
 - **Version skew crash-loop**: system `/usr/lib` and user `~/.local` copies on
@@ -102,13 +135,21 @@ openclaw cron add \
 python3 /home/<user>/.openclaw/workspace/skills/openclaw-devops/scripts/openclaw_devops.py cycle --json
 Then post the engine's summary to this channel (compact, no tables). Do NOT take
 any other maintenance action yourself — the script is authoritative. If it rolled
-back or reports overall=fail, lead with a ⛔ alert."
+back or reports overall=fail, lead with a ⛔ alert. If it exits 2 / reports
+paused=true, lead with a ⛔⛔ PAUSED alert and page a human — the breaker means
+cycle will keep doing nothing until resumed."
 ```
 
 Cadence guidance: a single daily `cycle` covers sanity+repair every day and only
 applies an update when a newer stable exists and policy allows — so one job is
 enough. Split into a more frequent read-only `sanity` and a weekly `cycle` if you
 want lighter daily touch. Use an off-:00 minute to avoid fleet-wide API spikes.
+
+**Exit codes matter for cron monitoring**: `cycle` returns `0` (ok/healthy),
+`1` (overall=fail, still acting normally), or `2` (circuit breaker tripped —
+see [Circuit breaker](#circuit-breaker)). Wire your cron/monitor on the exit
+code, not just the announced text, so a paused breaker can never look like a
+silent success.
 
 ## Passwordless sudo
 

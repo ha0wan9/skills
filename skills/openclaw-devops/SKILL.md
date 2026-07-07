@@ -11,7 +11,7 @@ description: >-
   repairing, upgrading, rolling back, or scheduling maintenance for an OpenClaw
   gateway/node install, when logging or tracking bugs in the backlog, or when
   OpenClaw is broken / out of date / crash-looping / failing config validation.
-metadata: {version: 1.2.1, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.3.0, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # OpenClaw DevOps

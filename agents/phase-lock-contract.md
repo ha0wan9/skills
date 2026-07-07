@@ -57,17 +57,40 @@ in `.claude/settings.json` invokes this script on every turn end.
 
 ## Gate Definitions
 
-Define what each gate verifies. Examples:
+This repo's `.harness/gates/*.sh` are real, mechanically-checkable gates
+(POSIX sh, deterministic, no network). Each exits 0 on pass, 1 on fail
+with a one-line reason to stderr.
 
-- **plan gate**: `plans/<task-id>.md` exists, has at least one
-  `## Tasks` section, every task has acceptance criteria.
-- **implement gate**: every task in the plan has a matching diff or
-  reference; `python3 scripts/validate_project_meta.py` passes; no debug code committed.
-- **review gate**: a review summary exists; no `BLOCKER` findings open.
+- **`brainstorm.sh`** — **stays a stub (`exit 0`) by decision.** There is
+  nothing mechanical to check at this phase: the deliverable is a
+  written approach reviewed by a human/reviewer agent, which is a
+  judgment call, not a file-shape or command-exit-code fact. Revisit
+  only if a future convention (e.g. a required `brainstorm-note.md`
+  path) gives this phase a checkable artifact.
+- **`plan.sh`** — checks that `.harness/phase-state.json` (path
+  overridable via `HARNESS_STATE_FILE`, default `.harness/phase-state.json`)
+  names a `build_plan` field (new optional field, written at plan entry)
+  and that the file it points to exists on disk. Unset, missing, or
+  pointing at a nonexistent path all exit 1.
+- **`implement.sh`** — runs `scripts/ship_plugin.sh validate` and exits
+  0 iff that exits 0. `validate` covers marketplace.json coherence, the
+  version-bump gate (`check-version`), and per-plugin dev validators for
+  any plugin touched vs `BASE_BRANCH`.
+- **`review.sh`** — checks that `.harness/last-turn-meta.json` (path
+  overridable via `HARNESS_LAST_TURN_META_FILE`) exists and contains a
+  non-empty `review_tier` string. File-derived, not a ledger query
+  (same precedent as D5 elsewhere in the harness): the review-tier
+  decision is written to a small file by whatever review workflow ran,
+  and this gate just confirms that record exists.
+- **`finish.sh`** — runs `scripts/ship_plugin.sh check-version` and
+  exits 0 iff that exits 0, i.e. a version bump exists vs `BASE_BRANCH`
+  for every changed plugin (or the marketplace version, for root-only
+  changes).
 
-Encode each gate as a small bash or python script under
-`.harness/gates/<phase>.sh`. Gates exit 0 on pass, non-zero on fail. The
-phase-lock check script aggregates them.
+Each gate script's own header comment documents its check. The
+phase-lock check script (`skills/project-meta/scripts/phase_lock_check.py`)
+aggregates them: it reads `.harness/phase-state.json` for the current
+phase and invokes `.harness/gates/<phase>.sh` from the repo root.
 
 ## Bypass
 

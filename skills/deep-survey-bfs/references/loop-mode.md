@@ -1,5 +1,7 @@
 # /loop Dynamic Mode — Per-Iteration Hygiene
 
+Conforms to [`project-meta/references/loop-contract.md`](../../project-meta/references/loop-contract.md) (citation only — this file's `loop_state.json` shape is the one the contract's schema was generalized from; no behavior change here).
+
 When the survey is being progressed asynchronously via `/loop` (no fixed interval;
 ScheduleWakeup self-pacing), maintain a `loop_state.json` artifact at the survey
 root scaffolded from `templates/loop_state.json`. Read it at the start of every
