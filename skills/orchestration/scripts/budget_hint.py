@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 
 DISCLAIMER = "estimate, not a guarantee — coarse heuristic, NOT a calibrated forecast"
@@ -198,7 +199,10 @@ def render(result: dict, dollars: bool = False) -> str:
     n_fable = tier_counts.get("fable", 0)
     n_cli = tier_counts.get("cli", 0)
     n_haiku = tier_counts.get("haiku", 0)
-    fleet_pct = round(result.get("fleet_share", 0.0) * 100)
+    fleet_share = result.get("fleet_share", 0.0)
+    # Floor when under target so the displayed % can never read "80%" above a
+    # below-80% WARN line.
+    fleet_pct = math.floor(fleet_share * 100) if fleet_share < 0.8 else round(fleet_share * 100)
     footer = f"tier-mix: {fleet_pct}% fleet / {n_opus}×opus / {n_fable}×fable / {n_cli}×cli"
     if n_haiku:
         footer += f" / {n_haiku}×haiku"

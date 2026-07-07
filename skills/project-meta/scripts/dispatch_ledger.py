@@ -249,9 +249,9 @@ def _normalize_tier(raw: str) -> str:
     else:
         tier_id, effort = tier, ""
     if tier_id not in TIER_IDS:
-        print(f"WARN --tier: unrecognized tier id {tier_id!r} (recorded as-is)", file=sys.stderr)
+        print(f"WARN --tier: unrecognized tier id {tier_id!r} (normalized and recorded)", file=sys.stderr)
     if effort and effort not in EFFORT_IDS:
-        print(f"WARN --tier: unrecognized effort {effort!r} (recorded as-is)", file=sys.stderr)
+        print(f"WARN --tier: unrecognized effort {effort!r} (normalized and recorded)", file=sys.stderr)
     return tier
 
 
@@ -533,7 +533,8 @@ def _print_tier_block(task_type: str, group: list[dict]) -> None:
     tier lines but still counted in the header's record count.
     """
     tiered = [r for r in group if r.get("tier")]
-    print(f"[tiers] {task_type} — {len(group)} record(s)")
+    safe_task_type = " ".join(str(task_type).split())
+    print(f"[tiers] {safe_task_type} — {len(group)} record(s)")
     counts: dict[str, dict[str, int]] = {}
     for r in tiered:
         key = _tier_effort_key(r["tier"])

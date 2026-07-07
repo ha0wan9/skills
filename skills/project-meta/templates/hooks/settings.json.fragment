@@ -49,6 +49,16 @@
             "command": "bash .claude/hooks/pre-tool-guard.sh"
           }
         ]
+      },
+      {
+        "_comment": "dispatch-tier-guard (DASH-066): advisory tier-visibility guard on Agent/Task dispatches. WARNs when a generic-type dispatch omits `model` (silent session-model inheritance vs the sonnet fleet default); one-line notices for explicit opus/fable tiers. Always exits 0 at every profile — the payload cannot see agent-definition frontmatter model resolution, and Workflow-internal agent() fan-out does not pass through this matcher. minimal=silent.",
+        "matcher": "Task|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/dispatch-tier-guard.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
