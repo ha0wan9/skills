@@ -1,7 +1,7 @@
 ---
 name: orchestration
 description: "Turn a chosen roadmap milestone or build plan into a committed, reviewable orchestration contract — per task: model tier, parallelization, orchestrator effort, human-in-the-loop checkpoints, review level, and a non-predictive budget hint — then hand the signed contract to the runtime's scripted engine (Claude Code Workflow or Codex Agents-SDK), degrading to an Agent/Task subagent loop when no scripted engine is available. Owns orchestration policy, never the run engine: it builds no worker pool or run loop, and only calls the Workflow tool when you invoke it. Use when you want to orchestrate a milestone across multiple agents, draft or review an orchestration contract before a run, or estimate the model and token cost of a multi-agent run before committing."
-metadata: {version: 0.3.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 0.4.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Orchestration
@@ -55,7 +55,7 @@ project-meta is not installed. When both are present, **project-meta is canonica
 - **Reviewer-Between-Subtasks:** brief a fresh worker → a fresh, separate reviewer on clean
   context (diff + brief only); a BLOCKER halts forward dispatch until the user decides
   (AP-COORD-2). A scripted/background runner must stop on the first BLOCKER, never batch them.
-- **Model tier:** deterministic → CLI · judgment → Sonnet (fleet, default) · escalation/synth → Opus · conductor → session model (Fable-class when available). Escalate one agent to Opus only on a demonstrated fleet shortfall, never precautionarily (`project-meta/references/multi-agent-protocols.md#model-tier`).
+- **Model tier:** deterministic → CLI · bounded high-fanout judgment → Haiku (`haiku`, opt-in utility rung below fleet — extract/classify/label/summarize only, never code edits/reviews) · judgment → Sonnet (fleet, default) · escalation/synth → Opus · conductor → session model (Fable-class when available). Escalate one agent to Opus only on a demonstrated fleet shortfall, never precautionarily (`project-meta/references/multi-agent-protocols.md#model-tier`).
 - **Review level:** every review fast; tokens proportionate to stakes — L0 self-check · L1 one
   reviewer · L2 parallel panel · L3 adversarial + pressure (`#review-tier`).
 - **Elastic harness:** long-running Codex runs snapshot `HARNESS_PROFILE` / optional bounds and

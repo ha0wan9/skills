@@ -35,7 +35,7 @@ Each task row carries exactly these fields:
 | Field | Values | Meaning |
 |---|---|---|
 | `task` | free text + (optional) build-plan item id | the unit of work, traceable back to the `plan` build order |
-| `model_tier` | `cli` · `sonnet` · `opus` · `fable` | deterministic → CLI (no model); judgment → Sonnet (fleet, default); escalation/synth → Opus (one escalation slot + one synthesis slot max per pipeline); conductor-only → Fable (at most one dispatched unblock call after Opus failed; justify per-slot). Escalate to Opus only on a demonstrated fleet shortfall, never precautionarily. (canon: `project-meta/references/multi-agent-protocols.md#model-tier`) |
+| `model_tier` | `cli` · `haiku` · `sonnet` · `opus` · `fable` | deterministic → CLI (no model); bounded high-fanout judgment (extract/classify/label/summarize; never code edits/reviews) → Haiku (opt-in utility rung below fleet, chosen up-front by task classification — outside the promotion/demotion ladder); judgment → Sonnet (fleet, default); escalation/synth → Opus (one escalation slot + one synthesis slot max per pipeline); conductor-only → Fable (at most one dispatched unblock call after Opus failed; justify per-slot). Escalate to Opus only on a demonstrated fleet shortfall, never precautionarily. (canon: `project-meta/references/multi-agent-protocols.md#model-tier`) |
 | `parallelization` | `serial` · `parallel(N)` · `pipeline` | the fan-out shape. Fan-out is a *cost and a coordination* signal, not a quality one (AP-COORD-4: don't over-parallelize). |
 | `orchestrator_effort` | `low` · `medium` · `high` | how much the Lead invests coordinating this task (brief depth, re-brief budget). Distinct from `model_tier` of the workers. |
 | `human_checkpoint` | `none` · `before` · `after` · `both` | the explicit halt-and-ask points (🔴). New dep / ops / live backend / push / unresolved decision MUST carry a checkpoint (execution-policy). |
@@ -56,17 +56,23 @@ a cost corpus (none exists yet).
 
 ## Tier-mix footer
 
-Every signed contract includes a **tier-mix footer** line:
+Every signed contract includes a **tier-mix footer** line. `budget_hint.py` computes and prints
+this line itself — **paste its output**, do not hand-compute it:
 
 ```
 tier-mix: <tok-share>% fleet / <n>×opus / <n>×fable / <n>×cli
 ```
 
-`<tok-share>` is the fleet token-share computed from the `budget_hint.py` per-task expected-token
-totals (fleet expected tokens ÷ total expected tokens × 100). Target: ≥80 % fleet token-share.
-`<n>×opus` and `<n>×fable` are the count of tasks at those tiers; `0×fable` is the documented
-normal case (Fable is conductor-only; dispatched Fable is exceptional). Computed at contract-signing
-time; re-check if any task's `model_tier` or `budget_hint` changes.
+(with a trailing `/ <n>×haiku` segment appended only when the contract has haiku tasks).
+
+`<tok-share>` is the fleet token-share — `(haiku + sonnet)` expected tokens ÷ total expected
+tokens × 100 (cli is excluded from the concept: it is "no model", contributes 0 anyway). Target:
+≥80 % fleet token-share. `<n>×opus` and `<n>×fable` are the count of tasks at those tiers; `0×fable`
+is the documented normal case (Fable is conductor-only; dispatched Fable is exceptional).
+`budget_hint.py` also appends a `WARN: fleet token-share below 80% target (advisory — mistagged
+tiers are not detectable here; review the per-task model_tier column)` line when the share is
+below target and any modeled task exists — carry that WARN into the contract verbatim if present.
+Computed at contract-signing time; re-check if any task's `model_tier` or `budget_hint` changes.
 
 ## Signing
 

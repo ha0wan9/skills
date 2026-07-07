@@ -7,7 +7,8 @@
     ],
     "PreToolUse": [
       { "matcher": "Edit|Write|MultiEdit", "hooks": [ { "type": "command", "command": "bash .claude/hooks/board-guard.sh" } ] },
-      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash .claude/hooks/pre-tool-guard.sh" } ] }
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash .claude/hooks/pre-tool-guard.sh" } ] },
+      { "matcher": "Task|Agent", "hooks": [ { "type": "command", "command": "bash .claude/hooks/dispatch-tier-guard.sh" } ] }
     ],
     "PostToolUse": [
       { "matcher": "Edit|Write|MultiEdit", "hooks": [ { "type": "command", "command": "bash .claude/hooks/format-on-edit.sh" } ] }

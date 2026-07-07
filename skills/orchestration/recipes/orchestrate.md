@@ -44,23 +44,27 @@ milestone — it decides how the already-planned work runs.
    `verification_oracle`. For Codex long-running / Goal / Heartbeat / remote-check-in runs, cite
    the Codex operating-loop canon and make sure the oracle is concrete before signing.
 3. **Produce the orchestration plan.** For each task decide: `model_tier` (deterministic→cli ·
-   judgment→sonnet fleet default · escalation/synth→opus · conductor→fable; escalate only on a
-   demonstrated fleet shortfall), `parallelization`
+   bounded high-fanout judgment→haiku (opt-in utility rung below fleet; extract/classify/label/
+   summarize only — never code edits/reviews) · judgment→sonnet fleet default · escalation/synth→
+   opus · conductor→fable; escalate only on a demonstrated fleet shortfall), `parallelization`
    (serial / parallel(N) / pipeline — fan-out is a cost, not a quality lever; AP-COORD-4),
    `orchestrator_effort`, `human_checkpoint` (🔴 for new dep / ops / live backend / push / open
    decision), and `review_level` (auto-derive a floor with `review_tier.py`; escalate on judgment
    and **state why** — never silently de-escalate high stakes).
 4. **Budget-hint it.** Run [`scripts/budget_hint.py`](../scripts/budget_hint.py) (python3, stdlib
    only — no install) over the per-task `tier:class:fanout` lines. Paste the wide low/expected/high
-   band into the contract. It is a
+   band into the contract, plus its **auto-computed tier-mix line** (the tool prints one — do not
+   hand-compute it) and any `WARN: fleet token-share below 80% target` line it appends when the
+   haiku+sonnet fleet share falls short. It is a
    **hint to eyeball Opus-heaviness / fan-out width before signing — "estimate, not a guarantee,"**
-   not the engine `budget`. If it looks Opus-heavy or too wide, adjust tiers/parallelism and re-run.
+   not the engine `budget`. If it looks Opus-heavy or too wide, or the WARN fires, adjust
+   tiers/parallelism and re-run.
 5. **Instantiate + deliver the contract.** Fill
    [`templates/orchestration-contract.md`](../templates/orchestration-contract.md). Include the
-   tier-mix footer: `tier-mix: <tok-share>% fleet / <n>×opus / <n>×fable / <n>×cli`, where
-   `<tok-share>` is the fleet token-share computed from the `budget_hint.py` totals (target ≥80 %).
-   It is a shared, user-facing artifact → **deliver it for operator review before any `git commit`**
-   (pre-commit delivery), like every editing recipe.
+   tier-mix footer pasted verbatim from `budget_hint.py`'s output:
+   `tier-mix: <tok-share>% fleet / <n>×opus / <n>×fable / <n>×cli` (target ≥80 % fleet token-share;
+   fleet = haiku + sonnet expected tokens). It is a shared, user-facing artifact → **deliver it for
+   operator review before any `git commit`** (pre-commit delivery), like every editing recipe.
 6. **Sign.** Mark `status: signed` only when every sign-off box holds (run context complete, all
    tasks rowed, review levels + escalation reasons set, checkpoints enumerated, budget hint
    reviewed, delivered). Signing is the gate before emission.

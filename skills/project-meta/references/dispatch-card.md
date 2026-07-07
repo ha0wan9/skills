@@ -31,4 +31,4 @@ When the conductor judges the rule does not apply (e.g. all touched files form o
 
 ## Load the full protocol when
 
-You actually enter a dispatch step and need the mechanics: [Roles](multi-agent-protocols.md#roles), [Context Package](multi-agent-protocols.md#context-package), [Delegation Template](multi-agent-protocols.md#delegation-template), [Reviewer-Between-Subtasks Protocol](multi-agent-protocols.md#reviewer-between-subtasks-protocol), [Model Tier](multi-agent-protocols.md#model-tier), or the [Fleet Delivery Workflow](multi-agent-protocols.md#fleet-delivery-workflow).
+You actually enter a dispatch step and need the mechanics: [Roles](multi-agent-protocols.md#roles), [Context Package](multi-agent-protocols.md#context-package), [Delegation Template](multi-agent-protocols.md#delegation-template), [Reviewer-Between-Subtasks Protocol](multi-agent-protocols.md#reviewer-between-subtasks-protocol), [Model Tier](multi-agent-protocols.md#model-tier) (tier ids `cli|haiku|sonnet|opus|fable`; that section is the single tier-id → model mapping point), or the [Fleet Delivery Workflow](multi-agent-protocols.md#fleet-delivery-workflow).
