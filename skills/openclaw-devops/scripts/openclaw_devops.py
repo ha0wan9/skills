@@ -89,6 +89,14 @@ OK, WARN, FAIL = "ok", "warn", "fail"
 BUG_STATUSES = ["open", "triaged", "in-progress", "fixed", "wontfix", "duplicate"]
 BUG_OPEN = {"open", "triaged", "in-progress"}
 
+# Circuit breaker: consecutive FAIL cycles (WARN/OK reset it) before `cycle`
+# pauses itself — files a bugs-backlog entry and stops taking repair/update
+# actions until an operator `resume`s or a passing `sanity` clears it. Exit
+# code on a paused cycle is 2 (never 0) so cron/exit-code monitors don't go
+# silent while the breaker is tripped (critic finding — see runbook.md).
+FAIL_STREAK_LIMIT = 3
+EXIT_PAUSED = 2
+
 
 # --------------------------------------------------------------------------- #
 # small utilities
@@ -372,9 +380,75 @@ def snapshot(cfg: Config, version_before: str | None) -> dict:
     if cfgp.exists():
         bak = str(cfgp) + f".devops-bak.{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
         shutil.copy2(cfgp, bak)
-    snap = {"ts": now(), "version_before": version_before, "config_backup": bak}
+    # Preserve the circuit-breaker fields already in state.json (fail_streak,
+    # paused) — this function only owns the update-snapshot fields.
+    prev = _state_load()
+    snap = {**prev, "ts": now(), "version_before": version_before, "config_backup": bak}
     STATE_FILE.write_text(json.dumps(snap, indent=2), encoding="utf-8")
     return snap
+
+
+# --------------------------------------------------------------------------- #
+# circuit breaker — consecutive-FAIL streak persisted alongside the
+# update-snapshot fields in the same state.json (see FAIL_STREAK_LIMIT above).
+# --------------------------------------------------------------------------- #
+def _state_load() -> dict:
+    if STATE_FILE.exists():
+        try:
+            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _state_save(st: dict) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(json.dumps(st, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def breaker_status() -> dict:
+    st = _state_load()
+    return {"fail_streak": st.get("fail_streak", 0), "paused": bool(st.get("paused", False))}
+
+
+def breaker_record(overall: str) -> dict:
+    """Update the fail streak for one cycle's outcome. Only FAIL increments;
+    WARN leaves the streak untouched; anything else (OK) resets it to 0.
+    Returns the updated breaker state (does not itself trip/clear `paused` —
+    callers decide based on the returned streak)."""
+    st = _state_load()
+    streak = st.get("fail_streak", 0)
+    if overall == FAIL:
+        streak += 1
+    elif overall == WARN:
+        pass  # WARN does not increment, and does not reset either
+    else:
+        streak = 0
+    st["fail_streak"] = streak
+    _state_save(st)
+    return {"fail_streak": streak, "paused": bool(st.get("paused", False))}
+
+
+def breaker_pause(reason: str) -> dict:
+    st = _state_load()
+    st["paused"] = True
+    st["paused_reason"] = reason
+    st["paused_at"] = now()
+    _state_save(st)
+    return st
+
+
+def breaker_clear() -> dict:
+    st = _state_load()
+    st["paused"] = False
+    st["fail_streak"] = 0
+    st.pop("paused_reason", None)
+    st.pop("paused_at", None)
+    _state_save(st)
+    return st
+
+
+PAUSED_MESSAGE = "paused: operator needed (resume or passing sanity clears)"
 
 
 def restart_services(cfg: Config, dry: bool) -> list[dict]:
@@ -514,9 +588,30 @@ def append_history(entry: dict):
 def cycle(cfg: Config, dry: bool, allow_major: bool, do_repair: bool, do_update: bool) -> dict:
     with Lock(LOCK_FILE):
         result = {"startedAt": now(), "runtime": detect_runtime(), "dry_run": dry}
+
+        # Circuit breaker: if already paused, do NO repair/update actions —
+        # just re-probe sanity (read-only) so a passing sanity can clear it.
+        already_paused = breaker_status()["paused"]
         rep = check(cfg)
         result["sanity"] = {"overall": rep["overall"],
                             "issues": [c["name"] for c in rep["checks"] if c["status"] != OK]}
+
+        if already_paused:
+            if rep["overall"] == OK:
+                breaker_clear()
+                result["breaker"] = {"paused": False, "cleared_by": "passing sanity"}
+            else:
+                bst = breaker_status()
+                result["breaker"] = {"paused": True, "fail_streak": bst["fail_streak"]}
+                result["finishedAt"] = now()
+                result["overall"] = rep["overall"]
+                result["bugs_open"] = open_bug_count()
+                result["paused"] = True
+                result["message"] = PAUSED_MESSAGE
+                append_history({"ts": result["finishedAt"], "overall": result["overall"],
+                                "sanity": result["sanity"], "dry_run": dry, "paused": True})
+                return result
+
         if do_repair and cfg["allow_repair"] and rep["overall"] != OK:
             result["repair"] = repair(cfg, rep, dry)
             rep2 = check(cfg)
@@ -525,11 +620,25 @@ def cycle(cfg: Config, dry: bool, allow_major: bool, do_repair: bool, do_update:
             rep = rep2
         if do_update and cfg["allow_update"]:
             result["update"] = update(cfg, rep, dry, allow_major)
+
+        bst = breaker_record(rep["overall"])
+        result["breaker"] = bst
+        if bst["fail_streak"] >= FAIL_STREAK_LIMIT:
+            breaker_pause(f"{bst['fail_streak']} consecutive FAIL cycles")
+            bugs_add(title="openclaw-devops cycle circuit breaker tripped",
+                     severity="sev2", source="openclaw-devops-cycle",
+                     detail=f"{bst['fail_streak']} consecutive FAIL cycles; "
+                            f"paused — issues: {', '.join(result['sanity']['issues']) or 'n/a'}",
+                     tags="circuit-breaker,cycle")
+            result["paused"] = True
+            result["message"] = PAUSED_MESSAGE
+
         result["finishedAt"] = now()
         result["overall"] = rep["overall"]
         result["bugs_open"] = open_bug_count()
         append_history({"ts": result["finishedAt"], "overall": result["overall"],
                         "sanity": result["sanity"], "dry_run": dry,
+                        "paused": result.get("paused", False),
                         "update": result.get("update", {}).get("updated") or result.get("update", {}).get("reason")})
         return result
 
@@ -762,7 +871,12 @@ def render_summary(obj: dict) -> str:
     # cycle result
     s = obj.get("sanity", {}) if isinstance(obj.get("sanity"), dict) else {}
     lines[0] += f" — cycle {ICON.get(obj.get('overall'),'')} {str(obj.get('overall','')).upper()}"
+    if obj.get("paused"):
+        lines[0] += " ⛔ PAUSED"
     lines.append(f"- sanity: {s.get('overall')} | issues: {', '.join(s.get('issues') or []) or 'none'}")
+    if obj.get("paused"):
+        bst = obj.get("breaker", {})
+        lines.append(f"- ⛔ {obj.get('message', PAUSED_MESSAGE)} (fail_streak={bst.get('fail_streak')})")
     if obj.get("bugs_open") is not None:
         lines.append(f"- backlog: {obj['bugs_open']} open bug(s) — `openclaw_devops.py bugs --panel`")
     if "repair" in obj:
@@ -781,7 +895,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="OpenClaw DevOps maintenance engine (sanity/repair/update/verify/rollback/cycle).",
         epilog="Missing host tools (openclaw/systemctl/npm) surface as failed checks, not crashes.")
-    ap.add_argument("command", choices=["sanity", "repair", "update", "verify", "rollback", "cycle", "lessons", "bugs"])
+    ap.add_argument("command", choices=["sanity", "repair", "update", "verify", "rollback", "cycle", "resume",
+                                        "lessons", "bugs"])
     ap.add_argument("--state-dir", metavar="DIR",
                     help="project-scoped state dir (default: <repo-root>/.harness/openclaw-devops, "
                          "or $OPENCLAW_DEVOPS_STATE_DIR)")
@@ -818,7 +933,17 @@ def main(argv: list[str] | None = None) -> int:
     cfg = Config(Path(expand(args.config)))
 
     if args.command == "sanity":
-        emit(check(cfg), args.json)
+        rep = check(cfg)
+        if rep["overall"] == OK and breaker_status()["paused"]:
+            breaker_clear()
+            rep["breaker_cleared"] = True
+        emit(rep, args.json)
+        return 0
+    if args.command == "resume":
+        st = breaker_clear()
+        out = {"resumed": True, "fail_streak": st.get("fail_streak", 0), "paused": st.get("paused", False)}
+        print(json.dumps(out, indent=2, ensure_ascii=False) if args.json
+              else "resumed: circuit breaker cleared (fail_streak=0, paused=false)")
         return 0
     if args.command == "repair":
         rep = check(cfg)
@@ -838,6 +963,10 @@ def main(argv: list[str] | None = None) -> int:
         res = cycle(cfg, args.dry_run, args.allow_major,
                     do_repair=not args.no_repair, do_update=not args.no_update)
         emit(res, args.json)
+        if res.get("paused"):
+            if not args.json:
+                print(PAUSED_MESSAGE)
+            return EXIT_PAUSED
         return 0 if res.get("overall") != FAIL else 1
     if args.command == "lessons":
         if args.title and args.bug and args.cause and args.fix:

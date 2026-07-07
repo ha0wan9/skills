@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.21.1",
+      "version": "1.22.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -68,7 +68,7 @@
     },
     {
       "name": "dl-research",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -90,7 +90,7 @@
     },
     {
       "name": "deep-survey-bfs",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "metadata": {
         "compat": [
           "claude-code",
@@ -170,7 +170,7 @@
     },
     {
       "name": "openclaw-devops",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "metadata": {
         "compat": [
           "claude-code",

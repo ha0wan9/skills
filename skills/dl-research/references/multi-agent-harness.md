@@ -269,3 +269,11 @@ Other hard STOP-and-return boundaries in this skill:
   predeclared decision gates.
 - Record reviewer verdicts in the phase artifact, not in the ledger unless they
   affect a run verdict.
+
+The prose MUST above — that a reviewer `block` halts promotion — now has a
+mechanical floor for the ratchet's `promote` decision: `scripts/validate_ledger.py`
+enforces that a ledger row with `decision: "promote"` is only valid alongside an
+earlier `critic_verdict` row with `verdict: "pass"` targeting that run
+(`templates/runs-ledger.schema.json` documents the row shape). This does not
+replace this prose section; it is the checkable proof that the gate was
+actually honored.

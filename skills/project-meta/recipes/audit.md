@@ -184,6 +184,20 @@ The report is the artifact. The user reviews, decides what to fix, and invokes t
 - Skipping the validation floor. An audit that doesn't first run `validate_target_harness.py` misses mechanical findings the human eye doesn't catch.
 - Single-pass final audit. Fixing BLOCKER/MAJOR findings and shipping on the strength of the original report means the fixes themselves were never audited. Final audits loop until clean (Convergence loop, workflow step 8).
 
+## Loop-Contract Conformance
+
+The Convergence loop (workflow step 8) is a declared loop per
+[`references/loop-contract.md`](../references/loop-contract.md) — the
+canon-writer conforms to its own canon (self-citation, no exemption).
+Inline floor: **trigger** = a ship/release-gating audit with BLOCKER/MAJOR
+fixes applied; **goal** = a round reporting zero BLOCKER and zero MAJOR;
+**budget** = 3 re-audit rounds (cap at Round 4); **verification** =
+computational floor `audit_ledger.py gate` (deterministic exit code) +
+inferential fresh-reviewer critique per round; **state** = the audit ledger
+JSONL, one row per round; **stopping rule** = converged (record `--final`)
+or capped with residuals handed to the operator (`--accept-residuals`),
+never silent.
+
 ## Cadence
 
 Recommended audit cadence:

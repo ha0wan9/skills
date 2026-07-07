@@ -1,22 +1,68 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DL Research Runs Ledger Row",
+  "description": "A row is either an experiment row (row_type absent or 'run', v1-compatible) or a 'critic_verdict' row (v2). ledger_version is an explicit marker (row-level field, e.g. on the first row) that opts a file into v2 validation rules; its absence means the file validates under v1 rules unchanged.",
   "type": "object",
-  "required": [
-    "run_id",
-    "study_id",
-    "experiment_id",
-    "status",
-    "hypothesis",
-    "intervention",
-    "command",
-    "code_revision",
-    "data_version",
-    "primary_metric",
-    "metric_direction",
-    "created_utc"
-  ],
+  "if": {
+    "properties": {"row_type": {"const": "critic_verdict"}},
+    "required": ["row_type"]
+  },
+  "then": {
+    "description": "Critic verdict row (v2 only): a mechanical record that a critic reviewed a run/experiment, used to gate 'promote' decisions. Exempt from run-row REQUIRED fields. Note: 'verdict' here is pass/block/revise, distinct from the run row's kept/killed/inconclusive/invalid 'verdict' enum.",
+    "required": ["row_type", "target_run_id", "critic_agent", "verdict", "created_at"],
+    "properties": {
+      "row_type": {"const": "critic_verdict"},
+      "target_run_id": {
+        "type": "string",
+        "description": "The run_id (or experiment_id) of the run row this verdict targets."
+      },
+      "critic_agent": {"type": "string"},
+      "verdict": {"type": "string", "enum": ["pass", "block", "revise"]},
+      "created_at": {"type": "string"}
+    }
+  },
+  "else": {
+    "description": "Experiment row (row_type absent or 'run', v1-compatible).",
+    "required": [
+      "run_id",
+      "study_id",
+      "experiment_id",
+      "status",
+      "hypothesis",
+      "intervention",
+      "command",
+      "code_revision",
+      "data_version",
+      "primary_metric",
+      "metric_direction",
+      "created_utc"
+    ],
+    "properties": {
+      "verdict": {
+        "type": ["string", "null"],
+        "enum": ["kept", "killed", "inconclusive", "invalid", null]
+      }
+    }
+  },
   "properties": {
+    "ledger_version": {
+      "type": ["string", "null"],
+      "description": "Explicit ledger format marker, e.g. '2'. Row-level field, conventionally set on the first row of the file. Absent (never inferred) means the file validates under v1 rules unchanged."
+    },
+    "row_type": {
+      "type": ["string", "null"],
+      "enum": ["run", "critic_verdict", null],
+      "description": "Row discriminator. Absent or 'run' = experiment row (v1-compatible). 'critic_verdict' = mechanical critic-verdict row (v2), exempt from run-row REQUIRED fields."
+    },
+    "target_run_id": {
+      "type": ["string", "null"],
+      "description": "critic_verdict rows only: the run_id (or experiment_id) this verdict targets."
+    },
+    "critic_agent": {"type": ["string", "null"]},
+    "created_at": {
+      "type": ["string", "null"],
+      "description": "critic_verdict rows only: ISO-8601 timestamp the verdict was recorded."
+    },
     "run_id": {"type": "string"},
     "study_id": {"type": "string"},
     "experiment_id": {
@@ -48,7 +94,7 @@
     "baseline_run_id": {"type": ["string", "null"]},
     "verdict": {
       "type": ["string", "null"],
-      "enum": ["kept", "killed", "inconclusive", "invalid", null]
+      "description": "Run rows (row_type absent/'run'): kept/killed/inconclusive/invalid. critic_verdict rows: pass/block/revise — see the 'if row_type==critic_verdict' branch below for the enum in effect."
     },
     "decision": {
       "type": ["string", "null"],

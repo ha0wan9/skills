@@ -7,7 +7,7 @@ description: >-
   methodology, or run a bounded autonomous ratchet loop. Use for
   project-agnostic model training, ablation, optimization, and research
   workflow orchestration.
-metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.3.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # DL Research

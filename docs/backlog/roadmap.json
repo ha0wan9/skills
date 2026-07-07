@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "0e471228291036d514d80d771598adeb07fc9b32f24eab04cd881613246e0679",
+    "items_sha256": "ad2302601aec2698369383e479dc42eb35dc35650a4b700bd3a7755af7e0f86b",
     "next_decision_id": 3,
-    "rev": 130,
+    "rev": 141,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-07-06T16:12:08Z"
+    "updated_at": "2026-07-07T01:06:23Z"
   },
   "milestones": [
     {
@@ -168,6 +168,20 @@
       "status": "done",
       "title": "Token diet round 2 (context on the common path)",
       "version": "v0.9"
+    },
+    {
+      "decisions": [],
+      "detail": "Implement the loop-engineering-2026 proposal slice L1-L4+L6 (DASH-059..062, 064): canonical Loop Contract reference + lint, loop_state checkpoint primitive with dl-research/deep-survey adoption, mechanized ratchet critic gate, openclaw-devops cron circuit breaker, and real phase-lock gate checks for this repo. L5 withdrawn (premise refuted); L7 (DASH-065) deferred pending appetite.",
+      "items": [
+        "DASH-059",
+        "DASH-060",
+        "DASH-061",
+        "DASH-062",
+        "DASH-064"
+      ],
+      "status": "todo",
+      "title": "Loop engineering",
+      "version": "v0.10"
     }
   ]
 }
