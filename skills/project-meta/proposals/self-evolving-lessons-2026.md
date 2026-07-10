@@ -1,8 +1,9 @@
 # Proposal: self-evolving lesson lifecycle (2026-07) → skill updates
 
-> **Status:** Revised (v2) — adversarial critic panel (4 lenses: mechanism-correctness,
-> reward-hacking, redundancy/lightweight-design, cost/complexity) returned **NO_GO on v1**;
-> this revision folds every BLOCKER/MAJOR finding. Awaiting operator GO for implementation.
+> **Status:** Partially shipped (2026-07-10) — **E0–E3** built and landed as v0.11 via PR #74
+> (project-meta 1.27.0, DASH-072..075 done; incl. adversarial + fix-verify review fixes).
+> E4–E7 remain proposed. Design history: v2 after a 4-lens adversarial panel (NO_GO on v1).
+> Shipped mapping: E0=DASH-072, E1=DASH-073, E2=DASH-074, E3=DASH-075 (v0.11 milestone closed).
 > **Scope:** benchmark the marketplace's self-evolution machinery (lesson registry, memory
 > write-back, dispatch telemetry) against the 2025–2026 self-evolving-agent literature;
 > propose 1 bug fix + 7 prioritized updates (E0–E7).
@@ -196,6 +197,13 @@ must be derived, not hand-typed.
   owning-skill-self-declaration row (task C1), so the protected-paths leg can no longer
   enumerate agent paths from that table and instead derives them from the marketplace
   manifest's `agents` arrays.*
+
+  *Implementation state (2026-07-10): PR #74 shipped `_protected_basenames()` deriving
+  from the installed project-meta's `scripts/*.py` + hook scripts + a frozen fallback —
+  covering leg (iii) automatically. Legs (i) and (ii) landed in the follow-up 1.28.0
+  change: the derivation now also reads each plugin's `agents` array from
+  `.claude-plugin/marketplace.json` when the target root carries one (dev-repo case),
+  and `skill-critics.md` joined the frozen set.*
 
 ### E3 — Symmetric demotion + scheduled trim (feat, project-meta)
 
