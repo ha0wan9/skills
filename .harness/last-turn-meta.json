@@ -1,0 +1,9 @@
+{
+  "delivery_shown": false,
+  "files_read": 0,
+  "files_written": 10,
+  "memory_updated": false,
+  "read_pattern": "context-mapping",
+  "review_tier": "L2",
+  "verb": "init"
+}

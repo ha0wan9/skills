@@ -45,10 +45,32 @@ trap 'rm -rf "$TMPD"' EXIT
 # (exit 127 under set -e would otherwise hard-fail the hook in BOTH profiles).
 command -v python3 >/dev/null 2>&1 || exit 0
 
+# E1/DASH-073: gate-failure event artifact. advisory_exit terminates the whole
+# hook, so a later step can never see an earlier gate's failure in-process; this
+# one-line durable record is what makes "a gate failed this turn" observable at
+# all (consumed read-then-truncate by `lesson_registry.py observe` on the next
+# invocation). Git-ignored; size-capped; every write is fail-open.
+GATE_EVENTS=".harness/stop-gate-events.jsonl"
+
+record_gate_event() {
+  local gate=$1
+  {
+    mkdir -p .harness 2>/dev/null
+    if [[ -f "$GATE_EVENTS" ]] && [[ "$(wc -l < "$GATE_EVENTS" 2>/dev/null || echo 0)" -gt 400 ]]; then
+      tail -n 200 "$GATE_EVENTS" > "$GATE_EVENTS.tmp" && mv "$GATE_EVENTS.tmp" "$GATE_EVENTS"
+    fi
+    printf '{"gate":"%s","profile":"%s","utc":"%s"}\n' \
+      "$gate" "$PROFILE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GATE_EVENTS"
+  } 2>/dev/null || true
+}
+
 advisory_exit() {
   # Standard profile: warn on stderr, exit 0 so the agent can still close
-  # the turn. Strict profile: exit non-zero to block.
+  # the turn. Strict profile: exit non-zero to block. Either way, record the
+  # failing gate id first so the evidence survives the process exit.
   local msg=$1
+  local gate=${2:-unknown}
+  record_gate_event "$gate"
   echo "[harness] $msg" >&2
   if [[ "$PROFILE" == "strict" ]]; then
     exit 1
@@ -98,7 +120,7 @@ if [[ -f .harness/phase-state.json ]]; then
   if [[ -x "$pm_check" ]] || [[ -f "$pm_check" ]]; then
     if ! python3 "$pm_check" --harness-dir .harness >"$TMPD/pl.out" 2>&1; then
       cat "$TMPD/pl.out" >&2
-      advisory_exit "phase-lock gate failed; see above."
+      advisory_exit "phase-lock gate failed; see above." phase-lock
     fi
   fi
 fi
@@ -107,7 +129,7 @@ fi
 if [[ -x .harness/verify.sh ]]; then
   if ! .harness/verify.sh >"$TMPD/v.out" 2>&1; then
     cat "$TMPD/v.out" >&2
-    advisory_exit "project verification failed; see above."
+    advisory_exit "project verification failed; see above." project-verify
   fi
 fi
 
@@ -120,7 +142,7 @@ pm_mem="$pm_dir/scripts/repo_memory.py"
 if [[ -f "$pm_mem" ]]; then
   if ! python3 "$pm_mem" --target-root . writeback 2>"$TMPD/wb.out"; then
     cat "$TMPD/wb.out" >&2
-    advisory_exit "memory write-back decision pending; see above."
+    advisory_exit "memory write-back decision pending; see above." writeback
   fi
 fi
 
@@ -132,7 +154,7 @@ pm_disp="$pm_dir/scripts/dispatch_ledger.py"
 if [[ -f "$pm_disp" ]]; then
   if ! python3 "$pm_disp" --target-root . gate 2>"$TMPD/dg.out"; then
     cat "$TMPD/dg.out" >&2
-    advisory_exit "mandatory-dispatch gate: see above."
+    advisory_exit "mandatory-dispatch gate: see above." dispatch
   fi
 fi
 
@@ -153,7 +175,7 @@ if [[ -f docs/backlog/items.jsonl ]]; then
   if [[ -n "$pm_board" && -f "$pm_board" ]]; then
     if ! python3 "$pm_board" tx --root . >"$TMPD/bt.out" 2>&1; then
       cat "$TMPD/bt.out" >&2
-      advisory_exit "project board store check (board.py tx) failed; see above."
+      advisory_exit "project board store check (board.py tx) failed; see above." board-tx
     fi
   fi
 fi
@@ -189,7 +211,7 @@ if [[ -f .harness/audit-ledger.jsonl ]]; then
   if [[ -n "$pm_audit" && -f "$pm_audit" ]]; then
     if ! python3 "$pm_audit" --target-root . gate >"$TMPD/ag.out" 2>&1; then
       cat "$TMPD/ag.out" >&2
-      advisory_exit "audit convergence gate: see above."
+      advisory_exit "audit convergence gate: see above." audit-convergence
     fi
   fi
 fi
@@ -208,7 +230,7 @@ fi
 if [[ -n "$pm_ltm" && -f "$pm_ltm" ]]; then
   if ! python3 "$pm_ltm" --target-root . check >"$TMPD/ltm.out" 2>&1; then
     cat "$TMPD/ltm.out" >&2
-    advisory_exit "last-turn-meta gate: see above."
+    advisory_exit "last-turn-meta gate: see above." last-turn-meta
   fi
 fi
 
@@ -227,11 +249,16 @@ if [[ "$EFFECTIVE_PROFILE" != "minimal" && -f .harness/lessons.jsonl ]]; then
     if [[ -n "$pm_ldir" ]]; then pm_les="$pm_ldir/scripts/lesson_registry.py"; fi
   fi
   if [[ -n "$pm_les" && -f "$pm_les" ]]; then
+    # observe (E1/DASH-073): heuristic evidence leg. Runs FIRST so it consumes
+    # gate-failure events recorded by earlier invocations this turn before the
+    # validate leg below can add a fresh one. Advisory, fail-open, exits 0.
+    python3 "$pm_les" --target-root . observe 2>&1 | sed 's/^/[harness] /' >&2 || true
     # validate: hard gate for the elastic lesson leg. Invariant core gates above
     # intentionally keep reading HARNESS_PROFILE directly.
     if ! python3 "$pm_les" --target-root . validate >"$TMPD/lr.out" 2>&1; then
       cat "$TMPD/lr.out" >&2
       echo "[harness] lesson registry validate failed; see above." >&2
+      record_gate_event lesson-validate
       if [[ "$EFFECTIVE_PROFILE" == "strict" ]]; then
         exit 1
       fi

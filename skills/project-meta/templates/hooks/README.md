@@ -239,19 +239,32 @@ that survives session boundaries and is intended to be code-reviewed alongside c
 **Store:** `.harness/lessons.jsonl` — one JSON row per lesson. Single writer; full-file
 atomic rewrite on each mutation (board.py-style O_EXCL lock + temp-file rename).
 
-**Row schema:**
+**Row schema (v2 — E1/DASH-073; v1 rows without the new fields stay valid):**
 ```
-{id, statement, status, target, target_path, applies_below,
- helpful_count, harmful_count, notes, created_at, updated_at,
- source_session, last_validated}
+{id, statement, status, target, target_path, scope_paths, gate_id,
+ applies_below, helpful_count, harmful_count, observations, notes,
+ created_at, updated_at, source_session, last_validated}
 ```
 
 - `target`: `null | "memory" | "hook" | "linter"` — where the lesson is wired
 - `target_path`: `null | str` — repo-relative path to the file that implements/enforces the lesson
+- `scope_paths`: `null | [str]` — repo-relative globs the lesson's **guidance** concerns
+  (distinct from `target_path`; required for `observe` eligibility — no scope, no signal)
+- `gate_id`: `null | str` — the `verify-before-stop.sh` leg this lesson corresponds to;
+  closed enum: `phase-lock`, `project-verify`, `writeback`, `dispatch`, `board-tx`,
+  `audit-convergence`, `last-turn-meta`, `lesson-validate`
+- `observations`: append-only evidence rows `{direction: helpful|harmful,
+  source: observe|manual, scope_snapshot, note, utc}`. `helpful_count`/`harmful_count`
+  are the frozen v1 baseline ints; effective counts = baseline + observation tallies.
 - `applies_below`: `null | "haiku" | "sonnet" | "opus" | "fable"` — tier filter; Codex
   model strings `luna`/`terra`/`sol` normalize to `sonnet`/`opus`/`fable`. A lesson with
   `applies_below=sonnet` is shown only when the session tier is BELOW sonnet (tier order:
   haiku < sonnet < opus < fable). `null` = always show.
+
+**Trust model:** observations are decision-support with an audit trail, **not** a security
+boundary — the store is plain text the measured agent can edit; git history is the tamper
+record. Every draft (`auto-demote`, `promote-draft`) prints its evidence inline so the
+operator judges substance, not an opaque count.
 
 **Status ladder (legal transitions only):**
 
@@ -263,30 +276,69 @@ promoted → recorded   (demotion; requires --note)
 ```
 
 - `promoted` and `enforced` REQUIRE `target` AND `target_path` to be set (on transition or supplied now).
+- **Evidence gate (E2/DASH-074):** any call that leaves a row in `promoted`/`enforced` and
+  changes anything — status transition OR same-status field retarget — requires ≥3 helpful
+  observations whose `scope_snapshot` matches the row's **current** `scope_paths`
+  (retargeting invalidates evidence by construction; snapshot comparison is
+  order-insensitive), no blocking harmful observation, and a scope narrow enough to be
+  meaningful evidence (whole-tree/&gt;200-file scopes are not promotable — E2 weighs breadth).
+  `enforced` additionally requires the target artifact to exist (and, for `hook`/`linter`
+  targets, be executable or a `.py` script). `--force` with a mandatory `--note` overrides
+  the evidence legs, leaving the audit trail in `notes[]`. The **protected-paths check runs
+  at transition time too** and is NOT bypassed by `--force`; its only override is a
+  path-bound `verifier_ack: <path> ...` note recorded after operator review.
 - Upward skips (e.g. `candidate → enforced`) are illegal — exit 1 with a clear message.
 - Demotions are legal but require `--note` to record the cause.
 
 **Subcommands (all accept `--target-root`, default cwd):**
 
-- `add --statement S [--source-session X] [--applies-below T]` — allocates LES-NNN
-  (`candidate`, counts 0). Prints the id.
-- `status <id> <to> [--target T] [--target-path P] [--note N]` — enforces the legal ladder.
-- `outcome <id> --helpful | --harmful [--note N]` — increments the ACE-style effectiveness count.
-- `validate` — hard gate: checks row structure, legal status fields, required fields for
-  `promoted`/`enforced`, and whether `target_path` resolves in the repo tree. Warns (exit 0)
-  on `applies_below` + universal-keyword mismatch; exits 1 on hard errors.
+- `add --statement S [--source-session X] [--applies-below T] [--scope-paths G] [--gate-id ID]`
+  — allocates LES-NNN (`candidate`, no evidence). Prints the id.
+- `status <id> <to> [--target T] [--target-path P] [--scope-paths G] [--note N] [--force]`
+  — enforces the legal ladder + the evidence gate.
+- `outcome <id> --helpful | --harmful --note N` — appends a `manual` observation.
+  `--note` is **required** (E3/DASH-075); a `--harmful` note must cite a gate id or file
+  path so the demotion trail is judgeable.
+- `observe [--model-tier T] [--changed-files-from FILE]` — Stop-hook heuristic evidence leg
+  (E1/DASH-073). Records `helpful` when the turn's changed files match a row's
+  `scope_paths` with no gate failure pending; `harmful` when the row's `gate_id` appears
+  in `.harness/stop-gate-events.jsonl` (consumed read-then-truncate). "The turn's changed
+  files" is a **delta** against the previous invocation's porcelain snapshot
+  (`.harness/observe-snapshot.json`, git-ignored) — a file left dirty across Stop cycles
+  counts once, not once per cycle. Porcelain is parsed with `-z` (non-ASCII paths safe).
+  At most one observation per row per invocation. **Advisory — always exits 0**;
+  skipped at `minimal`.
+- `validate` — hard gate: row structure, legal status fields, required fields for
+  `promoted`/`enforced`, `target_path` resolution, `gate_id` enum, observation shape, and
+  the **protected-paths check** (E2/DASH-074): a lesson must not target the machinery that
+  grades lessons (derived set: installed project-meta `scripts/*.py` + hook pack + the
+  lesson store/lock/event files + `.harness/gates/` + `.harness/verify.sh`); override only
+  via a **path-bound** note — `verifier_ack: <the protected path> ...` — recorded after
+  operator review (one ack cannot blanket-cover a later retarget to a different protected
+  file; ack authorship remains trust-model, git history is the tamper record). WARNs (exit 0) on
+  `applies_below` + universal-keyword mismatch and on overly-broad `scope_paths`
+  (whole-tree patterns or >200 matched files — the evidence-farming vector).
 - `watermark` — advisory visibility: candidate count + stale targets. **Always exits 0.**
   Hook legs call this for informational output only.
-- `inject [--model-tier T]` — SessionStart reminder: lists unprocessed candidates + stale
-  promoted/enforced lessons, hard-capped at **20 lines**. Filtered by `applies_below` if
-  `--model-tier` is given. Prints nothing + exits 0 when `HARNESS_PROFILE=minimal` or store
-  absent/empty.
-- `effectiveness` — print helpful/harmful table per lesson.
-- `trim-candidates [--apply]` — identify zero-value or stale-target promoted/enforced lessons;
-  with `--apply`, write board inbox captures for operator review. Does NOT hard-delete.
-- `promote-draft <id>` — run `trigger_collision_check.py` + `cross_skill_redundancy.py` over
-  the statement (degrade gracefully if not resolvable), then print a board inbox draft for
-  operator approval. Does not auto-promote.
+- `inject [--model-tier T]` — SessionStart reminder, hard-capped at **20 lines**. Surfaces
+  (in priority order under the cap): unprocessed candidates → stale promoted/enforced →
+  recorded rows → healthy promoted/enforced rows. The last two are the E1 injection-surface
+  extension — previously a lesson went invisible after leaving candidate status, starving
+  the observe/evidence loop. Filtered by `applies_below` if `--model-tier` is given.
+  Prints nothing + exits 0 when `HARNESS_PROFILE=minimal` or store absent/empty.
+- `effectiveness` — print effective helpful/harmful counts (baseline + observations) per lesson.
+- `trim-candidates [--apply]` — identify zero-evidence or stale-target promoted/enforced
+  lessons; with `--apply`, write board inbox captures for operator review. Does NOT hard-delete.
+- `auto-demote [--apply]` — E3/DASH-075 symmetric demotion: rows with ≥2 harmful
+  observations against the current scope (and newer than the last applied demotion —
+  spent evidence cannot walk a lesson down two rungs), or a stale `target_path`, get a
+  one-rung demotion draft with the full evidence printed inline; `--apply` performs the
+  demotions with auto-stamped notes + a `last_demoted_at` watermark. **`--apply` is an
+  operator action** — the standing audit cadence wires draft mode only; review the
+  printed evidence for fabricated notes before applying.
+- `promote-draft <id>` — statement-coverage check via `cross_skill_redundancy.py
+  --statement` (E0/DASH-072 — the previous invocation was a silent no-op), then print the
+  row's evidence + a board inbox draft for operator approval. Does not auto-promote.
 
 **validate vs watermark — the split:**
 
@@ -303,8 +355,10 @@ requirement.
 **Fail directions:**
 
 - Direct CLI invocation → **fail CLOSED** (exit 1 on bad input, bad transition, missing fields).
-- Hook legs (`watermark`, `inject`) → **fail OPEN** (corrupt/missing store → warn to stderr + exit 0;
-  never wedge a turn).
+- Hook legs (`watermark`, `inject`, `observe`) → **fail OPEN** (corrupt/missing store → warn to
+  stderr + exit 0; never wedge a turn). `observe`'s lock contention with an agent-invoked CLI
+  call also fails open on the hook side (the CLI side surfaces a real error — known,
+  low-probability race, documented in the proposal).
 
 **Profile gating:**
 
@@ -319,8 +373,18 @@ requirement.
 
 - **Stop** (`verify-before-stop.sh`, step 7, delimited `# --- D6: lesson registry ---`):
   When `.harness/lessons.jsonl` exists, resolve `lesson_registry.py` via `resolve_project_meta`,
-  run `validate` (the hard gate, routed through `advisory_exit`), then run `watermark` (advisory
-  output to stderr). Self-skips when the store is absent.
+  run `observe` first (advisory evidence leg — consumes gate-failure events recorded by
+  earlier invocations this turn), then `validate` (the hard gate), then `watermark`
+  (advisory output to stderr). Self-skips when the store is absent.
+- **Gate-event artifact** (`verify-before-stop.sh`, `record_gate_event`): `advisory_exit`
+  terminates the whole hook on the first failing gate, so a later step can never see the
+  failure in-process. Before exiting, it appends one line
+  `{"gate": "<id>", "profile": ..., "utc": ...}` to git-ignored
+  `.harness/stop-gate-events.jsonl` (size-capped at ~400 lines, trimmed to 200). This is
+  the E1(c) enabling artifact: `observe` reads it on the NEXT invocation and truncates it
+  (at-most-once accounting). Counters accumulated across parallel worktrees are
+  approximate/lossy under fleet merges by design; `observations[]` rows being append-only
+  keeps those conflicts line-mergeable in the common case.
 - **SessionStart** (`load-agents-md.sh`, delimited `# --- D6: lesson inject ---`):
   After the session receipt inject, resolve `lesson_registry.py` and run `inject` (passes
   `--model-tier` when `$CLAUDE_MODEL` is discoverable from the environment). Self-gates (prints
