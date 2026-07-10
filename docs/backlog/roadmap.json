@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "99563097adbe44cb7e765473c4fd704366afa494d37464a6791cedcf580182ab",
+    "items_sha256": "2a6b3b7ef0a2d8ddb3e91c8ad4e432986b358940cb11be8c69510171341eaac8",
     "next_decision_id": 3,
-    "rev": 166,
+    "rev": 171,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-07-10T12:10:01Z"
+    "updated_at": "2026-07-10T12:12:19Z"
   },
   "milestones": [
     {
@@ -192,7 +192,7 @@
         "DASH-074",
         "DASH-075"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Self-evolving lessons: measure + evidence-gate + forget",
       "version": "v0.11"
     }
