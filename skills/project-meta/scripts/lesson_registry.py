@@ -57,6 +57,7 @@ LOCK_RELPATH = ".harness/.lesson_registry.lock"
 VALID_STATUSES = {"candidate", "recorded", "promoted", "enforced", "retired"}
 VALID_TARGETS = {"memory", "hook", "linter"}
 TIER_ORDER = {"haiku": 0, "sonnet": 1, "opus": 2, "fable": 3}
+TIER_ALIASES = {"luna": "sonnet", "terra": "opus", "sol": "fable"}
 
 # Legal forward transitions (no-skip rule enforced here)
 FORWARD_TRANSITIONS: dict[str, str] = {
@@ -500,7 +501,8 @@ def cmd_inject(args: argparse.Namespace) -> int:
     if not rows:
         return 0
 
-    model_tier = getattr(args, "model_tier", None)
+    raw_model_tier = getattr(args, "model_tier", None)
+    model_tier = TIER_ALIASES.get(raw_model_tier, raw_model_tier)
 
     def _should_show(row: dict[str, Any]) -> bool:
         ab = row.get("applies_below")
@@ -762,7 +764,7 @@ def build_parser() -> argparse.ArgumentParser:
     # inject
     p_inj = sub.add_parser("inject", help="Print SessionStart reminder block (≤20 lines).")
     p_inj.add_argument("--model-tier", dest="model_tier",
-                       choices=sorted(TIER_ORDER.keys()), default=None,
+                       choices=sorted(set(TIER_ORDER) | set(TIER_ALIASES)), default=None,
                        help="Current session model tier; filters applies_below lessons.")
     p_inj.set_defaults(func=cmd_inject)
 

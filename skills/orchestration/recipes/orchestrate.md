@@ -45,8 +45,9 @@ milestone — it decides how the already-planned work runs.
    the Codex operating-loop canon and make sure the oracle is concrete before signing.
 3. **Produce the orchestration plan.** For each task decide: `model_tier` (deterministic→cli ·
    bounded high-fanout judgment→haiku (opt-in utility rung below fleet; extract/classify/label/
-   summarize only — never code edits/reviews) · judgment→sonnet fleet default · escalation/synth→
-   opus · conductor→fable; escalate only on a demonstrated fleet shortfall), `parallelization`
+   summarize only — never code edits/reviews) · judgment→sonnet/luna fleet default ·
+   escalation/synth→opus/terra · conductor→fable/sol; escalate only on a demonstrated fleet
+   shortfall), `parallelization`
    (serial / parallel(N) / pipeline — fan-out is a cost, not a quality lever; AP-COORD-4),
    `orchestrator_effort`, `human_checkpoint` (🔴 for new dep / ops / live backend / push / open
    decision), and `review_level` (auto-derive a floor with `review_tier.py`; escalate on judgment

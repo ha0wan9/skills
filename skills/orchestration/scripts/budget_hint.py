@@ -15,7 +15,8 @@ has no token/runtime fields; adding them + collecting actuals is a separate late
 Usage:
     budget_hint.py --task <tier>:<class>:<fanout>[:<label>] [--task ...] [--json] [--dollars]
 
-    <tier>   = cli | haiku | sonnet | opus | fable  (cli = no model = 0 tokens)
+    <tier>   = cli | haiku | sonnet | opus | fable  (Codex aliases: luna=sonnet,
+               terra=opus, sol=fable; cli = no model = 0 tokens)
     <class>  = mechanical | lint | edit | review | research | plan | hard | scaffold
                (lint≈mechanical, hard≈plan; any other value → default band, flagged with *)
     <fanout> = positive int (parallel copies of this task); default 1
@@ -25,6 +26,7 @@ Examples:
     budget_hint.py --task opus:hard:1 --task sonnet:review:4 --json
     budget_hint.py --task fable:plan:1 --task sonnet:edit:3 --dollars
     budget_hint.py --task haiku:lint:8 --task sonnet:edit:2 --task opus:plan:1
+    budget_hint.py --task luna:edit:2 --task terra:plan:1
 """
 from __future__ import annotations
 
@@ -74,6 +76,12 @@ TIER_PRICE: dict[str, float] = {
     "fable": 50.0,
 }
 
+TIER_ALIASES: dict[str, str] = {
+    "luna": "sonnet",
+    "terra": "opus",
+    "sol": "fable",
+}
+
 # Order-of-magnitude envelope around the expected value (the critic's non-predictive finding).
 LOW_MULT = 0.3
 HIGH_MULT = 3.0
@@ -87,7 +95,8 @@ def parse_task(spec: str) -> dict:
     parts = spec.split(":")
     if len(parts) < 2:
         raise ValueError(f"task '{spec}' must be tier:class[:fanout[:label]]")
-    tier = parts[0].strip().lower()
+    raw_tier = parts[0].strip().lower()
+    tier = TIER_ALIASES.get(raw_tier, raw_tier)
     cls = parts[1].strip().lower()
     fanout = 1
     label = ""
@@ -101,12 +110,16 @@ def parse_task(spec: str) -> dict:
     if len(parts) >= 4:
         label = ":".join(parts[3:]).strip()
     if tier not in TIER_FACTOR:
-        raise ValueError(f"unknown tier '{tier}' in '{spec}' (cli|haiku|sonnet|opus|fable)")
+        raise ValueError(
+            f"unknown tier '{raw_tier}' in '{spec}' "
+            "(cli|haiku|sonnet|opus|fable|luna|terra|sol)"
+        )
     band_known = cls in CLASS_BANDS
     band = CLASS_BANDS.get(cls, DEFAULT_BAND)
     expected = band * TIER_FACTOR[tier] * fanout
     return {
         "tier": tier,
+        "input_tier": raw_tier,
         "class": cls,
         "class_known": band_known,
         "fanout": fanout,
@@ -130,8 +143,9 @@ def hint(tasks: list[dict]) -> dict:
         expected_cost = _cost_usd(t["expected"], t["tier"])
         rows.append(
             {
-                "label": t["label"] or f"{t['tier']}:{t['class']}",
+                "label": t["label"] or f"{t['input_tier']}:{t['class']}",
                 "tier": t["tier"],
+                "input_tier": t["input_tier"],
                 "class": t["class"],
                 "class_known": t["class_known"],
                 "fanout": t["fanout"],

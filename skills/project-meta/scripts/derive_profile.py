@@ -51,11 +51,11 @@ def _model_tier(model_id: str | None) -> str:
     mid = (model_id or os.environ.get("CLAUDE_MODEL") or os.environ.get("ANTHROPIC_MODEL") or "").lower()
     if "haiku" in mid:
         return "haiku"
-    if "sonnet" in mid:
+    if "sonnet" in mid or "luna" in mid:
         return "sonnet"
-    if "opus" in mid:
+    if "opus" in mid or "terra" in mid:
         return "opus"
-    if "fable" in mid:
+    if "fable" in mid or "sol" in mid:
         return "fable"
     return "unknown"
 

@@ -39,7 +39,7 @@ it cannot drift from intent.
    prior DASH-08 co-reviews (current direction, acceptance-shape patterns that passed, recurring
    trim/staleness reasons). This sharpens the draft. (Guidance lives here, **not** in
    `repo_memory` — that is a 30-item-capped entry-point CLI, not a queryable index.)
-3. **Draft (fleet-tier sub-agent).** Dispatch a fleet-tier sub-agent (Claude: Sonnet; Codex: GPT-5.4) to draft the concrete requirement:
+3. **Draft (fleet-tier sub-agent).** Dispatch a fleet-tier sub-agent (Claude: Sonnet; Codex: Luna) to draft the concrete requirement:
    **scope · acceptance-shape · rough size**. It must **ask the operator** wherever ambiguous —
    never invent missing intent.
 4. **Confirm + apply.** On operator confirmation, apply:

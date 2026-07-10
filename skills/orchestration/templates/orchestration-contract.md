@@ -58,7 +58,7 @@ One row per task in the build plan's build order. `budget_hint` = the tier:class
 | <task — ITEM> | opus | serial | high | both | L2 | opus:plan:1 |
 | <task — ITEM> | cli | serial | low | none | L0 | cli:lint:1 |
 
-(`model_tier` values: `cli` · `haiku` · `sonnet` · `opus` · `fable` — see schema for usage rules.)
+(`model_tier` values: `cli` · `haiku` · `sonnet` · `opus` · `fable`; Codex budget lines may use aliases `luna` · `terra` · `sol` — see schema for usage rules.)
 
 ## Budget hint (non-predictive — "estimate, not a guarantee")
     python3 skills/orchestration/scripts/budget_hint.py --task sonnet:edit:1 --task opus:plan:1 --task cli:lint:1

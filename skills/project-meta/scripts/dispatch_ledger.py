@@ -84,7 +84,7 @@ REQUIRED_FIELDS = ("worker", "role", "verdict")
 # free-form field in the schema (see the decoupling comment on cmd_record) —
 # these sets are only used to WARN on out-of-vocabulary tokens at record time
 # and are never enforced as a hard validation.
-TIER_IDS = {"cli", "haiku", "sonnet", "opus", "fable", "gpt-5.4", "gpt-5.5"}
+TIER_IDS = {"cli", "haiku", "sonnet", "opus", "fable", "luna", "terra", "sol", "gpt-5.4", "gpt-5.5"}
 EFFORT_IDS = {"low", "medium", "high", "xhigh", "max"}
 
 # v2 capsule sub-fields required when schema_version >= 2
@@ -281,7 +281,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         "comment": args.comment or "",
         # Retro-inspect evidence (multi-agent-protocols.md "Retro-inspect promotion"):
         # task_type keys cross-run tier promotion; tier is the (model, effort) attempted,
-        # e.g. "sonnet/medium", "opus/max", "gpt-5.4/medium", or "gpt-5.5/max".
+        # e.g. "sonnet/medium", "luna/medium", "opus/max", "terra/max", or "sol/max".
         # Both optional + free-form so the ledger stays decoupled from any specific
         # tier vocabulary — --tier is soft-normalized (lowercase/trim, WARN on
         # out-of-vocabulary tokens) but never rejected; see _normalize_tier.
@@ -636,7 +636,7 @@ def main(argv: list[str] | None = None) -> int:
         "--tier",
         help=(
             "the (model, effort) attempted, e.g. 'sonnet/medium', "
-            "'opus/max', 'gpt-5.4/medium', or 'gpt-5.5/max'"
+            "'opus/max', 'luna/medium', 'terra/max', or 'sol/max'"
         ),
     )
     # v2 fields

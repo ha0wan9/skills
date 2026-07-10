@@ -244,7 +244,8 @@ atomic rewrite on each mutation (board.py-style O_EXCL lock + temp-file rename).
 
 - `target`: `null | "memory" | "hook" | "linter"` — where the lesson is wired
 - `target_path`: `null | str` — repo-relative path to the file that implements/enforces the lesson
-- `applies_below`: `null | "haiku" | "sonnet" | "opus" | "fable"` — tier filter; a lesson with
+- `applies_below`: `null | "haiku" | "sonnet" | "opus" | "fable"` — tier filter; Codex
+  model strings `luna`/`terra`/`sol` normalize to `sonnet`/`opus`/`fable`. A lesson with
   `applies_below=sonnet` is shown only when the session tier is BELOW sonnet (tier order:
   haiku < sonnet < opus < fable). `null` = always show.
 
@@ -481,15 +482,15 @@ silent session-model inheritance at dispatch time, per
 
 | # | Condition | Result |
 |---|---|---|
-| 1 | `model` present, haiku/sonnet-class (substring match) | silent |
-| 2 | `model` present, opus-class | one-line notice — escalation-tier dispatch (sanctioned ≤2/run) |
-| 3 | `model` present, fable/conductor-class | one-line notice — conductor-tier dispatch (≤1 unblock call/run) |
+| 1 | `model` present, haiku/sonnet/luna-class (substring match) | silent |
+| 2 | `model` present, opus/terra-class | one-line notice — escalation-tier dispatch (sanctioned ≤2/run) |
+| 3 | `model` present, fable/sol/conductor-class | one-line notice — conductor-tier dispatch (≤1 unblock call/run) |
 | 4 | `model` absent, `subagent_type` ∈ {general-purpose, claude} or absent/empty | WARN — dispatch inherits the session model |
 | 5 | `model` absent, any other `subagent_type` (Explore/Plan/custom/plugin) | short notice — the type likely pins its own model in frontmatter |
 
 A present-but-non-string `model`, or a non-string `subagent_type`, is treated as
 custom/unknown and routed down the same notice/WARN paths above (never a crash).
-An unrecognized non-empty model string (no haiku/sonnet/opus/fable/conductor
+An unrecognized non-empty model string (no haiku/sonnet/luna/opus/terra/fable/sol/conductor
 substring) gets its own one-line "unrecognized model tier" notice.
 
 **Advisory-only rationale (no deny path in v1):** the PreToolUse payload for

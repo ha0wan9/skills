@@ -134,9 +134,13 @@ case "$PROFILE" in
       # Pass model tier when discoverable from environment
       _les_tier=""
       if [[ -n "${CLAUDE_MODEL:-}" ]]; then
-        # Map model string to tier: haiku/sonnet/opus/fable (best-effort substring match)
+        # Map model string to tier: haiku/sonnet/opus/fable plus Codex luna/terra/sol aliases
+        # (best-effort substring match)
         _les_model_lc="$(printf '%s' "$CLAUDE_MODEL" | tr '[:upper:]' '[:lower:]')"
         case "$_les_model_lc" in
+          *luna*)   _les_tier="sonnet" ;;
+          *terra*)  _les_tier="opus"   ;;
+          *sol*)    _les_tier="fable"  ;;
           *haiku*)  _les_tier="haiku"  ;;
           *sonnet*) _les_tier="sonnet" ;;
           *opus*)   _les_tier="opus"   ;;

@@ -109,12 +109,12 @@ DEFAULT_HOSTS = [h for h in HOSTS if h != "codex-subagents"]
 # the default model tier policy.
 CODEX_TIER_POLICY = (
     "# Codex model-tier policy mirrors Claude's multi-tier structure:\n"
-    "# - fleet/default: GPT-5.4 (Claude equivalent: Sonnet)\n"
-    "# - escalation/synth: GPT-5.5 (Claude equivalent: Opus)\n"
-    "# - conductor/session: active session model, GPT-5.5 when available "
+    "# - fleet/default: Luna (Claude equivalent: Sonnet)\n"
+    "# - escalation/synth: Terra (Claude equivalent: Opus)\n"
+    "# - conductor/session: active session model, Sol when available "
     "(Claude equivalent: Fable)\n"
     "# If your Codex CLI version supports per-agent model keys, set bounded "
-    "fan-out roles to GPT-5.4 and use GPT-5.5 only when the brief explicitly "
+    "fan-out roles to Luna and use Terra/Sol only when the brief explicitly "
     "records a demonstrated fleet shortfall or synth/conductor slot.\n\n"
 )
 CODEX_SUBAGENT_ROLES: dict[str, str] = {
@@ -124,7 +124,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'role = "explorer"  # read-only; never edits files\n'
         'description = "Read-only exploration and narrow Q&A. Returns findings only."\n'
         'instructions = """\n'
-        'You are an Explorer (read-only). Default to the Codex fleet tier (GPT-5.4)\n'
+        'You are an Explorer (read-only). Default to the Codex fleet tier (Luna)\n'
         'for bounded exploration unless the brief explicitly assigns another tier.\n'
         'Answer the narrow question in your brief.\n'
         'Do NOT edit files. Return findings only. See AGENTS.md and the project\n'
@@ -138,7 +138,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'role = "worker"  # read-write; edits ONLY the files named in the brief\n'
         'description = "Bounded editor. Edits only its assigned write-set, returns a patch summary."\n'
         'instructions = """\n'
-        'You are a Worker. Default to the Codex fleet tier (GPT-5.4) for bounded\n'
+        'You are a Worker. Default to the Codex fleet tier (Luna) for bounded\n'
         'fan-out work unless the brief explicitly records an escalation slot.\n'
         'Edit ONLY the files your brief assigns (its write-set).\n'
         'Do not expand scope, refactor adjacent code, or add dependencies. Produce\n'
@@ -156,7 +156,7 @@ CODEX_SUBAGENT_ROLES: dict[str, str] = {
         'description = "Reviews a worker diff against its brief. Returns PASS / SUGGEST / BLOCKER."\n'
         'instructions = """\n'
         'You are a Reviewer with fresh context. Default to the Codex fleet tier\n'
-        '(GPT-5.4); use GPT-5.5 only for an explicit escalation/synth slot in the\n'
+        '(Luna); use Terra/Sol only for an explicit escalation/synth slot in the\n'
         'brief. You see only the brief, the diff, and\n'
         'the success criterion — not the conductor context. Return one verdict:\n'
         'PASS | SUGGEST | BLOCKER. BLOCKER is a synchronous halt: stop the chain and\n'

@@ -11,9 +11,9 @@
 # session-default resolution chain, so a deny would false-positive on legitimate
 # flows). The hook is stateless — it never queries the ledger.
 #
-#   1. model present, haiku/sonnet-class (substring match)      → silent
-#   2. model present, opus-class                                → notice
-#   3. model present, fable/conductor-class                     → notice
+#   1. model present, haiku/sonnet/luna-class (substring match) → silent
+#   2. model present, opus/terra-class                          → notice
+#   3. model present, fable/sol/conductor-class                 → notice
 #   4. model absent, subagent_type generic/unset                → WARN
 #   5. model absent, subagent_type other (Explore/Plan/custom)  → short notice
 #
@@ -48,11 +48,11 @@ def classify(model):
     if not isinstance(model, str) or not model.strip():
         return None
     m = model.lower()
-    if "haiku" in m or "sonnet" in m:
+    if "haiku" in m or "sonnet" in m or "luna" in m:
         return "silent"
-    if "opus" in m:
+    if "opus" in m or "terra" in m:
         return "opus"
-    if "fable" in m or "conductor" in m:
+    if "fable" in m or "sol" in m or "conductor" in m:
         return "fable"
     return "unknown-model"
 
@@ -115,7 +115,7 @@ case "$tag" in
     exit 0
     ;;
   warn-generic)
-    echo "[dispatch-tier-guard] WARN: dispatch inherits the session model — fleet default is sonnet; pass model:'sonnet' or confirm the agent definition pins a model (invisible to this hook)" >&2
+    echo "[dispatch-tier-guard] WARN: dispatch inherits the session model — fleet default is sonnet/luna; pass model:'sonnet' (Claude) or model:'luna' (Codex), or confirm the agent definition pins a model (invisible to this hook)" >&2
     exit 0
     ;;
   notice-other-type)
