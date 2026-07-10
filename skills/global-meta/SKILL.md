@@ -1,7 +1,7 @@
 ---
 name: global-meta
 description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and their <name> profiles). create — new config profile (dir, plugins symlink, launcher, optional memory seed) for either runtime; status — read-only inventory of profiles, plugins, hooks, launchers, context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope, cache-version-mismatch), optionally emitting a reviewable remediation script; snapshot/restore — ledger the three config stores. Config-root corruption or incidents route to meta-debug via the audit case file. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/snapshot/restore/reconcile their global config across profiles.
-metadata: {version: 1.2.2, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.3, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -119,7 +119,7 @@ If arbitration is unclear, ask before acting. Never silently invoke two skills.
 2. **Choose launcher form** — simple (default) or `--isolated`.
 3. **Run (dry-run first if unsure):**
    ```bash
-   python3 skills/global-meta/scripts/create_profile.py --dry-run [--runtime claude|codex] <name>
+   python3 skills/global-meta/scripts/create_profile.py --dry-run [--runtime claude|codex] <name>  # (enforcement: manual)
    python3 skills/global-meta/scripts/create_profile.py [--runtime claude|codex] [--isolated] [--seed-from <profile>] <name>
    ```
 4. **Confirm output** — the script prints every action; verify `ls -la ~/.<rt>-<name>/`.

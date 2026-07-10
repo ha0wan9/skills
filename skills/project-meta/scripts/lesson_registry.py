@@ -154,6 +154,8 @@ FROZEN_PROTECTED_BASENAMES = {
     "skill_architecture_lint.py", "trigger_collision_check.py",
     "context_cost_estimate.py", "determinism_gap_scan.py",
     "cross_skill_redundancy.py",
+    # the critic catalog itself (amended E2(b) derivation)
+    "skill-critics.md",
     # hook pack
     "verify-before-stop.sh", "load-agents-md.sh", "board-guard.sh",
     "pre-tool-guard.sh", "dispatch-tier-guard.sh", "format-on-edit.sh",
@@ -468,17 +470,27 @@ def _resolve_pm_dir() -> Path | None:
     return None
 
 
-def _protected_basenames() -> set[str]:
+def _protected_basenames(root: Path | None = None) -> set[str]:
     """Derive the protected grader/hook file set from the installed project-meta
-    (so new gates are protected automatically); fall back to the frozen list."""
-    pm = _resolve_pm_dir()
-    if pm is None:
-        return set(FROZEN_PROTECTED_BASENAMES)
+    (so new gates are protected automatically); fall back to the frozen list.
+    When `root` carries a marketplace manifest (.claude-plugin/marketplace.json —
+    the dev-repo case), also protect every plugin-declared agents/*.md (domain
+    critics, amended E2(b) derivation) so a lesson cannot target a critic agent
+    unprotected."""
     derived: set[str] = set()
-    with contextlib.suppress(OSError):
-        derived |= {p.name for p in (pm / "scripts").glob("*.py")}
-    with contextlib.suppress(OSError):
-        derived |= {p.name for p in (pm / "templates" / "hooks" / "scripts").glob("*.sh")}
+    pm = _resolve_pm_dir()
+    if pm is not None:
+        with contextlib.suppress(OSError):
+            derived |= {p.name for p in (pm / "scripts").glob("*.py")}
+        with contextlib.suppress(OSError):
+            derived |= {p.name for p in (pm / "templates" / "hooks" / "scripts").glob("*.sh")}
+    if root is not None:
+        manifest = root / ".claude-plugin" / "marketplace.json"
+        if manifest.is_file():
+            with contextlib.suppress(OSError, ValueError, KeyError, TypeError, AttributeError):
+                for plugin in json.loads(manifest.read_text(encoding="utf-8")).get("plugins", []):
+                    for agent_rel in plugin.get("agents") or []:
+                        derived.add(Path(agent_rel).name)
     return derived | set(FROZEN_PROTECTED_BASENAMES)
 
 
@@ -740,7 +752,7 @@ def cmd_status(args: argparse.Namespace) -> int:
                 note_pool.append(args.note)
             probe = dict(row)
             probe["notes"] = note_pool
-            prot_err = _check_protected(probe, _protected_basenames())
+            prot_err = _check_protected(probe, _protected_basenames(root))
             if prot_err:
                 raise SystemExit(f"cannot apply transition: {prot_err}")
 
@@ -942,7 +954,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
     errors: list[str] = []
     warnings: list[str] = []
-    protected = _protected_basenames()
+    protected = _protected_basenames(root)
 
     ids_seen: set[str] = set()
     for row in rows:

@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.27.0, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.28.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta
@@ -35,7 +35,7 @@ Do not use the skill for ordinary implementation work that touches none of the a
 4. Inspect shared docs lightly (title, TOC, heading map); read fully only when short or directly relevant.
 5. Read the canonical user-preference file when it exists.
 6. Load `templates/*.md` only when instantiating or reviewing artifacts; load references per *When To Load References* below.
-7. Near session start, when the repo carries git worktrees, run the Worktree Trim Contract: `python3 scripts/worktree_audit.py --target-root . --base <base>`, then trim stale, surface in-progress, route mergeable.
+7. Near session start, when the repo carries git worktrees, run the Worktree Trim Contract: `python3 scripts/worktree_audit.py --target-root . --base <base>` (enforcement: advisory), then act per disposition.
 
 ## Core Rules
 
@@ -80,7 +80,7 @@ If an arbitration is unclear, ask the user before invoking either skill. Never s
 - **`USER.template.md` is a skill-layer questionnaire, not a target-repo file** — render selections into ignored local `USER.md` via `scripts/render_user_preferences.py`.
 - **`templates/*.md` are skill-level seeds, not a target-repo template library** — instantiate at semantic project paths (`agents/delegation.md`, …), never a generic `agents/templates/` directory.
 - **Every instantiated artifact carries a YAML provenance frontmatter block** (`artifact_name`, `instantiated_from`, `source_reference`, `project_scope`, `owner`, `review_policy`, `last_reviewed`) — never strip these fields; the manifest and audit checks rely on them.
-- **`scripts/validate_project_meta.py` is the dev-repo validator** (not shipped; needs a git working tree). The validator that ships with the skill is `scripts/validate_target_harness.py`.
+- **`scripts/validate_project_meta.py` is the dev-repo validator** (not shipped; needs a git tree). The shipped validator is `scripts/validate_target_harness.py` (enforcement: manual).
 - **Mirror roles depend on tool context** — always detect the primary tool before syncing; write durable rules into topical files, not into the loader.
 - **`/project-meta init` does not depend on existing `USER.md`** — ask for preset and checklist selection first, then render `USER.md`.
 
@@ -132,7 +132,7 @@ Cross-cutting policy (route contract, reserved verbs, shared rules, footer contr
 | Author/audit a skill; scaffold from `templates/SKILL.template.md` | [writing-skills](references/writing-skills.md) + [skill-critics](references/skill-critics.md) — the publish gate |
 | Install/diagnose phase-lock workflow gates | `templates/phase-lock-contract.md`; verify via `python3 scripts/phase_lock_check.py --harness-dir <repo>/.harness` (also the Stop-hook payload) |
 | Hooks pack, `HARNESS_PROFILE`, hook payloads (receipt/lesson/guards/env-probe), elastic profiles | `templates/hooks/README.md` (+ `scripts/derive_profile.py` for elastic resolution) |
-| Lint canonical memory for stale citations | `python3 scripts/memory_staleness.py --target-root <repo>` (advisory leg of `validate`/`audit`) |
+| Lint canonical memory for stale citations | `python3 scripts/memory_staleness.py --target-root <repo>` (enforcement: advisory) — a validate leg |
 | Wire/audit an external issue tracker (Linear/GitHub/Jira) | [issue-tracking-integration](references/issue-tracking-integration.md), then `templates/issue-tracking.md`; `init --issue-tracker <tracker>` / `settings enable` |
 | Wire/audit a code-knowledge-graph engine | [code-graph-integration](references/code-graph-integration.md), then `templates/code-graph.md`; `init --code-graph` / `settings enable` |
 | Deterministic parallel-branch landing; merge-tax diagnosis | [land-queue-integration](references/land-queue-integration.md), then `templates/land-queue.md` + `templates/land/land.sh`; `init --land-queue` / `settings enable` |
@@ -140,9 +140,9 @@ Cross-cutting policy (route contract, reserved verbs, shared rules, footer contr
 | Project Board CRUD or board enforcement | [project-board-crud](references/project-board-crud.md) — `board.py` is the only writer; scaffold via `init --board` |
 | Mirror board rows to Linear | [linear-mirror](references/linear-mirror.md) + `recipes/mirror-linear.md`; push-only, interactive-only — never live-push headless |
 | Per-host manifests from canonical memory; mirror drift | [multi-host-manifests](references/multi-host-manifests.md); `scripts/render_host_manifests.py` (`--dry-run` previews) |
-| Pressure-test MUST-rules; design scenarios for a new MUST | [pressure-testing](references/pressure-testing.md); fixture `templates/pressure-test-scenarios.json`; run `scripts/pressure_test_skill.py` |
+| Pressure-test MUST-rules; design scenarios for a new MUST | [pressure-testing](references/pressure-testing.md); fixture `templates/pressure-test-scenarios.json`; run `scripts/pressure_test_skill.py` (enforcement: manual) |
 | Plan/milestone risk score → review-tier floor + readiness | [review-tier](references/review-tier.md) "Plan-time risk rubric"; `python3 scripts/risk_score.py --scope N … --reversibility N` (advisory) |
-| Trim/route git worktrees at session start | [worktree-hygiene](references/worktree-hygiene.md) + `scripts/worktree_audit.py` |
+| Trim/route git worktrees at session start | [worktree-hygiene](references/worktree-hygiene.md) |
 
 ## Output Footer
 

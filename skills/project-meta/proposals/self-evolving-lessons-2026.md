@@ -1,8 +1,9 @@
 # Proposal: self-evolving lesson lifecycle (2026-07) → skill updates
 
-> **Status:** Revised (v2) — adversarial critic panel (4 lenses: mechanism-correctness,
-> reward-hacking, redundancy/lightweight-design, cost/complexity) returned **NO_GO on v1**;
-> this revision folds every BLOCKER/MAJOR finding. Awaiting operator GO for implementation.
+> **Status:** Partially shipped (2026-07-10) — **E0–E3** built and landed as v0.11 via PR #74
+> (project-meta 1.27.0, DASH-072..075 done; incl. adversarial + fix-verify review fixes).
+> E4–E7 remain proposed. Design history: v2 after a 4-lens adversarial panel (NO_GO on v1).
+> Shipped mapping: E0=DASH-072, E1=DASH-073, E2=DASH-074, E3=DASH-075 (v0.11 milestone closed).
 > **Scope:** benchmark the marketplace's self-evolution machinery (lesson registry, memory
 > write-back, dispatch telemetry) against the 2025–2026 self-evolving-agent literature;
 > propose 1 bug fix + 7 prioritized updates (E0–E7).
@@ -181,10 +182,28 @@ must be derived, not hand-typed.
 - (b) **Protected-paths leg** (¶2, DGM incident): `validate` FAILs any lesson whose
   `target_path` or `scope_paths` point at the machinery that grades lessons. The list is
   **derived programmatically**, not enumerated by hand (panel BLOCKER): the union of
-  every script `verify-before-stop.sh` resolves, everything under
-  `templates/hooks/scripts/`, the lesson store + lock files, and the critic scripts from
-  `skill-critics.md`'s suite table. Override requires a note with the exact prefix
+  (i) every `agents/*.md` listed in each plugin's `agents` array in
+  `.claude-plugin/marketplace.json`, (ii) `skill-critics.md` itself, and (iii) the five
+  deterministic critic scripts enumerated in `skill-critics.md`'s Deterministic Critics
+  sections — `trigger_collision_check.py`, `context_cost_estimate.py`,
+  `determinism_gap_scan.py`, `cross_skill_redundancy.py`, `skill_architecture_lint.py`
+  (parse the section headings or hand-list them; either derivation is acceptable, but all
+  five MUST be included — E0 makes two of them lesson-promotion graders, and a grader must
+  not itself be lesson-targetable). Override requires a note with the exact prefix
   `verifier_ack:` (specified format, matched literally — panel MINOR).
+
+  *Note (2026-07-10): this replaces the earlier "parse Suite Overview rows 6–7"
+  derivation — those two hardcoded per-skill rows collapsed into one generic
+  owning-skill-self-declaration row (task C1), so the protected-paths leg can no longer
+  enumerate agent paths from that table and instead derives them from the marketplace
+  manifest's `agents` arrays.*
+
+  *Implementation state (2026-07-10): PR #74 shipped `_protected_basenames()` deriving
+  from the installed project-meta's `scripts/*.py` + hook scripts + a frozen fallback —
+  covering leg (iii) automatically. Legs (i) and (ii) landed in the follow-up 1.28.0
+  change: the derivation now also reads each plugin's `agents` array from
+  `.claude-plugin/marketplace.json` when the target root carries one (dev-repo case),
+  and `skill-critics.md` joined the frozen set.*
 
 ### E3 — Symmetric demotion + scheduled trim (feat, project-meta)
 
@@ -274,8 +293,12 @@ lesson whose statement generalizes beyond the repo (operator judgment, aided by 
 E0-fixed statement-vs-tree redundancy check run against the *marketplace* skill tree),
 emit a board-inbox draft **for this marketplace's repo** proposing the lesson as a
 SKILL.md/references edit to the owning skill — the Trace2Skill universal-vs-niche split:
-universal rules climb to the skill, repo quirks stay in `.harness/`. Transport is the
-existing board inbox + ship flow; no new sync store, no automation of the judgment call.
+universal rules climb to the skill, repo quirks stay in `.harness/`. Prefer a
+`references/*.md` target unless the lesson is genuinely router-worthy: router SKILL.md
+bodies carry an on-invoke token ceiling (`context_cost_estimate.py --max-invoke-tokens
+--fail-on-invoke`, live since 1.25.0/1.26.0) — run it on the draft target before filing
+the inbox item. Transport is the existing board inbox + ship flow; no new sync store,
+no automation of the judgment call.
 
 ## 3. Explicitly out of scope (researched, rejected)
 

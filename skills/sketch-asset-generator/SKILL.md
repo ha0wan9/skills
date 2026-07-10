@@ -1,7 +1,7 @@
 ---
 name: sketch-asset-generator
 description: Generate modular, reusable, original visual asset packs from user-provided design sketches, wireframes, whiteboard photos, Figma or Sketch screenshots, UI mocks, moodboards, or existing UI source (CSS, SVG, components). Prefer extracting assets from user-owned resources (tokens, vectors, component code); use GPT Image only when an asset cannot be extracted. Use when turning sketches or source UI into design-system-ready assets, asset-pack.yaml briefs, design tokens, SVG and component primitives, manifests, contact sheets, or validation reports, using public design systems only as structural references and never copying third-party brand visuals. Works whether the agent is Claude or Codex.
-metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.2.2, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Sketch Asset Generator
@@ -40,7 +40,7 @@ Read before acting:
 
 - **Calling GPT Image before `validate_asset_pack.py` silently skips the originality check.** The validator must run first; image generation without a passing validation is a policy violation regardless of output quality.
 - **Missing sketch reference breaks manifest traceability.** Every asset entry in `manifest.json` must carry a `sketch_refs` value. An empty array is accepted only when the asset is extracted purely from code with no sketch source — document why.
-- **`render_contact_sheet.py` depends on `manifest.json` being present and valid.** Running it before the manifest is written produces an empty or malformed contact sheet with no error. Always write the manifest first.
+- **`render_contact_sheet.py` depends on `manifest.json` being present and valid.** Running it before the manifest is written produces an empty or malformed contact sheet with no error. Always write the manifest first. (enforcement: advisory)
 - **Public design-system structure notes are not licenses.** `examples/public-design-systems/structure-notes.md` documents taxonomy patterns only; loading it does not authorize copying any visual from those systems.
 - **No sketch provided ≠ skip intake.** Even when the user provides only text or a brief, run the intake inventory to surface missing inputs before acting. Skipping intake causes silent gaps in the final manifest.
 
@@ -48,11 +48,11 @@ Read before acting:
 
 1. **Intake** — inventory sketches and source resources; load [references/sketch-intake.md](references/sketch-intake.md). If inputs are missing, produce draft YAML + question list only.
 2. **Brief** — build or update `asset-pack.yaml` from [templates/asset-pack.yaml](templates/asset-pack.yaml); use [references/public-case-model.md](references/public-case-model.md) for module taxonomy.
-3. **Validate** — run `python3 scripts/validate_asset_pack.py <asset-pack.yaml>`; stop on errors.
+3. **Validate** — run `python3 scripts/validate_asset_pack.py <asset-pack.yaml>`; stop on errors. (enforcement: manual)
 4. **Extract** (default) — load [references/direct-extraction-workflow.md](references/direct-extraction-workflow.md); extract tokens from CSS/source, vectorize to SVG, author component assets. Set `generation.provider: direct-extraction`, `model: none`.
 5. **Generate** (fallback only) — when extraction is impossible and image-generation access exists, load [references/gpt-image-workflow.md](references/gpt-image-workflow.md) and record the reason in the manifest.
 6. **Package** — save tokens under `tokens/`, vectors/components under `assets/`, raster exports under `dist/`. Write `manifest.json` and `validation.md`.
-7. **Contact sheet** — run `python3 scripts/render_contact_sheet.py <manifest.json> --output <contact-sheet.svg>` after manifest is written.
+7. **Contact sheet** — run `python3 scripts/render_contact_sheet.py <manifest.json> --output <contact-sheet.svg>` after manifest is written. (enforcement: manual)
 
 ## When To Load References
 

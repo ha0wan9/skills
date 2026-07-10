@@ -45,6 +45,40 @@ Restructure repo memory when:
 - repeated mistakes show that a rule needs stronger routing, examples, or mechanical enforcement
 - project work repeatedly requires ad hoc planning, context packaging, or review
 
+## Determinism-Gap Enforcement Tags
+
+`scripts/determinism_gap_scan.py` (AP-VAL-1/2) flags prose rules that name a
+backing script but that no hook actually invokes. Not every such rule is a
+real gap — some are deliberately manual. Mark the honest state inline:
+
+```
+(enforcement: manual|advisory|hook|stop-gate|ci)
+```
+
+Place the tag on the flagged rule line itself, or on the physical line
+immediately following it (bounded to +1 — no farther).
+
+- `manual` — a command a human or agent deliberately runs (e.g. a
+  workflow step, a one-off migration); never intended to be hook-fired.
+- `advisory` — a session-start or best-effort leg that informs but does not
+  block (e.g. a lint that surfaces findings without gating).
+- `hook` / `stop-gate` / `ci` — intended to be enforced mechanically. These
+  behave like an untagged line: the scan still checks actual hook wiring
+  and reports GAP until one exists. Tagging documents intent; it does not
+  by itself close the gap.
+- Untagged — unchanged default: GAP when the script exists and no hook
+  invokes it.
+
+`manual`/`advisory` downgrade a GAP to INFO. `hook`/`stop-gate`/`ci` (and
+untagged) stay GAP until a hook is wired.
+
+**CONFLICT rule:** a rule line containing a MUST-ASSERTION cannot honestly be
+marked `manual` or `advisory` — a hard MUST names a real gate, not a
+best-effort leg. Tagging one is reported as CONFLICT and fails `--strict`. A
+MUST-ASSERTION is a bold `**MUST**` or a line-initial/imperative `MUST`
+token; mentions such as "MUST-rules" or "a new MUST" are not assertions and
+never trigger the check.
+
 ## Output Pattern
 
 When improving a project harness:
