@@ -101,17 +101,30 @@ diff <(sed '/^<!--.*generated.*-->/d' AGENTS.md) <(sed '/^<!--.*generated.*-->/d
 grep -L 'instantiated_from:' agents/*.md 2>/dev/null
 
 # capability registry probe (all 6 entries — name + detection globs come from
-# capabilities.json; resolve project-meta's own dir per references/shared-cli-delegation.md,
-# or set $PROJECT_META_DIR explicitly)
-python3 -c "
-import glob, json, os
-paths = (glob.glob(os.path.join(os.environ.get('PROJECT_META_DIR', ''), 'capabilities.json'))
-         or glob.glob('**/skills/project-meta/capabilities.json', recursive=True))
-reg = json.loads(open(paths[0]).read()) if paths else []
-for cap in reg:
+# capabilities.json inside the INSTALLED project-meta; resolve via the canonical
+# dual-runtime probe order from references/shared-cli-delegation.md)
+pm_dir=""
+for c in "${PROJECT_META_DIR:-}" \
+         "$HOME/.codex/skills/project-meta" \
+         "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
+         "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+         "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.codex/plugins/cache/*/project-meta/* \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*; do
+  [ -n "$c" ] && [ -f "$c/capabilities.json" ] && { pm_dir="$c"; break; }
+done
+if [ -n "$pm_dir" ]; then
+  python3 -c "
+import glob, json, sys
+for cap in json.load(open(sys.argv[1])):
     hits = [g for g in cap['detection'] if glob.glob(g)]
     print(f\"{cap['name']:<14} {'on' if hits else 'off':<4} {hits}\")
-"
+" "$pm_dir/capabilities.json"
+else
+  echo "capabilities.json not found in any project-meta install — report the degradation, fall back to the prose checklist above"
+fi
 
 # project board (if present) — read-only integrity + counts
 [ -f docs/backlog/items.jsonl ] && python3 scripts/board.py tx --root .
