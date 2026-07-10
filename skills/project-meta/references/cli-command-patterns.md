@@ -82,6 +82,15 @@ Promotion path: when a reserved command sees consistent demand and a stable work
 - **Delivery before commit**: editing commands MUST show a delivery (via the `deliver` recipe contract) before any commit when user-facing docs, agent-facing docs, trigger behavior, or validation changes.
 - **Local USER.md**: use only after it exists. During `init`, ask for preset selection first (AP-LIFE-1).
 - **Subagent dispatch**: when an editing recipe touches ≥2 of {AGENTS.md, agents/*.md, mirrors, templates}, MUST dispatch per-file edits to fresh subagents with a reviewer between (AP-COORD-1, AP-COORD-2). Detail in [`multi-agent-protocols.md`](multi-agent-protocols.md).
+- **Output footer + machine counterpart**: every invocation ends with the one-line
+  `project-meta/<verb> done — …` footer (format in `SKILL.md`). The prose line is for humans;
+  an **editing** verb (`init`, `plan`, `roadmap`, `refine`, `settings`, `mirror-linear`) must
+  additionally persist the machine counterpart by writing `.harness/last-turn-meta.json` at
+  completion via
+  `python3 scripts/last_turn_meta.py --target-root <repo> write --verb <verb> --review-tier <L0|L1|L2|L3> --read-pattern <minimal|context-mapping> [--files-written N] [--files-read N] [--memory-updated] [--delivery-shown]`.
+  The Stop hook's last-turn-meta gate checks this file (presence + required keys) without
+  grepping the transcript — it fires only when the turn changed a harness file, so read-only
+  verbs need not write it.
 
 ## Implementation Risks
 
