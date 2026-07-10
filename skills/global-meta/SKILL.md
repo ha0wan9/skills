@@ -1,7 +1,7 @@
 ---
 name: global-meta
-description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin — all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE — create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status — read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix — write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore — ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) — drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.
-metadata: {version: 1.2.1, compat: [claude-code, codex], published: [claude-marketplace]}
+description: Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and their <name> profiles). create — new config profile (dir, plugins symlink, launcher, optional memory seed) for either runtime; status — read-only inventory of profiles, plugins, hooks, launchers, context-tax; audit — four-way consistency findings (stale-enablement, wrong-scope, dup-scope, cache-version-mismatch), optionally emitting a reviewable remediation script; snapshot/restore — ledger the three config stores. Config-root corruption or incidents route to meta-debug via the audit case file. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/snapshot/restore/reconcile their global config across profiles.
+metadata: {version: 1.2.2, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # global-meta
@@ -73,9 +73,16 @@ engine (user-gated). Reference it generically ("scripted-engine tier").
 co-writers; global-meta audits/promotes across lanes, never claims sole authorship.
 
 **MUST delegate harness logic to `project-meta`, never vendor.** Resolve it
-(`$PROJECT_META_DIR` → `~/.claude/skills/project-meta` → `~/.claude/plugins/{marketplaces/*/skills,cache/*/*/*/skills,cache/*/project-meta/*}/project-meta`)
-and call its scripts; carry a thin floor if absent. See
-`project-meta/references/shared-cli-delegation.md`.
+dual-runtime — `$PROJECT_META_DIR` override, then personal-skill locations for
+both runtimes (`~/.codex/skills/project-meta`, `~/.claude/skills/project-meta`),
+then each runtime's marketplace checkout (`~/.codex/plugins/marketplaces/*/skills/project-meta`,
+`~/.claude/plugins/marketplaces/*/skills/project-meta`), then old- and
+new-layout plugin caches for both (`~/.codex/plugins/cache/*/*/*/skills`,
+`~/.claude/plugins/cache/*/*/*/skills`, and their `cache/*/project-meta/*`
+equivalents) — and call its scripts; carry a thin floor if absent. The
+canonical resolver order lives in
+[`verify-before-stop.sh`](../project-meta/templates/hooks/scripts/verify-before-stop.sh);
+see `project-meta/references/shared-cli-delegation.md` for the delegation contract.
 
 Default: claude runtime; **simple** launcher form (inherits env) unless the user
 asks for `--isolated`. The claude leg reproduces former `profile-creator` behavior.

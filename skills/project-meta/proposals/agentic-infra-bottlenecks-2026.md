@@ -1,6 +1,8 @@
 # Proposal: agentic-coding infra bottlenecks (2026) → harness additions/refactors
 
-> **Status:** Proposed — awaiting operator GO + adversarial critic panel before any canon/code change.
+> **Status:** Shipped except P3/P7 (deferred). Maps to v0.6 "Agentic-infra hardening" milestone,
+> done (DASH-031,046,047,049,050,051).
+> Shipped mapping: DASH-031,046,047,049,050,051 (v0.6 milestone done); P3/P7 explicitly deferred.
 > **Scope:** map the 2025–2026 practitioner-reported infra bottlenecks of agentic coding onto
 > project-meta's capability surface; propose 7 prioritized additions/refactors (P1–P7).
 > **Grounding:** 6 parallel web-research agents (2026-06-12), one per bottleneck domain

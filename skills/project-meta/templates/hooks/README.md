@@ -60,7 +60,9 @@ For Codex, install globally with:
 python3 ~/.codex/skills/project-meta/scripts/install_codex_hooks.py
 ```
 
-The installer copies the scripts into `~/.codex/hooks/project-meta/`,
+(That's the personal-skill path; see `references/shared-cli-delegation.md`
+for the full dual-runtime resolver order if `project-meta` is installed as
+a plugin instead.) The installer copies the scripts into `~/.codex/hooks/project-meta/`,
 merges `SessionStart`, `PostToolUse`, and `Stop` entries into
 `~/.codex/hooks.json`, injects `PROJECT_META_DIR` so hooks resolve the
 Codex-installed skill, and preserves existing hooks. It does not pre-seed
@@ -120,7 +122,9 @@ Responsibilities (each self-skips when its artifact is absent):
 1. **Phase-lock check** when `.harness/phase-state.json` exists. Invokes
    `phase_lock_check.py` from the installed `project-meta` skill (path
    resolves via `$PROJECT_META_DIR`, `~/.codex/skills/project-meta/`, or
-   `~/.claude/skills/project-meta/`).
+   `~/.claude/skills/project-meta/`, plus each runtime's marketplace and
+   scoped-cache plugin tiers — full probe order in
+   `references/shared-cli-delegation.md`).
 2. **Project verifier** when `.harness/verify.sh` exists. The user
    defines what verification means for the project (test runner,
    linter, type-checker, integration suite — whatever is fast enough

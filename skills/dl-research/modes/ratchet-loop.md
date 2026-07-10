@@ -66,10 +66,16 @@ past it" rule — resume only by re-entry after the user resolves the block.
    marketplace):
 
    ```bash
+   # full dual-runtime set — see project-meta/references/shared-cli-delegation.md
    pm_dir=""
-   for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+   for c in "${PROJECT_META_DIR:-}" \
+            "$HOME/.codex/skills/project-meta" \
+            "$HOME/.claude/skills/project-meta" \
+            "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
             "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
+            "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
             "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+            "$HOME"/.codex/plugins/cache/*/project-meta/* \
             "$HOME"/.claude/plugins/cache/*/project-meta/*; do
      [ -n "$c" ] && [ -f "$c/scripts/loop_state.py" ] && { pm_dir="$c"; break; }
    done

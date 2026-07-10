@@ -73,11 +73,15 @@ python3 scripts/trigger_collision_check.py . [--ngram 3] [--min-shared 4]
 Splits each skill's token cost into **always-on** (frontmatter description,
 paid every session a plugin is enabled), **on-invoke** (SKILL.md body), and
 **lazy** (references + templates), mirroring Claude Code's per-component cost
-display. FAILs any description over `--max-desc-tokens` (default 200). Token
-counts are a `chars/N` estimate, not a real tokenizer.
+display. FAILs any description over `--max-desc-tokens` (default 200).
+`--max-invoke-tokens` (default 0 = disabled; recommend 4000 for a
+root/router skill, 3000 for ordinary ones) gates the on-invoke body — it's
+advisory (prints an `INVOKE>N` flag, exit code unchanged) unless paired with
+`--fail-on-invoke`. Token counts are a `chars/N` estimate, not a real
+tokenizer.
 
 ```bash
-python3 scripts/context_cost_estimate.py . [--max-desc-tokens 200]
+python3 scripts/context_cost_estimate.py . [--max-desc-tokens 200] [--max-invoke-tokens 4000] [--fail-on-invoke]
 ```
 
 ### 4. `determinism_gap_scan.py` — AP-VAL-1 / AP-VAL-2
