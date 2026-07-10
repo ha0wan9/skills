@@ -26,6 +26,7 @@ Checks (each PASS / WARN / FAIL):
 - every scripts/*.py exposes argparse (AP-SKL-4)           (WARN per script)
 - examples/ present when templates/ exist (AP-SKL-4)       (WARN)
 - prose loop declaration cites loop-contract.md             (WARN, never FAIL)
+- embedded project-meta resolver has dual-runtime parity    (WARN, never FAIL)
 
 The loop-marker check (`references/loop-contract.md`, DASH-059/060): a prose
 skill file (SKILL.md, recipes/*.md, modes/*.md, references/*.md) that reads
@@ -35,6 +36,17 @@ loop-contract.md WARNs. This is a precision heuristic, not a classifier: it
 never FAILs, and it is scoped to prose files only (not scripts, where the
 same vocabulary is normal implementation detail — see the known-non-matches
 in `--self-test`).
+
+The resolver-parity check (`references/shared-cli-delegation.md`, task A5): a
+line in skill markdown that names the project-meta install path
+(`.claude/skills/project-meta`, `.claude/plugins/.../project-meta`, or their
+`.codex` equivalents) is an embedded copy of the shared-CLI resolver. If the
+surrounding block (+-10 lines) shows neither a `.codex` path nor a
+scoped-cache (`plugins/cache/*/project-meta`) path, and never cites
+`shared-cli-delegation.md` (the canonical resolver), it WARNs — the snippet
+has likely drifted from the dual-runtime 8-glob set in
+`templates/hooks/scripts/verify-before-stop.sh`. Advisory only, and scoped to
+markdown — the canonical hook scripts are not linted here.
 
 Usage:
 
@@ -47,6 +59,7 @@ Exit: 0 = no FAIL, 1 = at least one FAIL, 2 = path could not be resolved.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -85,6 +98,21 @@ LOOP_MARKERS = (
     "loop budget",
 )
 LOOP_CONTRACT_CITATION_HINTS = ("loop-contract.md", "loop_contract")
+
+# Resolver-parity check (task A5): broad on purpose — a line naming either
+# runtime's personal-skill or plugin install path for project-meta. False
+# positives just WARN (advisory), never FAIL.
+RESOLVER_TRIGGER_RE = re.compile(r"\.(?:claude|codex)/skills/project-meta|\.(?:claude|codex)/plugins/\S*project-meta")
+RESOLVER_CODEX_RE = re.compile(r"\.codex/(?:skills/project-meta|plugins/\S*project-meta)")
+RESOLVER_SCOPED_CACHE_RE = re.compile(r"plugins/cache/\S*project-meta")
+RESOLVER_CITATION_HINT = "shared-cli-delegation"
+RESOLVER_WINDOW = 10  # lines of context on each side of a trigger line
+
+# Files carrying a deliberately partial resolver mention (e.g. a single
+# install command) rather than the full dual-runtime snippet, verified to
+# already point at the canonical doc — add entries as "skills/<skill>/<rel>"
+# when a real exception is confirmed, not to silence an unreviewed WARN.
+RESOLVER_PARITY_ALLOWLIST: tuple[str, ...] = ()
 
 
 @dataclass
@@ -207,6 +235,7 @@ def lint_skill(skill_dir: Path) -> list[Finding]:
             )
 
     findings.extend(loop_marker_findings(skill_dir))
+    findings.extend(resolver_parity_findings(skill_dir))
 
     return findings
 
@@ -252,6 +281,50 @@ def loop_marker_findings(skill_dir: Path) -> list[Finding]:
                     f"declares a loop (markers: {', '.join(hits)}) without citing loop-contract.md",
                 )
             )
+    return findings
+
+
+def resolver_parity_findings(skill_dir: Path) -> list[Finding]:
+    """WARN (never FAIL) on an embedded project-meta resolver snippet whose
+    surrounding block shows neither a Codex-tier path nor a scoped-cache path,
+    and does not cite shared-cli-delegation.md (the canonical resolver order,
+    project-meta/references/shared-cli-delegation.md). Scans all skill
+    markdown (not just the prose-file subset the loop-marker check uses),
+    since resolver snippets also live in templates/ and hook docs."""
+    findings: list[Finding] = []
+    for path in sorted(skill_dir.rglob("*.md")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        lines = text.splitlines()
+        trigger_idxs = [i for i, ln in enumerate(lines) if RESOLVER_TRIGGER_RE.search(ln)]
+        if not trigger_idxs:
+            continue
+        rel_label = f"skills/{skill_dir.name}/{path.relative_to(skill_dir).as_posix()}"
+        if rel_label in RESOLVER_PARITY_ALLOWLIST:
+            continue
+        # Merge trigger lines that share overlapping +-WINDOW context into
+        # one block so a multi-line resolver snippet is not double-counted.
+        blocks: list[list[int]] = []
+        for i in trigger_idxs:
+            lo, hi = max(0, i - RESOLVER_WINDOW), min(len(lines) - 1, i + RESOLVER_WINDOW)
+            if blocks and lo <= blocks[-1][1] + 1:
+                blocks[-1][1] = max(blocks[-1][1], hi)
+            else:
+                blocks.append([lo, hi])
+        for lo, hi in blocks:
+            block_text = "\n".join(lines[lo : hi + 1]).lower()
+            has_codex = bool(RESOLVER_CODEX_RE.search(block_text))
+            has_scoped_cache = bool(RESOLVER_SCOPED_CACHE_RE.search(block_text))
+            cites_canonical = RESOLVER_CITATION_HINT in block_text
+            if not has_codex and not has_scoped_cache and not cites_canonical:
+                findings.append(
+                    Finding(
+                        f"resolver parity: {rel_label}:{lo + 1}",
+                        "WARN",
+                        "embedded project-meta resolver has no .codex path, no scoped-cache "
+                        "path, and doesn't cite shared-cli-delegation.md — likely drifted "
+                        "from the dual-runtime resolver in verify-before-stop.sh",
+                    )
+                )
     return findings
 
 

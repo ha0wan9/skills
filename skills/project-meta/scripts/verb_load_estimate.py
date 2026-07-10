@@ -8,6 +8,13 @@ file as **base** (always loaded when the verb runs), **lazy** (loaded only when 
 specific step fires — under a `Lazy-load:` label), or **optional** (feature-flag
 gated — under an `Optional` label), and sums file sizes per tier.
 
+That alone understates real invocation cost: every verb also pays for the
+skill's `SKILL.md` router (loaded once per run, whichever verb fires) and for
+the recipe file itself (its own prose, read in full). This script adds those
+two as a **router** and **recipe** column and reports **initial** = router +
+recipe + base — the true first-load cost of invoking the verb, before any
+lazy/optional reference is pulled in.
+
 The point of staging (D4): keep each verb's **base** load small so invoking a verb
 does not eagerly pull every reference. The headline budget is `init` base <= 40 KB.
 
@@ -25,6 +32,11 @@ Parsing convention (the recipes' `## Required references` section):
     markdown link `[text](href)` (a single bullet may name more than one file,
     e.g. an `--flag` that loads two); bare code-span mentions are not counted, so
     a `scripts/x.py` invocation or an instantiated target artifact is ignored.
+
+The router is `SKILL.md` in the parent directory of the recipes dir passed on
+the command line (e.g. `skills/project-meta/recipes` -> `skills/project-meta/SKILL.md`);
+its size is computed once per run and added to every verb's row. If no such
+SKILL.md exists, router is counted as 0 bytes and a warning is printed.
 
 Dependency-free; sizes are real bytes (KB = bytes/1024). Token counts are a
 chars/N heuristic, not a tokenizer. Exit: 0 = every recipe's base within budget,
@@ -125,14 +137,26 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.path).expanduser()
     if root.is_dir():
         recipes = sorted(p for p in root.glob("*.md"))
+        recipes_dir = root
     elif root.is_file():
         recipes = [root]
+        recipes_dir = root.parent
     else:
         print(f"not a file or directory: {root}", file=sys.stderr)
         return 2
     if not recipes:
         print(f"no recipe .md files under {root}", file=sys.stderr)
         return 2
+
+    # Router: the skill's SKILL.md, one directory up from the recipes dir
+    # (e.g. skills/project-meta/recipes -> skills/project-meta/SKILL.md). Every
+    # verb pays for it once per invocation, so it's added to each row below.
+    router = recipes_dir.parent / "SKILL.md"
+    if router.is_file():
+        router_b = router.stat().st_size
+    else:
+        router_b = 0
+        print(f"warning: no SKILL.md found at {router} (router counted as 0 bytes)", file=sys.stderr)
 
     report = []
     over = 0
@@ -143,14 +167,20 @@ def main(argv: list[str] | None = None) -> int:
         base_b = sum(b for _, b in tiers["base"])
         lazy_b = sum(b for _, b in tiers["lazy"])
         opt_b = sum(b for _, b in tiers["optional"])
+        recipe_b = recipe.stat().st_size
+        initial_b = router_b + recipe_b + base_b
         verb = recipe.stem
         breached = kb(base_b) > args.budget_kb
         if breached:
             over += 1
         report.append({
             "verb": verb,
+            "router_kb": kb(router_b),
+            "recipe_kb": kb(recipe_b),
             "base_kb": kb(base_b),
             "base_tokens": (base_b + args.chars_per_token - 1) // args.chars_per_token,
+            "initial_kb": kb(initial_b),
+            "initial_tokens": (initial_b + args.chars_per_token - 1) // args.chars_per_token,
             "lazy_kb": kb(lazy_b),
             "optional_kb": kb(opt_b),
             "over_budget": breached,
@@ -164,14 +194,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"warning: unresolved reference (counted as 0 bytes): {m}", file=sys.stderr)
 
     if args.json:
-        print(json.dumps({"budget_kb": args.budget_kb, "recipes": report, "missing_refs": all_missing}, indent=2))
+        print(json.dumps({"budget_kb": args.budget_kb, "router_kb": kb(router_b), "recipes": report, "missing_refs": all_missing}, indent=2))
         return 1 if over else 0
 
-    print(f"{'verb':<14} {'base':>8} {'lazy':>8} {'optional':>9}  flag")
-    print("-" * 56)
+    print(f"{'verb':<14} {'router':>8} {'recipe':>8} {'base':>8} {'initial':>9} {'lazy':>8} {'optional':>9}  flag")
+    print("-" * 82)
     for r in report:
         flag = f"BASE>{args.budget_kb:g}KB" if r["over_budget"] else ""
-        print(f"{r['verb']:<14} {r['base_kb']:>7}K {r['lazy_kb']:>7}K {r['optional_kb']:>8}K  {flag}")
+        print(
+            f"{r['verb']:<14} {r['router_kb']:>7}K {r['recipe_kb']:>7}K {r['base_kb']:>7}K "
+            f"{r['initial_kb']:>8}K {r['lazy_kb']:>7}K {r['optional_kb']:>8}K  {flag}"
+        )
     print()
     print(f"summary: {len(report)} recipe(s), {over} over the {args.budget_kb:g}KB base budget")
     return 1 if over else 0

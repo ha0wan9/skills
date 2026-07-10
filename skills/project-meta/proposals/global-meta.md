@@ -1,14 +1,15 @@
 # Proposal: `global-meta` — a user/global-scope harness skill (superset of `profile-creator`, dual-runtime)
 
-> **Status:** Partially shipped — the `create` verb is **live** in `skills/global-meta/` 1.0.0 (2026-06-11; `profile-creator`
-> retired from marketplace, marketplace 2.0.x). Remaining verbs: verdict written back 2026-06-11 (see below).
+> **Status:** Shipped — `create`, `status`, `audit` (incl. `--emit-fix`), `snapshot`, and `restore`
+> are all **live** in `skills/global-meta/` 1.2.1 (`profile-creator` retired from marketplace).
 > - `create` — **LIVE** since 1.0.0 (profile-creator retired 2026-06-11, marketplace 2.0.0).
-> - `status` + `audit` — **APPROVED, build as v1.1** (DASH-039; `config_root_audit.py`; four-way consistency as first-class check; snapshot ledger; context-tax report; findings as `board.py inbox-add` lines).
+> - `status` + `audit` — **SHIPPED** as v1.1 (DASH-039; `config_root_audit.py`; four-way consistency as first-class check; snapshot ledger; context-tax report; findings as `board.py inbox-add` lines).
 > - `drift` — **FOLDED into `audit`** as a cross-profile section (2026-06-11; shared `~/.claude-shared` store eliminated most surface).
-> - `reconcile` — **SUPERSEDED by `audit --emit-fix` v1.2** (DASH-040; reviewable idempotent snapshot-guarded fix script; never auto-applies; borrowed from openclaw-devops transactional shape).
+> - `reconcile` — **SHIPPED, SUPERSEDED by `audit --emit-fix`** as v1.2 (DASH-040; reviewable idempotent snapshot-guarded fix script; never auto-applies; borrowed from openclaw-devops transactional shape).
 > - `settings enable/disable` — **CUT** (update-config/`/config` own leaf edits; cross-profile toggles ride the emitted fix script).
 > - `track` (dotfiles git) — **DEFERRED** (snapshot ledger covers rollback; revisit if diff-review demand materialises; secret-safety MUSTs stay).
 > - `deliver` — **unchanged** (reuses project-meta deliver as specified).
+> Shipped mapping: status+audit=v1.1/DASH-039; reconcile→audit --emit-fix=v1.2/DASH-040; current version 1.2.1.
 > **Board items:** DASH-039 (`status`+`audit` v1.1), DASH-040 (`reconcile`→`audit --emit-fix` v1.2), DASH-041 + DASH-042 (marketplace slimming / context-tax) — v0.5 milestone, see `docs/backlog/`.
 > **Build plan:** `docs/plans/global-meta-lifecycle-build-plan.md`.
 > **Scope:** a new top-level skill `skills/global-meta/` that **absorbs and deprecates `profile-creator`**, adds the

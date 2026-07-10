@@ -1,7 +1,7 @@
 ---
 name: project-meta
 description: "Bootstrap, audit, and evolve a repository agent-work harness via /project-meta commands — /project-meta init, status, validate, deliver, audit. Manages canonical memory (AGENTS.md), local USER.md preference presets, and an existing agent-facing documentation framework with user-facing delivery; instantiates canonical templates; sets trigger policy and behavior guardrails; coordinates multi-agent dispatch with pre-commit delivery; handles mirror sync, multi-host manifests, phase-lock gates, and skill-critic pressure-testing; promotes validated lessons into durable knowledge. Use when starting work in a repo, repairing repo memory, improving agent instructions, coordinating project work, authoring or auditing a skill, or turning validated lessons into durable harness updates."
-metadata: {version: 1.24.1, compat: [claude-code, codex], published: [claude-marketplace]}
+metadata: {version: 1.25.0, compat: [claude-code, codex], published: [claude-marketplace]}
 ---
 
 # Project Meta

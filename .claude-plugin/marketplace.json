@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.24.1",
+      "version": "1.25.0",
       "metadata": {
         "compat": [
           "claude-code",
@@ -49,7 +49,7 @@
     },
     {
       "name": "global-meta",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "metadata": {
         "compat": [
           "claude-code",
@@ -59,7 +59,7 @@
           "claude-marketplace"
         ]
       },
-      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and ~/.claude-<name>/~/.codex-<name> profiles). Replaces the retired profile-creator plugin \u2014 all its triggers (add/create/spin up a multi-claude profile, claude-X profile, isolated config dir) route here. LIVE \u2014 create a config profile for either runtime (config dir, plugins symlink, launcher in ~/.local/bin, optional memory seed); status \u2014 read-only inventory of profiles, plugins, hooks, launchers, and context-tax; audit \u2014 four-way consistency findings (stale-enablement, wrong-scope, dup-scope-records, cache-version-mismatch) with capture lines; audit --emit-fix \u2014 write a reviewable bash remediation script (dry-run by default, --apply to execute, snapshot before first mutation); snapshot/restore \u2014 ledger of the three config stores. ROADMAP (proposed, see proposals/global-meta.md) \u2014 drift/reconcile/settings/track for cross-profile drift and secret-safe dotfiles git. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/reconcile their global config across profiles.",
+      "description": "Bootstrap, audit, and evolve a user's GLOBAL Claude Code / Codex config root (~/.claude, ~/.codex, and their <name> profiles). create \u2014 new config profile (dir, plugins symlink, launcher, optional memory seed) for either runtime; status \u2014 read-only inventory of profiles, plugins, hooks, launchers, context-tax; audit \u2014 four-way consistency findings (stale-enablement, wrong-scope, dup-scope, cache-version-mismatch), optionally emitting a reviewable remediation script; snapshot/restore \u2014 ledger the three config stores. Config-root corruption or incidents route to meta-debug via the audit case file. Use when the user asks to create/add/spin up a Claude or Codex profile, or to inventory/audit/snapshot/restore/reconcile their global config across profiles.",
       "source": "./skills/global-meta",
       "strict": false,
       "skills": [
@@ -68,7 +68,7 @@
     },
     {
       "name": "dl-research",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "metadata": {
         "compat": [
           "claude-code",
@@ -150,7 +150,7 @@
     },
     {
       "name": "meta-debug",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "metadata": {
         "compat": [
           "claude-code",

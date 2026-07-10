@@ -1,11 +1,14 @@
 # Proposal: project-meta token diet + three-tier (Fable/Opus/Sonnet) pipeline contract
 
-> **Status:** Partially shipped (2026-06-10) — **D2** (router repair), **D6** (trigger coverage)
+> **Status:** Shipped (as of 2026-06-13). **D2** (router repair), **D6** (trigger coverage)
 > and **PR-D** (three-tier model canon + orchestration schema) landed in project-meta 1.10.0 /
 > orchestration 0.2.0 (PR #36); the harness-feedback machinery (Stop gate #5 et al.) landed via
-> the board PR line. Remaining: **D1 description trim (DASH-031)**, **D3–D5**. Branch
+> the board PR line. **D1** shipped as DASH-031 (v0.6 milestone); **D3+D4** shipped via PR #64,
+> project-meta 1.20.0, DASH-056/057; **D5** shipped via PR #66, project-meta 1.21.0, DASH-058.
+> v0.9 "Token diet round 2" milestone is closed done. Branch
 > coordinates referenced below (`harness-feedback`, `claude/clever-jang-25c094`) are
 > historical — all branches have merged and been deleted.
+> Shipped mapping: D1=DASH-031 (v0.6); D3+D4=PR #64/1.20.0/DASH-056+057; D5=PR #66/1.21.0/DASH-058; v0.9 milestone closed.
 > (Design **rev 2** — revised after a 4-lens adversarial critic panel:
 > cost-model, enforcement-feasibility, regression, scope/conflict. Panel adjudication in §7.)
 > Extends board item DASH-031 (token diet) with the audit evidence behind it, and adds the

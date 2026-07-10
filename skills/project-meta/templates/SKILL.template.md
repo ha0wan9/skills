@@ -130,10 +130,17 @@ locations (override, personal skill, plugin layouts); if none, use the floor.
 
 ```bash
 # canonical resolver: project-meta's templates/hooks/scripts/verify-before-stop.sh
+# (resolve_project_meta) — full dual-runtime set, see references/shared-cli-delegation.md
 pm_dir=""
-for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+for c in "${PROJECT_META_DIR:-}" \
+         "$HOME/.codex/skills/project-meta" \
+         "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
          "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
+         "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.codex/plugins/cache/*/project-meta/* \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*; do
   [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
 done
 if [ -n "$pm_dir" ]; then

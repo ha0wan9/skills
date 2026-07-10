@@ -10,7 +10,7 @@ description: >-
   user wants to debug, root-cause, or systematically fix a non-trivial bug, a
   regression, a heisenbug, a "works locally but fails in prod" issue, or a
   post-incident root cause — even if they don't name this skill.
-metadata: {version: 1.2.3, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
+metadata: {version: 1.2.4, compat: [claude-code, codex, openclaw], published: [claude-marketplace]}
 ---
 
 # Meta-Debug
@@ -106,11 +106,18 @@ install path; delegate to project-meta's scripts rather than re-rolling the
 logic; fall back to the thin floor when project-meta is absent.
 
 ```bash
-# canonical resolver (matches project-meta's verify-before-stop.sh pattern)
+# canonical resolver (matches project-meta's verify-before-stop.sh pattern,
+# full dual-runtime set — see project-meta/references/shared-cli-delegation.md)
 pm_dir=""
-for c in "${PROJECT_META_DIR:-}" "$HOME/.claude/skills/project-meta" \
+for c in "${PROJECT_META_DIR:-}" \
+         "$HOME/.codex/skills/project-meta" \
+         "$HOME/.claude/skills/project-meta" \
+         "$HOME"/.codex/plugins/marketplaces/*/skills/project-meta \
          "$HOME"/.claude/plugins/marketplaces/*/skills/project-meta \
-         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta; do
+         "$HOME"/.codex/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.claude/plugins/cache/*/*/*/skills/project-meta \
+         "$HOME"/.codex/plugins/cache/*/project-meta/* \
+         "$HOME"/.claude/plugins/cache/*/project-meta/*; do
   [ -n "$c" ] && [ -f "$c/scripts/repo_memory.py" ] && { pm_dir="$c"; break; }
 done
 if [ -n "$pm_dir" ]; then

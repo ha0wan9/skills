@@ -1,7 +1,9 @@
 # Proposal: plan/roadmap intake hardening (v0.4) — lessons from `fullstack-dev-skills`
 
-> **Status:** Proposed (design). Backs the v0.4 milestone "Plan/roadmap intake hardening"
-> (board items DASH-026…030); this doc is the `source` those items point to.
+> **Status:** Shipped (v0.4). Backs the v0.4 milestone "Plan/roadmap intake hardening"
+> (board items DASH-026…030); this doc is the `source` those items point to. The v0.4
+> milestone is done.
+> Shipped mapping: DASH-026..030, v0.4 milestone done.
 > **Scope:** strengthen the *front* of `/project-meta plan` and `/project-meta roadmap` with
 > intake rigor mined from `jeffallan/claude-skills` (`fullstack-dev-skills`) workflow commands.
 > **Grounding:** direct read of `fullstack-dev-skills` commands (`common-ground`,

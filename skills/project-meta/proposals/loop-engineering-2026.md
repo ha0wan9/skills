@@ -1,6 +1,8 @@
 # Proposal: loop-engineering audit (2026-07) → skill updates
 
-> **Status:** Proposed — awaiting operator GO + adversarial critic panel before any canon/code change.
+> **Status:** Shipped except L5 (withdrawn) and L7 (deferred, DASH-065). L1-L4+L6 shipped as
+> v0.10 (DASH-059..062,064, PR #69, project-meta 1.21.x-1.22).
+> Shipped mapping: L1-L4+L6=DASH-059..062,064/PR #69/v0.10 milestone; L5=withdrawn; L7=deferred (DASH-065, unscheduled).
 > **Scope:** audit every skill's loop design (iteration structure, verification, state, stopping)
 > against the 2025–2026 loop-engineering literature; propose 7 prioritized updates (L1–L7).
 > **Grounding:** one very-thorough repo inventory agent + two web-research agents (2026-07-06)
