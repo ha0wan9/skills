@@ -14,4 +14,6 @@
 .harness/dispatch-ack
 .harness/writeback-ack
 .harness/audit-ledger.jsonl
+.harness/stop-gate-events.jsonl
+.harness/observe-snapshot.json
 .board.lock

@@ -16,6 +16,8 @@ __pycache__/
 .harness/audit-ledger.jsonl
 .harness/risk-context.json
 .harness/effective-profile
+.harness/stop-gate-events.jsonl
+.harness/observe-snapshot.json
 
 # Project Board mutation lock (board.py); transient, never committed.
 .board.lock

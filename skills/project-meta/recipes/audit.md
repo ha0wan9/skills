@@ -71,6 +71,7 @@ Score each dimension as **ABSENT / PARTIAL / ENFORCED**.
 - [ ] Repeated mistakes have been promoted from prose to scripts/linters/hooks/templates (AP-VAL-1)
 - [ ] Validators are wired into the delivery contract (AP-VAL-2)
 - [ ] Pressure-test methodology has been applied to MUST rules (AP-VAL-3) — see `scripts/pressure_test_skill.py`
+- [ ] Lesson-lifecycle forget leg has run (AP-LIFE-2/3 mechanization): when `.harness/lessons.jsonl` exists, run `lesson_registry.py trim-candidates` and `lesson_registry.py auto-demote` (draft mode) and review their suggestions — demotion drafts print their evidence inline; retirements go through the board inbox
 
 ### Goal-readiness (when the audit target is a build plan)
 

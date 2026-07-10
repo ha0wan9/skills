@@ -12,6 +12,15 @@ Usage:
     python3 cross_skill_redundancy.py <marketplace-root-or-skills-dir> \
         [--ratio 0.5] [--min-shared-headings 2] [--strict]
 
+Statement mode (E0/DASH-072): check a single free-text statement (e.g. a lesson
+about to be promoted) for coverage by any existing reference/SKILL.md, instead
+of the pairwise file sweep:
+
+    python3 cross_skill_redundancy.py <root> --statement "text" [--coverage 0.5]
+
+Reports COVERED lines when >= --coverage of the statement's word 3-grams already
+appear in one file — the signal that the lesson duplicates existing canon.
+
 Dependency-free (uses difflib from the standard library).
 
 Exit: 0 = no redundancy over threshold (or advisory), 1 = found under
@@ -52,10 +61,13 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", body).strip().lower()
 
 
-def collect_refs(skills_root: Path) -> list[tuple[str, str, str]]:
+def collect_refs(skills_root: Path, include_skill_md: bool = False) -> list[tuple[str, str, str]]:
     """Return (skill, relpath, text) for every references/*.md."""
     out: list[tuple[str, str, str]] = []
     for skill in sorted(d for d in skills_root.iterdir() if d.is_dir()):
+        if include_skill_md and (skill / "SKILL.md").is_file():
+            out.append((skill.name, "SKILL.md",
+                        (skill / "SKILL.md").read_text(encoding="utf-8", errors="replace")))
         refs = skill / "references"
         if not refs.is_dir():
             continue
@@ -64,12 +76,37 @@ def collect_refs(skills_root: Path) -> list[tuple[str, str, str]]:
     return out
 
 
+def _word_ngrams(text: str, n: int = 3) -> set[tuple[str, ...]]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {tuple(words[i:i + n]) for i in range(len(words) - n + 1)}
+
+
+def statement_coverage(statement: str, refs: list[tuple[str, str, str]],
+                       threshold: float) -> list[tuple[str, str, float]]:
+    """Return (skill, relpath, coverage) rows where >= threshold of the
+    statement's word 3-grams already appear in that file."""
+    stmt_grams = _word_ngrams(statement)
+    hits: list[tuple[str, str, float]] = []
+    if not stmt_grams:
+        return hits
+    for skill, relpath, text in refs:
+        shared = stmt_grams & _word_ngrams(text)
+        coverage = len(shared) / len(stmt_grams)
+        if coverage >= threshold:
+            hits.append((skill, relpath, coverage))
+    return sorted(hits, key=lambda h: -h[2])
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("path", help="Marketplace root (with skills/) or a directory of skill dirs")
     parser.add_argument("--ratio", type=float, default=0.5, help="difflib similarity to flag (default 0.5)")
     parser.add_argument("--min-shared-headings", type=int, default=2, help="shared headings to flag (default 2)")
     parser.add_argument("--strict", action="store_true", help="exit 1 when redundancy is found")
+    parser.add_argument("--statement", default=None,
+                        help="statement mode: check this text for coverage by existing refs/SKILL.md instead of the pairwise sweep")
+    parser.add_argument("--coverage", type=float, default=0.5,
+                        help="statement mode: 3-gram coverage share to flag (default 0.5)")
     args = parser.parse_args(argv)
 
     root = Path(args.path).expanduser()
@@ -77,6 +114,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"not a directory: {root}", file=sys.stderr)
         return 2
     skills_root = root / "skills" if (root / "skills").is_dir() else root
+
+    if args.statement is not None:
+        refs = collect_refs(skills_root, include_skill_md=True)
+        if not refs:
+            print(f"no reference/SKILL.md files found under {skills_root}", file=sys.stderr)
+            return 2
+        hits = statement_coverage(args.statement, refs, args.coverage)
+        for skill, relpath, coverage in hits:
+            print(f"COVERED {skill}/{relpath}  coverage={coverage:.2f}")
+            print("    fix: the statement substantially duplicates this file; extend it there instead of promoting a parallel copy")
+        print()
+        print(f"summary: {len(hits)} coverage candidate(s) at >= {args.coverage:.2f}")
+        return 1 if (hits and args.strict) else 0
+
     refs = collect_refs(skills_root)
     if len(refs) < 2:
         print(f"need >=2 reference files; found {len(refs)} under {skills_root}", file=sys.stderr)
