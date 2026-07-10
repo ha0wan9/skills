@@ -1368,6 +1368,11 @@ def cmd_tx(args: argparse.Namespace) -> int:
         for err in errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
+    # Advisory (WARN, not FAIL — legacy stores carry historical duplicates):
+    # duplicate inbox ids make id-addressed verbs ambiguous.
+    inbox_ids = [str(r.get("id", "")) for r in read_jsonl(p["inbox"])] if p["inbox"].exists() else []
+    for dup in sorted({i for i in inbox_ids if inbox_ids.count(i) > 1}):
+        print(f"board tx: WARN duplicate inbox id: {dup}", file=sys.stderr)
     rev = roadmap.get("_meta", {}).get("rev", "?")
     print(f"board tx: PASS ({len(rows)} items, roadmap rev {rev})")
     return 0
@@ -1377,8 +1382,18 @@ def cmd_inbox_add(args: argparse.Namespace) -> int:
     init_store(args.root)
     p = paths(args.root)
     now = utc_now()
+    # Timestamp ids have 1s resolution — two captures in the same second (same
+    # process or same wall-second) would collide, and a shared id used to make
+    # `promote` strip every row bearing it. Suffix -2/-3/... on collision.
+    row_id = args.id or f"INBOX-{now}"
+    if not args.id:
+        existing = {r.get("id") for r in read_jsonl(p["inbox"])}
+        n = 2
+        while row_id in existing:
+            row_id = f"INBOX-{now}-{n}"
+            n += 1
     row = {
-        "id": args.id or f"INBOX-{now}",
+        "id": row_id,
         "kind": args.kind,
         "title": args.title,
         "body": args.body or "",
@@ -1449,7 +1464,12 @@ def cmd_promote(args: argparse.Namespace) -> int:
         if errors:
             raise SystemExit("store validation failed:\n  - " + "\n  - ".join(errors))
         write_items_and_roadmap_atomic(args.root, rows, roadmap, before)
-        write_jsonl_atomic(p["inbox"], [r for r in inbox_rows if r.get("id") != args.id])
+        # Remove ONLY the promoted row instance. Legacy stores may carry
+        # duplicate inbox ids (1s-resolution timestamps); an id-filter here
+        # would silently strip every row sharing the id — data loss.
+        remaining = list(inbox_rows)
+        remaining.remove(match)
+        write_jsonl_atomic(p["inbox"], remaining)
     render_dashboard(args.root, args.template)
     print(f"promoted {args.id} from inbox -> items (fuzzy); refine next")
     return 0
