@@ -1153,6 +1153,30 @@ def _cap_state(present: bool, wired: bool) -> str:
     return "off"
 
 
+# Literal fallback for the capability-detection engine's NAME LIST — used whenever
+# capabilities.json is missing, malformed, or fails schema validation. Board writes
+# must never fail because of the registry (see _load_capability_names).
+_FALLBACK_CAPS: tuple[str, ...] = (
+    "hooks", "phase-lock", "multi-host", "issue-tracker", "code-graph", "land-queue",
+)
+
+
+def _load_capability_names() -> tuple[str, ...]:
+    """Read the capability NAME LIST from the project-meta capabilities.json registry
+    (resolved relative to this script's own location, not the target repo). On ANY
+    failure — missing file, malformed JSON, wrong schema — fall back to the literal
+    _FALLBACK_CAPS so board rendering never breaks because of the registry."""
+    try:
+        registry_path = Path(__file__).resolve().parent.parent / "capabilities.json"
+        entries = json.loads(registry_path.read_text(encoding="utf-8"))
+        names = tuple(entry["name"] for entry in entries)
+        if not names or not all(isinstance(n, str) and n for n in names):
+            raise ValueError("capabilities.json: empty or non-string name(s)")
+        return names
+    except Exception:
+        return _FALLBACK_CAPS
+
+
 def collect_harness(root: Path) -> dict[str, Any]:
     """Derive the harness settings matrix from where each fact already lives (recipes/settings.md):
     HARNESS_PROFILE from .claude/settings.json, and each optional capability's on/off/half-installed
@@ -1251,13 +1275,20 @@ def collect_harness(root: Path) -> dict[str, Any]:
         "routed_in": lq_routed_in,
     }
 
+    # Bespoke per-capability detection logic, keyed by name. A registry name with no
+    # entry here (unknown to this engine version) is handled safely below — rendered
+    # as state "unknown" rather than raising KeyError.
+    _cap_by_name: dict[str, dict[str, Any]] = {
+        "hooks": {"state": _cap_state(bool(hook_scripts), hooks_wired), "sources": hooks_sources, "detail": hooks_detail},
+        "phase-lock": {"state": _cap_state(pl_contract.is_file(), pl_state.is_file()), "sources": pl_sources, "detail": phase_detail},
+        "multi-host": {"state": "on" if mirror_present else "off", "sources": mirror_present, "detail": {"mirrors": mirrors_detail}},
+        "issue-tracker": {"state": _cap_state(it_present, bool(it_routed_in)), "sources": it_sources, "detail": issue_detail},
+        "code-graph": {"state": _cap_state(cg_present, bool(cg_routed_in)), "sources": cg_sources, "detail": cg_detail},
+        "land-queue": {"state": _cap_state(lq_present or lq_script.is_file(), lq_present and lq_script_ok and bool(lq_routed_in)), "sources": lq_sources, "detail": lq_detail},
+    }
     capabilities = [
-        {"key": "hooks", "state": _cap_state(bool(hook_scripts), hooks_wired), "sources": hooks_sources, "detail": hooks_detail},
-        {"key": "phase-lock", "state": _cap_state(pl_contract.is_file(), pl_state.is_file()), "sources": pl_sources, "detail": phase_detail},
-        {"key": "multi-host", "state": "on" if mirror_present else "off", "sources": mirror_present, "detail": {"mirrors": mirrors_detail}},
-        {"key": "issue-tracker", "state": _cap_state(it_present, bool(it_routed_in)), "sources": it_sources, "detail": issue_detail},
-        {"key": "code-graph", "state": _cap_state(cg_present, bool(cg_routed_in)), "sources": cg_sources, "detail": cg_detail},
-        {"key": "land-queue", "state": _cap_state(lq_present or lq_script.is_file(), lq_present and lq_script_ok and bool(lq_routed_in)), "sources": lq_sources, "detail": lq_detail},
+        {"key": name, **_cap_by_name.get(name, {"state": "unknown", "sources": [], "detail": {}})}
+        for name in _load_capability_names()
     ]
 
     return {

@@ -29,12 +29,12 @@ judgement becomes a reviewer with an artifact-citation discipline.
 | 3 | Context-cost | script `context_cost_estimate.py` | always-on description budget | project-meta |
 | 4 | Determinism-gap | script `determinism_gap_scan.py` | AP-VAL-1 / AP-VAL-2 | project-meta |
 | 5 | Redundancy | script `cross_skill_redundancy.py` | one-source-of-truth (writing-skills) | project-meta |
-| 6 | Claims-adversary | agent `deep-survey-bfs/agents/claims-adversary.md` | survey anti-hallucination contract | deep-survey-bfs |
-| 7 | Methodology-critic | agent `dl-research/agents/methodology-critic.md` | DL methodology checklist, decision rules | dl-research |
+| 6 | Domain critics (owning-skill self-declaration) | agent, declared by the artifact's owning skill | artifact-specific adversarial review | owning skill |
 
 Critics 1–5 are marketplace-wide and live with `project-meta` because it owns
-harness authoring. Critics 6–7 are skill-specific and live with the skill
-whose artifacts they judge, as plugin `agents/` (subagents component).
+harness authoring. Critic 6 is a class, not a single agent: each artifact type
+is judged by whatever domain critic its owning skill declares, self-declared
+rather than hardcoded here — see §6 below.
 
 ## Deterministic Critics
 
@@ -117,20 +117,33 @@ the adversarial read the script cannot, and returns the
 `reviewer-report.md` shape with the verdict vocabulary
 `pass | pass-with-warnings | block | insufficient-context`.
 
-### 6. `claims-adversary` (deep-survey-bfs)
+### 6. Domain critics — owning-skill self-declaration protocol
 
-Attacks the survey anti-hallucination contract: unbacked assertions,
-quote/claim mismatch, paraphrase drift, un-sourced aggregation, hedging without
-a `paper_id`. Floor: `claims_validate.py` (which deliberately does **not**
-verify a quote supports its claim — that human-judgement gap is the agent's
-core job). Dispatch during/after `synthesize`.
+Artifact-specific adversarial review is not hardcoded here as a peer-path
+list; it is **self-declared by the artifact's owning skill**. project-meta
+does not own — and must not enumerate — which skill judges which artifact
+type; that binding lives with the skill that produces the artifact.
 
-### 7. `methodology-critic` (dl-research)
+Dispatch protocol, at audit time:
 
-Attacks a study's protocol before promotion: unfair baselines, data leakage,
-metric gaming, seed/variance gaps, unrecorded protocol changes, exploratory
-probes promoted as results. Floor: `validate_ledger.py`. Dispatch during
-`design`, `evaluate`, `synthesize`, or `audit`.
+1. **Identify the owning skill** from the artifact type. Generic rule: an
+   artifact belongs to whichever skill authors/consumes that artifact shape
+   as its primary output. *(informative, examples only)* a `survey.md`
+   belongs to the survey-producing skill; a DL study belongs to the
+   research skill — these are illustrations, not a normative lookup table.
+2. **Load the owning skill's own docs** (its `SKILL.md` / `references/`).
+   The owning skill names, in its own documentation, the critic agent file
+   it ships under its `agents/` directory. project-meta never names that
+   path itself — it asks the owning skill to name it.
+3. **Dispatch the declared critic** via whatever the runtime offers:
+   - Claude Code: the plugin-registered agent type from the session agent
+     list if the owning skill's agent is registered, or a subagent seeded
+     with the agent file's content otherwise.
+   - Codex: a native subagent seeded with the agent file's content.
+4. **Degrade explicitly if the owning skill can't be found.** If the
+   artifact's owning skill install cannot be located (skill not present,
+   agent file missing), run generic critics 1–5 only and **state the
+   degradation in the audit output** — do not silently skip domain review.
 
 ## How Critics Wire Into Recipes
 
@@ -153,8 +166,9 @@ itself an AP-VAL-1 violation — mark it WARN with the actual evidence instead.
   `agentType` fan-out (or a Codex Agents-SDK equivalent) is an *optional*
   orchestration over the **same** scripts, never a replacement for them. If
   audit depth is scaled to a token budget, only the reviewer-agent dimensions
-  (critics 6–7, extra review passes) may scale — dropping a deterministic floor
-  critic under budget pressure is AP-VAL-2 (validator not in the gate).
+  (critic 6's domain critics, extra review passes) may scale — dropping a
+  deterministic floor critic under budget pressure is AP-VAL-2 (validator not
+  in the gate).
 
 ### Verdict vocabulary
 
@@ -180,6 +194,11 @@ into a binary pass/fail, and preserve `BLOCKER`'s stop semantics in any schema.
    frontmatter, the shared reviewer stance, a mechanical floor command, a
    bounded adversarial read, read-only boundaries, and the
    `reviewer-report.md` output shape.
-4. Register the critic in the [Suite Overview](#suite-overview) table and wire
-   it into the relevant recipe. One source of truth: this file is the catalog;
-   recipes point here rather than re-describing critics.
+4. **Scripts (critics 1–5)** register directly in the
+   [Suite Overview](#suite-overview) table and wire into the relevant recipe.
+   **Domain critics (critic 6)** do not register here: the owning skill
+   declares its critic in its own `SKILL.md`/`references/` per the §6
+   self-declaration protocol — this table stays generic (a single row
+   pointing at §6), never a per-skill peer-path list. One source of truth:
+   this file is the catalog for critics 1–5; recipes point here rather than
+   re-describing them.

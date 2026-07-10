@@ -506,6 +506,53 @@ def check_land_queue(root: Path) -> Finding:
     )
 
 
+# Capabilities with a dedicated check_* function above (fully wired presence/routing
+# integrity). The generic advisory leg below only reports on registry entries NOT in
+# this set, so a capability never gets reported twice.
+_DEDICATED_CAPABILITY_CHECKS = {"issue-tracker", "code-graph", "land-queue"}
+
+
+def check_capability_registry_advisory(root: Path) -> list[Finding]:
+    """Advisory-only presence/absence report for registry capabilities that have no
+    dedicated check_* function (e.g. hooks, phase-lock, multi-host). Reads the
+    inventory from capabilities.json, resolved relative to this script's own
+    location (same fault-tolerant resolution as board.py's detection engine — see
+    _load_capability_names there). On ANY failure — missing file, malformed JSON,
+    wrong schema — this leg silently returns no findings; it is purely informational
+    and must never change the pass/warn/fail exit-code contract of `main`.
+    """
+    import json
+
+    try:
+        registry_path = Path(__file__).resolve().parent.parent / "capabilities.json"
+        entries = json.loads(registry_path.read_text(encoding="utf-8"))
+        if not isinstance(entries, list):
+            raise ValueError("capabilities.json must be a JSON array")
+    except Exception:
+        return []
+
+    findings: list[Finding] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        globs = entry.get("detection")
+        if not isinstance(name, str) or not name or name in _DEDICATED_CAPABILITY_CHECKS:
+            continue
+        if not isinstance(globs, list):
+            continue
+        hits = sorted(
+            str(match.relative_to(root)) if match.is_absolute() else str(match)
+            for pattern in globs
+            for match in root.glob(pattern)
+        )
+        if hits:
+            findings.append(Finding(f"{name} capability (advisory)", "PASS", f"detected: {', '.join(hits)}"))
+        else:
+            findings.append(Finding(f"{name} capability (advisory)", "PASS", "not detected (optional capability)"))
+    return findings
+
+
 def check_project_board(root: Path) -> Finding:
     """Project Board store (DASH-17). Optional capability:
     - No store (docs/backlog/items.jsonl absent) -> PASS (skipped).
@@ -567,6 +614,16 @@ def main(argv: list[str] | None = None) -> int:
     ]
     for finding in findings:
         print(finding.render())
+
+    # Advisory-only capability-registry leg: informational, kept out of `findings` so
+    # it can never affect the pass/warn/fail exit-code contract below.
+    advisory = check_capability_registry_advisory(root)
+    if advisory:
+        print()
+        print("advisory (capability registry — informational, not counted in the summary):")
+        for finding in advisory:
+            print("  " + finding.render())
+
     failed = [f for f in findings if f.status == "FAIL"]
     warned = [f for f in findings if f.status == "WARN"]
     print()

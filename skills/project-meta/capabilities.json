@@ -1,0 +1,48 @@
+[
+  {
+    "name": "hooks",
+    "summary": "Claude Code / Codex lifecycle hook scripts wired into settings.json.",
+    "reference": "templates/hooks/README.md",
+    "detection": [".claude/hooks/*.sh"]
+  },
+  {
+    "name": "phase-lock",
+    "summary": "Phase-gated workflow contract enforcing sequential build phases via gate scripts.",
+    "reference": "templates/phase-lock-contract.md",
+    "detection": [
+      "agents/phase-lock-contract.md",
+      ".harness/phase-state.json",
+      ".harness/gates/*.sh"
+    ]
+  },
+  {
+    "name": "multi-host",
+    "summary": "Generated mirror instruction files for non-Claude agent hosts.",
+    "reference": "references/multi-host-manifests.md",
+    "detection": [
+      ".cursor/rules/agents.md",
+      ".opencode/instructions.md",
+      "gemini-extension.json",
+      ".codex/AGENTS.md",
+      ".codex/config.toml"
+    ]
+  },
+  {
+    "name": "issue-tracker",
+    "summary": "Routed issue-tracking workflow doc linking the repo to an external tracker.",
+    "reference": "references/issue-tracking-integration.md",
+    "detection": ["agents/issue-tracking.md"]
+  },
+  {
+    "name": "code-graph",
+    "summary": "Routed code-graph capability doc integrating the graphify code-graph tool.",
+    "reference": "references/code-graph-integration.md",
+    "detection": ["agents/code-graph.md"]
+  },
+  {
+    "name": "land-queue",
+    "summary": "Land-queue merge workflow doc plus executable script for queued, gated merges.",
+    "reference": "references/land-queue-integration.md",
+    "detection": ["agents/land-queue.md", "scripts/land.sh"]
+  }
+]

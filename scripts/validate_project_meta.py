@@ -1120,6 +1120,60 @@ def check_user_preference_renderer() -> None:
         )
 
 
+def check_capability_registry_consistency() -> None:
+    """C2 — the six-name capability inventory has three owners that must never drift:
+    `capabilities.json` (the registry), `board.py`'s harness-detection engine
+    (behavioral — verified via a live bare-repo render, not a source-text guess),
+    and `recipes/settings.md`'s Settings-model source-of-truth table (parsed, not
+    hand-copied). This single check also asserts every registry entry's "reference"
+    doc actually exists on disk, so the pointer can't silently rot.
+    """
+    registry_path = ROOT / "capabilities.json"
+    require(registry_path.is_file(), "skills/project-meta/capabilities.json must exist")
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    require(isinstance(registry, list) and bool(registry), "capabilities.json must be a non-empty JSON array")
+
+    registry_names: set[str] = set()
+    for entry in registry:
+        require(isinstance(entry, dict), f"capabilities.json entry must be an object: {entry!r}")
+        for field in ("name", "summary", "reference", "detection"):
+            require(field in entry, f"capabilities.json entry missing required field {field!r}: {entry!r}")
+        name = entry["name"]
+        require(isinstance(name, str) and bool(name), f"capabilities.json entry has an invalid name: {entry!r}")
+        registry_names.add(name)
+        ref = ROOT / entry["reference"]
+        require(ref.is_file(), f"capabilities.json[{name!r}].reference does not exist: {entry['reference']}")
+
+    # (1) capabilities.json vs. what board.py's detection engine actually reports —
+    # a live render against a bare repo, not a static guess at its source text.
+    with tempfile.TemporaryDirectory() as td:
+        target_root = Path(td) / "repo"
+        init = run_python_script_result("scripts/board.py", "init", "--root", str(target_root))
+        require(init.returncode == 0, f"bare board init (registry consistency check) failed: {init.stderr}")
+        html = (target_root / "docs" / "dashboard.html").read_text(encoding="utf-8")
+        m = re.search(r"const BOARD_DATA = (\{.*?\});", html, re.DOTALL)
+        require(m is not None, "dashboard must embed BOARD_DATA harness state")
+        board_names = {c["key"] for c in json.loads(m.group(1)).get("harness", {}).get("capabilities", [])}
+    require(
+        board_names == registry_names,
+        f"capabilities.json names {sorted(registry_names)} must match what board.py's harness-detection "
+        f"engine reports for a bare repo {sorted(board_names)}",
+    )
+
+    # (2) capabilities.json vs. the capability rows in recipes/settings.md's
+    # Settings-model table (`| name | source of truth |` rows).
+    settings_names: set[str] = set()
+    for line in read("recipes/settings.md").splitlines():
+        row = re.match(r"^\|\s*`?([a-z][a-z-]*)`?\s*\|", line)
+        if row:
+            settings_names.add(row.group(1))
+    require(
+        settings_names == registry_names,
+        f"recipes/settings.md Settings-model table capability rows {sorted(settings_names)} must match "
+        f"capabilities.json names {sorted(registry_names)}",
+    )
+
+
 def check_board_cli() -> None:
     template = read("templates/board.dashboard.html")
     require("__BOARD_DATA_JSON__" in template, "board dashboard template must expose data injection marker")
@@ -1287,11 +1341,11 @@ def check_board_cli() -> None:
         require(mb is not None, "dashboard must embed BOARD_DATA harness state")
         bare = json.loads(mb.group(1)).get("harness", {})
         require(bare.get("profile") == "unset", "bare repo must derive HARNESS_PROFILE=unset")
+        # Registry vs. detection-engine vs. recipes/settings.md name-set consistency,
+        # plus reference-file existence, is covered independently by
+        # check_capability_registry_consistency (C2) — not re-asserted here.
         bare_caps = {c["key"]: c["state"] for c in bare.get("capabilities", [])}
-        require(
-            set(bare_caps) == {"hooks", "phase-lock", "multi-host", "issue-tracker", "code-graph", "land-queue"},
-            "harness must report the six optional capabilities",
-        )
+        require(bare_caps, "harness must report at least one optional capability")
         require(all(s == "off" for s in bare_caps.values()), "capabilities must read 'off' with no artifacts")
 
         # Detection + drill-down: a wired hook reads 'on' and its detail maps each event->script
@@ -1689,6 +1743,7 @@ CHECKS = (
     check_template_surface_contract,
     check_doc_context_extractor,
     check_user_preference_renderer,
+    check_capability_registry_consistency,
     check_board_cli,
     check_review_tier,
     check_inbox_concurrency,

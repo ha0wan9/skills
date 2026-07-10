@@ -113,7 +113,7 @@ GO/NO-GO + blockers only (a score invites gaming, cf. "Auditing for show" below)
 
 1. **Scope the audit**: full harness, single skill, mirrors only, etc. Default scope = full harness.
 2. **Run `validate_target_harness.py`** as the structural floor — record PASS/WARN/FAIL. When the target is a skill or the marketplace, also run the deterministic critic suite (`references/skill-critics.md`); its output is the mechanical evidence for the *Skill / harness authoring* and *Validation & enforcement* dimensions below.
-3. **Dispatch reviewer-agent critics** when the audit target includes a survey or a study artifact: `deep-survey-bfs/agents/claims-adversary.md` for a `survey.md`, `dl-research/agents/methodology-critic.md` for a study. Skip for a plain harness/memory audit.
+3. **Dispatch reviewer-agent critics** when the audit target includes a domain artifact (e.g. a survey, a study): follow the owning-skill self-declaration protocol in `references/skill-critics.md` §6 — identify the artifact's owning skill, load that skill's own docs to find the critic agent it declares under its `agents/`, and dispatch it (plugin-registered agent type or a seeded subagent, per the runtime). If the owning skill's install can't be found, run generic critics 1–5 only and state the degradation in the audit output. Skip entirely for a plain harness/memory audit.
 4. **Walk the dimensions** above, scoring each item.
 5. **Group findings** by severity (BLOCKER / MAJOR / MINOR / NIT) and by owner (template, reference, script, instantiated artifact, mirror).
 6. **Cite anti-pattern IDs** for every finding that matches a named pattern. Findings without a matching AP-XXX-N are candidates for adding new entries to the catalog.

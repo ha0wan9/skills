@@ -44,7 +44,8 @@ Inspect the current harness state without editing files.
    - `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/agents.md`, etc.
    - Generation banners present? Drift from canonical?
 
-7. **Inspect optional capabilities**:
+7. **Inspect optional capabilities** (inventory + detection globs sourced from
+   `capabilities.json` — see the Quick checks probe below):
    - Hooks installed? (`<repo>/.claude/hooks/` + settings.json)
    - Phase-lock contract installed? (`agents/phase-lock-contract.md` + `.harness/`)
    - Multi-host manifests present?
@@ -99,11 +100,18 @@ diff <(sed '/^<!--.*generated.*-->/d' AGENTS.md) <(sed '/^<!--.*generated.*-->/d
 # provenance compliance
 grep -L 'instantiated_from:' agents/*.md 2>/dev/null
 
-# hooks presence
-ls .claude/hooks/*.sh 2>&1 | head
-
-# phase-lock state
-[ -f .harness/phase-state.json ] && jq -r '.phase' .harness/phase-state.json
+# capability registry probe (all 6 entries — name + detection globs come from
+# capabilities.json; resolve project-meta's own dir per references/shared-cli-delegation.md,
+# or set $PROJECT_META_DIR explicitly)
+python3 -c "
+import glob, json, os
+paths = (glob.glob(os.path.join(os.environ.get('PROJECT_META_DIR', ''), 'capabilities.json'))
+         or glob.glob('**/skills/project-meta/capabilities.json', recursive=True))
+reg = json.loads(open(paths[0]).read()) if paths else []
+for cap in reg:
+    hits = [g for g in cap['detection'] if glob.glob(g)]
+    print(f\"{cap['name']:<14} {'on' if hits else 'off':<4} {hits}\")
+"
 
 # project board (if present) — read-only integrity + counts
 [ -f docs/backlog/items.jsonl ] && python3 scripts/board.py tx --root .
