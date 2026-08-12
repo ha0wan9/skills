@@ -64,3 +64,19 @@ Artifacts:
   owner: agent-facing
   review_policy: user review before base-branch or test-command changes
   last_reviewed: 2026-06-13
+- path: docs/plans/harness-tier-fit-v0.8-build-plan.md
+  artifact_name: harness-tier-fit-v0.8-build-plan
+  instantiated_from: project-meta/templates/building-plan.md
+  source_reference: project-meta/references/cli-command-patterns.md
+  owner: shared-user-facing
+  review_policy: user review when goal or readiness changes; per-PR fresh-context review before land
+  last_reviewed: 2026-08-12
+  refresh_trigger: v0.8 Wave 1 scope changes, DEC-003/DEC-004 resolution, or evidence-gate verdict
+- path: docs/plans/harness-tier-fit-v0.8-orchestration-contract.md
+  artifact_name: harness-tier-fit-v0.8-orchestration-contract
+  instantiated_from: orchestration/templates/orchestration-contract.md
+  source_reference: orchestration/references/orchestration-contract.md
+  owner: shared-user-facing
+  review_policy: re-review when the build plan or any task tier/checkpoint/review-level changes
+  last_reviewed: 2026-08-12
+  refresh_trigger: build-plan change or any task tier/checkpoint/review-level change
