@@ -10,7 +10,7 @@
 #
 # (b) Secret leg: scans TRACKED files only (git ls-files, capped at 2000 files; binary
 #     files skipped) for credential-shaped strings:
-#       * aws_secret_access_key
+#       * aws_secret_access_key assignments with a secret-shaped value (20+ chars)
 #       * AKIA[0-9A-Z]{16}  (AWS access key ID)
 #       * -----BEGIN (RSA |EC )?PRIVATE KEY-----
 #       * ghp_[A-Za-z0-9]{36}  (GitHub personal access token)
@@ -91,7 +91,7 @@ _probe_secrets() {
     # per hit (file path only — matched value is NEVER printed).
     #
     # Patterns (same set as the original per-file grep):
-    #   aws_secret_access_key
+    #   aws_secret_access_key\s*[=:]\s*[quote?][A-Za-z0-9/+=]{20,}  (value must be secret-shaped, not a bare keyword mention)
     #   AKIA[0-9A-Z]{16}
     #   -----BEGIN (RSA |EC )?PRIVATE KEY-----
     #   ghp_[A-Za-z0-9]{36}
@@ -106,7 +106,7 @@ FILE_CAP = 2000
 PER_FILE_BYTE_CAP = 1 * 1024 * 1024  # 1 MiB per file
 
 PATTERNS = re.compile(
-    r"aws_secret_access_key\s*[=:]\s*\S"
+    r"aws_secret_access_key\s*[=:]\s*[\x27\x22]?[A-Za-z0-9/+=]{20,}"
     r"|AKIA[0-9A-Z]{16}"
     r"|-----BEGIN (?:RSA |EC )?PRIVATE KEY-----"
     r"|ghp_[A-Za-z0-9]{36}"
