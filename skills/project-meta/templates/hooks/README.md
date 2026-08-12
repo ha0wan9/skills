@@ -604,7 +604,7 @@ files skipped by null-byte heuristic) for credential-shaped strings:
 
 | Pattern | What it finds |
 |---|---|
-| `aws_secret_access_key\s*[=:]\s*\S` | AWS secret key assignments |
+| `aws_secret_access_key\s*[=:]\s*[\x27\x22]?[A-Za-z0-9/+=]{20,}` | AWS secret key assignments with a secret-shaped value (a bare keyword mention in docs no longer trips it) |
 | `AKIA[0-9A-Z]{16}` | AWS access key IDs |
 | `-----BEGIN (RSA \|EC )?PRIVATE KEY-----` | PEM private keys |
 | `ghp_[A-Za-z0-9]{36}` | GitHub personal access tokens |

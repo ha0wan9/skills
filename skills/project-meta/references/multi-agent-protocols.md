@@ -84,8 +84,8 @@ high-fanout bounded judgment:
 | tier | Claude Code model (2026) | Codex model tier (2026) | role |
 |---|---|---|---|
 | **utility** (opt-in, below fleet) | Haiku 4.5 | closest small tier, or "—" if none | high-fanout bounded judgment: extract/classify/label/summarize; never code edits, reviews, or security surfaces |
-| **fleet** (default) | Sonnet 4.6 | Luna | every dispatched bounded role: Workers, Reviewers, Explorers, scouts, finders, verifiers, extract/summarize/lint-adjacent judgment |
-| **escalation/synth** | Opus 4.8 | Terra | (a) the single escalate-on-demonstrated-shortfall agent; (b) cross-agent synthesis where one context reconciles many fleet outputs; (c) adversarial/security review where a miss is expensive |
+| **fleet** (default) | Sonnet 5 | Luna | every dispatched bounded role: Workers, Reviewers, Explorers, scouts, finders, verifiers, extract/summarize/lint-adjacent judgment |
+| **escalation/synth** | Opus 5 | Terra | (a) the single escalate-on-demonstrated-shortfall agent; (b) cross-agent synthesis where one context reconciles many fleet outputs; (c) adversarial/security review where a miss is expensive |
 | **conductor** | the **active session model** (Fable 5 when available) | the **active session model** (Sol when available) | Lead/session only: framing, contract signing, architecture forks, final canon gate; plus at most **one** dispatched "unblock" call after an Opus/Terra escalation already failed |
 
 Rules:
