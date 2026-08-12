@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "78b704a61b43a0699dcc3ac3f6b2d4bce0739837fb9c05b9302c8ad0ed051b35",
-    "next_decision_id": 3,
-    "rev": 174,
+    "items_sha256": "718821e72a25165bac95e21d42f72dff35ce605bed9d25a8fcbf812878bce678",
+    "next_decision_id": 5,
+    "rev": 184,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-07-10T13:18:51Z"
+    "updated_at": "2026-08-12T03:34:31Z"
   },
   "milestones": [
     {
@@ -146,12 +146,46 @@
             "resolved_at": "2026-06-13T14:49:16Z",
             "resolver": "operator+L2-panel"
           }
+        },
+        {
+          "blocks": [
+            "DASH-080"
+          ],
+          "created_at": "2026-08-12T03:31:33Z",
+          "id": "DEC-003",
+          "options": [
+            "uninstall the whole pack (find-skills re-discovers; reinstallable)",
+            "prune to a named keep-list (5-10 skills)",
+            "keep as-is (reject slimming)"
+          ],
+          "question": "fullstack-dev-skills roster: what survives the Fable-tier slimming?",
+          "recommendation": "uninstall the whole pack: persona depth is native to Fable-class models; the listing weight taxes every session; reinstall is one command if missed",
+          "resolution": null
+        },
+        {
+          "blocks": [
+            "DASH-082"
+          ],
+          "created_at": "2026-08-12T03:31:33Z",
+          "id": "DEC-004",
+          "options": [
+            "migrate to user scope via uninstall+reinstall per plugin in a quiet window",
+            "keep local scope (works today; scope-aware reload handles it)",
+            "defer until CLI grows a scope-migrate command"
+          ],
+          "question": "9 ha0wan9 plugins recorded at local scope (projectPath=/Users/HaoranWang): normalize?",
+          "recommendation": "keep local scope for now: scope-aware reload already handles it correctly and a bulk reinstall risks enablement churn; revisit if the CLI adds scope migration",
+          "resolution": null
         }
       ],
       "detail": "Self-audit & upgrade: the harness gains (1) a new dashboard Audit panel reporting its own health/usage/staleness + composing CLI recipes (DASH-54), and (2) the ability to upgrade its installed components to latest marketplace/git version (DASH-55, adds the net-new per-component version surface). 55 sequences before 54 (54's upgradable-health signal consumes 55's version surface). Both L; DASH-54 P3 reuse-discovery is a bounded spike. Fleet-hygiene CI + token-diet round-2 candidates remain pooled for v0.9.",
       "items": [
         "DASH-54",
-        "DASH-55"
+        "DASH-55",
+        "DASH-080",
+        "DASH-081",
+        "DASH-082",
+        "DASH-083"
       ],
       "status": "todo",
       "title": "Harness self-audit + component upgrade",
