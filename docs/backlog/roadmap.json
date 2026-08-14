@@ -1,11 +1,11 @@
 {
   "_meta": {
     "created_at": "2026-06-06T00:00:00Z",
-    "items_sha256": "8a34da7111c14acbda292de31666411415e2fcb1617c21d97a9c2c0f47a60f6f",
+    "items_sha256": "0c958baf4d0a7d6c2229e95b9f5acf513affa7941a668c9b177932cbdf5521d4",
     "next_decision_id": 5,
-    "rev": 186,
+    "rev": 189,
     "source_reference": "docs/backlog/project-board-system.md",
-    "updated_at": "2026-08-14T02:09:11Z"
+    "updated_at": "2026-08-14T02:57:16Z"
   },
   "milestones": [
     {
@@ -160,7 +160,11 @@
           ],
           "question": "fullstack-dev-skills roster: what survives the Fable-tier slimming?",
           "recommendation": "uninstall the whole pack: persona depth is native to Fable-class models; the listing weight taxes every session; reinstall is one command if missed",
-          "resolution": null
+          "resolution": {
+            "option": "uninstall the whole pack (find-skills re-discovers; reinstallable)",
+            "resolved_at": "2026-08-14T02:41:12Z",
+            "resolver": "operator"
+          }
         },
         {
           "blocks": [
