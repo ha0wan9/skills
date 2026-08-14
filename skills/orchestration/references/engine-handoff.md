@@ -34,7 +34,7 @@ The signed contract is runtime-agnostic policy. It is emitted via whichever back
 
 | Runtime | Backing | Emission |
 |---|---|---|
-| **Claude Code** | the **Workflow** tool (scripted) | translate the contract's per-task table into a workflow script: `model_tier` → `agent(... {model})`, `parallelization` → `parallel()`/`pipeline()`, `review_level` → a verify stage, `human_checkpoint` → a `log()` + stop. Called only on the user's `orchestrate` invocation. |
+| **Claude Code** | the **Workflow** tool (scripted) | translate the contract's per-task table into a workflow script: `model_tier` → `agent(... {model})`, `parallelization` → `parallel()`/`pipeline()`, `review_level` → an `agent()` review call (`schema`-validated for a pass/BLOCKER verdict where the level calls for it), `human_checkpoint` → a `log()` + stop. Called only on the user's `orchestrate` invocation. |
 | **Codex** | **OpenAI Agents-SDK** (`codex mcp`) + `.codex/agents/*.toml` roles | a PM/orchestrator script with handoffs + gating; read-only roles → Codex `explorer`, workers → `worker`. (canon: `project-meta/references/multi-agent-protocols.md`, Orchestration Backings.) |
 | **OpenClaw / none** | — | **degrade to the Agent/Task subagent-loop floor**: the conductor runs the contract as a prose dispatch loop (fresh worker → fresh reviewer per task, BLOCKER halts). Slower, but the contract still executes. |
 
