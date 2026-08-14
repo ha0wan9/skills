@@ -13,6 +13,8 @@ Shared infra inside `project-meta` — **not** a separate skill. Consumed by `au
 
 Reviewers run on **clean context** (diff + brief only — AP-COORD-2); L2/L3 panels run **in parallel** for speed.
 
+**Reviewer briefs are coverage-first.** Never brief a reviewer to report "only high-severity" / "only blocking" findings — current-generation reviewers (Opus 5 / Sonnet 5) follow severity filters literally and measured recall drops (per-tier prompting pages, 2026-06/07). Brief for full reporting with per-finding confidence + severity; filtering and ranking happen downstream (synth stage or Lead). The BLOCKER verdict remains the halt signal.
+
 **Profile × stakes interaction (read before trusting the floor):** `review_tier.py` returns **L3 for a new-skill or MUST-rule change** — the *high-stakes floor* — and `--profile minimal` can **never** lower that. `minimal` *can* lower the ordinary size/scope-derived floor by one (e.g. a harness-path change L2 → L1) to cut ceremony in low-stakes repos; `strict` raises it by one. So a harness-path change is L2 by default but not a protected floor; *changing or adding* a MUST-rule is the protected L3, while merely editing code *governed by* a harness path is L2.
 
 ## Scorer — `scripts/review_tier.py` (heuristic floor, NOT a classifier)
