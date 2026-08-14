@@ -538,11 +538,11 @@ false positives):
 
 Fails open — any payload it cannot parse yields exit 0. It never wedges the session.
 
-### `dispatch-tier-guard.sh` — PreToolUse on Task|Agent
+### `dispatch-tier-guard.sh` — PreToolUse on Task|Agent|Workflow
 
 Advisory dispatch-tier guard. Fires on the `Agent` tool (`Task` is the historical
-alias — a dead regex alternative, harmless, covers older runtimes) and surfaces
-silent session-model inheritance at dispatch time, per
+alias — a dead regex alternative, harmless, covers older runtimes) and on the
+`Workflow` tool, and surfaces silent session-model inheritance at dispatch time, per
 [`docs/plans/model-tier-routing-build-plan.md`](../../../../docs/plans/model-tier-routing-build-plan.md)
 §2 decision #4.
 
@@ -555,6 +555,7 @@ silent session-model inheritance at dispatch time, per
 | 3 | `model` present, fable/sol/conductor-class | one-line notice — conductor-tier dispatch (≤1 unblock call/run) |
 | 4 | `model` absent, `subagent_type` ∈ {general-purpose, claude} or absent/empty | WARN — dispatch inherits the session model |
 | 5 | `model` absent, any other `subagent_type` (Explore/Plan/custom/plugin) | short notice — the type likely pins its own model in frontmatter |
+| 6 | `Workflow` payload: script has more `agent()`/`workflow()` call sites than explicit `model:` keys | WARN — unset calls inherit the session model for the whole fan-out |
 
 A present-but-non-string `model`, or a non-string `subagent_type`, is treated as
 custom/unknown and routed down the same notice/WARN paths above (never a crash).
@@ -570,12 +571,19 @@ types, which may resolve a model internally without ever surfacing it here. A
 strict deny is a possible v2, but only behind evidence that `tool_input.model` is
 a reliable signal (tracked as a backlog item, not built).
 
-**Coverage gap — Workflow-internal fan-out is invisible:** `agent()` calls made
+**Workflow fan-out (1.29.0 — closes the old coverage gap):** `agent()` calls made
 *inside* a Workflow script do not pass through the PreToolUse `Agent`/`Task`
-matcher — only the top-level `Workflow` tool call is hook-visible. This hook
-therefore covers direct Agent-tool dispatch only; the scripted-engine path is
-governed by the orchestration contract's per-task tier table and `budget_hint`
-tier-mix, not by this hook (see `skills/orchestration`).
+matcher — only the top-level `Workflow` tool call is hook-visible, and every
+`agent()` whose opts omit `model:` silently inherits the *session* model for the
+whole fan-out (the exact leak this guard exists to surface, multiplied by the
+agent count). The guard therefore also matches `Workflow`: it scans the script
+text (inline `script`, or the file behind `scriptPath`) and WARNs when
+`agent()`/`workflow()` call sites outnumber explicit `model:` keys. Deliberately
+heuristic and advisory: `meta.phases` model rows overcount in the safe
+direction, and resume-only / named-workflow payloads with no readable script
+fail open. The scripted-engine path additionally stays governed by the
+orchestration contract's per-task tier table and `budget_hint` tier-mix (see
+`skills/orchestration`).
 
 The hook is **stateless** — it never queries `dispatch_ledger.py`; the "≤2/run"
 and "≤1/run" figures in the notice text are contract-reviewed conventions, not

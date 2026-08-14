@@ -6,12 +6,12 @@
   },
   "metadata": {
     "description": "Agent harness skills: project-meta (repo memory + execution governance), orchestration (turn a milestone into a signed orchestration contract, then hand it to the runtime's scripted engine; depends on project-meta), global-meta (user/global Claude+Codex config root \u2014 dual-runtime profiles now, audit/evolve lifecycle proposed; replaces the retired profile-creator), dl-research (rigorous DL research workflows), deep-survey-bfs (breadth-first literature surveys), calendar-crud-workflow (safe calendar event CRUD), sketch-asset-generator (extraction-first design-system asset packs from sketches or source UI, with GPT Image as a fallback), meta-debug (a gated, rollbackable, looping debug pipeline that composes with project-meta), and openclaw-devops (OpenClaw install maintenance \u2014 sanity/repair/transactional update/rollback \u2014 that uses meta-debug as its debug base layer).",
-    "version": "3.0.5"
+    "version": "3.0.6"
   },
   "plugins": [
     {
       "name": "project-meta",
-      "version": "1.28.3",
+      "version": "1.29.0",
       "metadata": {
         "compat": [
           "claude-code",

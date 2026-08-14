@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
-# dispatch-tier-guard.sh — PreToolUse advisory dispatch-tier guard (matcher Task|Agent).
+# dispatch-tier-guard.sh — PreToolUse advisory dispatch-tier guard
+# (matcher Task|Agent|Workflow).
 #
 # Surfaces silent session-model inheritance at Agent-dispatch time. `Agent` is the
 # current tool name; `Task` is the historical alias — a dead regex alternative is
 # harmless and covers older runtimes. See
 # docs/plans/model-tier-routing-build-plan.md §2 decision #4.
+#
+# Workflow extension (local, 2026-08-14): the Workflow tool's internal agent()
+# fan-out never passes through the Task|Agent matcher, so a script whose agent()
+# opts omit `model:` silently inherits the session model for EVERY spawned
+# subagent — the exact leak this guard exists to surface, multiplied by the
+# fan-out. For a Workflow payload the guard scans the script text (inline
+# `script`, or the file behind `scriptPath`) and WARNs when it finds more
+# `agent(`/`workflow(` call sites than explicit `model:` keys. Heuristic and
+# advisory by design (meta.phases model rows overcount in our favor); exit 0
+# always.
 #
 # Branches evaluated in order, first match wins. ALL branches exit 0 (advisory —
 # the PreToolUse payload cannot see agent-definition frontmatter `model:` or the
@@ -66,6 +77,34 @@ ti = d.get("tool_input")
 if not isinstance(ti, dict):
     ti = {}
 
+# Workflow payloads carry a script (inline or by path), never model/subagent_type.
+if d.get("tool_name") == "Workflow" or "script" in ti or "scriptPath" in ti:
+    import re
+    script = ti.get("script")
+    if not isinstance(script, str):
+        script = ""
+    if not script:
+        sp = ti.get("scriptPath")
+        if isinstance(sp, str) and sp.strip():
+            try:
+                with open(sp, "r", encoding="utf-8") as fh:
+                    script = fh.read()
+            except Exception:
+                print("parse-error")
+                sys.exit(0)
+    if not script:
+        print("parse-error")  # resume-only / named-workflow payload — nothing to scan
+        sys.exit(0)
+    calls = len(re.findall(r"\bagent\(", script)) + len(re.findall(r"\bworkflow\(", script))
+    models = len(re.findall(r"\bmodel\s*:", script))
+    if calls > models:
+        print("warn-workflow")
+        print(f"{calls} agent() call(s), {models} explicit model key(s)")
+    else:
+        print("silent")
+        print("")
+    sys.exit(0)
+
 model = ti.get("model")
 subagent_type = ti.get("subagent_type")
 
@@ -112,6 +151,10 @@ case "$tag" in
     ;;
   unknown-model)
     echo "[dispatch-tier-guard] NOTICE: unrecognized model tier (model=$detail)" >&2
+    exit 0
+    ;;
+  warn-workflow)
+    echo "[dispatch-tier-guard] WARN: Workflow script has $detail — agent() calls without an explicit model inherit the SESSION model for every spawned subagent; fleet default is sonnet: pass {model:'sonnet'} per call, escalate only with a stated reason" >&2
     exit 0
     ;;
   warn-generic)
