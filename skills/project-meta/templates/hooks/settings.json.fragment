@@ -51,8 +51,8 @@
         ]
       },
       {
-        "_comment": "dispatch-tier-guard (DASH-066): advisory tier-visibility guard on Agent/Task dispatches. WARNs when a generic-type dispatch omits `model` (silent session-model inheritance vs the sonnet/luna fleet default); one-line notices for explicit opus/terra or fable/sol tiers. Always exits 0 at every profile — the payload cannot see agent-definition frontmatter model resolution, and Workflow-internal agent() fan-out does not pass through this matcher. minimal=silent.",
-        "matcher": "Task|Agent",
+        "_comment": "dispatch-tier-guard (DASH-066 + 1.29.0 Workflow extension): advisory tier-visibility guard on Agent/Task/Workflow dispatches. WARNs when a generic-type dispatch omits `model` (silent session-model inheritance vs the sonnet/luna fleet default); one-line notices for explicit opus/terra or fable/sol tiers. Workflow payloads: scans the script (inline or scriptPath) and WARNs when agent()/workflow() call sites outnumber explicit model: keys — every unset call inherits the session model for the whole fan-out. Always exits 0 at every profile — the payload cannot see agent-definition frontmatter model resolution. minimal=silent.",
+        "matcher": "Task|Agent|Workflow",
         "hooks": [
           {
             "type": "command",
