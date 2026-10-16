@@ -16,6 +16,7 @@ Each skill in `skills/` is independently installable by name. The plugin manifes
 | `calendar-crud-workflow` | [`skills/calendar-crud-workflow/`](skills/calendar-crud-workflow/) | Standardize calendar event CRUD from fuzzy scheduling requests into stable calendars, title prefixes, searchable tags, source links, and safe batch operations. |
 | `sketch-asset-generator` | [`skills/sketch-asset-generator/`](skills/sketch-asset-generator/) | Turn sketches or existing UI source into reviewable design-system asset packs (tokens, SVG/component primitives, manifests, contact sheets, validation reports). Extraction-first: extract directly from user-owned resources by default, use GPT Image only as a fallback. Runs under Claude or Codex. |
 | `meta-debug` | [`skills/meta-debug/`](skills/meta-debug/) | A gated, rollbackable, looping debug pipeline: triage & mitigate → bounded clean-context case file → deterministic repro → red test (reuse existing CI/suite) → falsifiable hypotheses → constraint-scored solutions → top-k parallel sandbox fixes → adversarial-critic validation → canary with a predefined rollback trigger → recorded lesson. Phase gates enforced by a stdlib session tracker; composes with `project-meta` for context-collection, multi-agent dispatch, and lesson promotion. |
+| `licp-collaboration` | [`skills/licp-collaboration/`](skills/licp-collaboration/) | Manual upstream-frontier ↔ downstream-worker (pi first) collaboration on one scoped task: four **human-selected** tiers (`Eco` / `Balanced` / `Boost` / `Full`) that allocate participation only, a verified manual `pi` invocation with scoped task envelopes and an evidence packet, a monitoring fallback (manual UTC timestamps, native per-side counters, explicit `unknown`), and a **bidirectional** close retrospective with a non-degradation gate. Workflow instructions + bundled references only — no run/resume/result adapter, scheduler, automatic retrospective hook, or tier enforcement; distinct from `orchestration`. |
 | `openclaw-devops` | [`skills/openclaw-devops/`](skills/openclaw-devops/) | OpenClaw install maintenance: sanity/health probe, bounded self-repair, transactional auto-update across all npm copies with post-update integrity verification + automatic rollback, an ops lessons journal, and a thin maintenance cron. Delegates systematic debugging to `meta-debug` (the debug base layer) and supplies the OpenClaw `reproduce`/`verify`/`rollback` mechanics its phases call. |
 
 ## Compatibility
@@ -39,6 +40,7 @@ metadata:
 | `meta-debug` | ✅ | ✅ | ✅ | Claude Marketplace |
 | `openclaw-devops` | ✅ | ✅ | ✅ | Claude Marketplace |
 | `global-meta` | ✅ | ✅ | ❌ | Claude Marketplace |
+| `licp-collaboration` | ✅ | ✅ | ❌ | Claude Marketplace |
 | `orchestration` | ✅ | ✅ | ⚠️ | Claude Marketplace |
 | `project-meta` | ✅ | ✅ | ⚠️ | Claude Marketplace |
 | `sketch-asset-generator` | ✅ | ✅ | ❌ | Claude Marketplace |
@@ -62,6 +64,7 @@ From a git repo URL (`git@github.com:ha0wan9/skills.git` or `https://github.com/
 /plugin install sketch-asset-generator@ha0wan9-skills
 /plugin install meta-debug@ha0wan9-skills
 /plugin install openclaw-devops@ha0wan9-skills
+/plugin install licp-collaboration@ha0wan9-skills
 ```
 
 Each `/plugin install` resolves the plugin name from `.claude-plugin/marketplace.json` and copies the referenced skill directory into the user's plugin store. Skills install independently; you can install one without the other. With marketplace ≥3.0 (scoped plugin sources), each install materializes **only that plugin's skill directory** — prior versions (pre-3.0 cached installs) copied the full repo until reinstalled.
@@ -78,6 +81,7 @@ cp -R /path/to/skills/skills/calendar-crud-workflow ~/.claude/skills/calendar-cr
 cp -R /path/to/skills/skills/sketch-asset-generator ~/.claude/skills/sketch-asset-generator
 cp -R /path/to/skills/skills/meta-debug      ~/.claude/skills/meta-debug
 cp -R /path/to/skills/skills/openclaw-devops ~/.claude/skills/openclaw-devops
+cp -R /path/to/skills/skills/licp-collaboration ~/.claude/skills/licp-collaboration
 ```
 
 ## Bounded Doc Loading
@@ -167,6 +171,9 @@ skills/
     │   ├── config.json  # policy + host topology
     │   ├── references/  # runbook (upgrade/rollback/repair catalog, cron recipe, sudoers)
     │   └── scripts/     # openclaw_devops.py (sanity/repair/update/verify/rollback/cycle/lessons)
+    ├── licp-collaboration/              # upstream(frontier) ↔ downstream(worker) collaboration tiers, docs-only
+    │   ├── SKILL.md
+    │   └── references/           # tier-policy, pi-worker-invocation, retrospective
     └── sketch-asset-generator/
         ├── SKILL.md
         ├── agents/openai.yaml
